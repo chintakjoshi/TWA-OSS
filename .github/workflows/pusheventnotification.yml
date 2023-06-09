@@ -1,0 +1,30 @@
+name: Send Email Notification on Main Branch Push
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  send-email-notification:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.x
+
+      - name: Install SendGrid
+        run: pip install sendgrid
+
+      - name: Send Email Notification
+        env:
+          SENDGRID_API_KEY: nmMMUXFsQ7OE-OQhWgjYog
+          TO_EMAIL: navya.nelluri98@gmail.com
+          FROM_EMAIL: navya.nelluri98@gmail.com
+        run: |
+          python send_email.py $SENDGRID_API_KEY $TO_EMAIL $FROM_EMAIL
