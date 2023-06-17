@@ -61,4 +61,3 @@ Compatibility: The MIT License is compatible with many other licenses, including
 No Warranty: The license explicitly states that the software is provided "as is," without any warranty of any kind.
 
 No Liability: The license includes a disclaimer stating that the authors or copyright holders will not be liable for any damages arising from the software.
-
