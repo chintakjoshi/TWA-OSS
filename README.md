@@ -75,7 +75,7 @@ The initial approach to this project involves the following steps:
    - Mapping job seekers to appropriate job positions
 4. The mapped data will be available on the front end, either by sorting based on employer details or job positions.
 
-### How to Use [Your Product's Name]
+### How to Use the application
 TBD
 
 ### API Reference
