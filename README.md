@@ -56,10 +56,6 @@ System Requirements
 Front-end (react.js, css)
 Back-end (node.js)
 
-### Installation
-For frontend - ```cd frontend``` & ```npm install```
-
-For Backend -  ```cd backend``` & ```TBD```
 
 ### Product Overview
 ![image](https://github.com/NavyaNelluri/Project-TWA/assets/123142678/bbf27237-df59-4606-81bd-5c7d836caf96)
@@ -76,7 +72,13 @@ The initial approach to this project involves the following steps:
 4. The mapped data will be available on the front end, either by sorting based on employer details or job positions.
 
 ### How to Use the application
-TBD
+
+***How to Run Frontend*** 
+
+```cd client\src```
+Then ```npm install``` to install the dependencies.
+After installing the dependencies run ```npm start```.
+This will start the frontend.
 
 ### API Reference
 TBD
