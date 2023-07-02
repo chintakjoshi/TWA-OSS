@@ -1,27 +1,29 @@
-name: Create Merge Request
+
+name: Install Snowflake Connector and test
 
 on:
   push:
     branches: [ main, issue_3 ]
-  workflow_dispatch: # Manual trigger event
+  pull_request:
+    branches: [ main, issue_3 ]
 
 jobs:
-  create_merge_request:
+  install_dependencies:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Merge issue_3 into main
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.x # Replace with your desired Python version
+
+      - name: Install Snowflake Connector
         run: |
-          git checkout main
-          git merge issue_3 --no-ff --no-commit
+          pip install --upgrade snowflake-connector-python
 
-          # Manual conflict resolution
-          # Open the affected files in a text editor and resolve the conflicts
-
-          # Add the resolved changes to the staging area
-          git add .
-
-          # Finalize the merge commit
-          git commit
+      - name: Verify Installation
+        run: |
+          python -c "import snowflake.connector; print(snowflake.connector.__version__)"
