@@ -5,7 +5,7 @@ name: Create Merge Request
 on:
   push:
     branches:
-      - DEV
+      - issue_3
   workflow_dispatch: # Manual trigger event
 
 jobs:
@@ -18,7 +18,7 @@ jobs:
       - name: Merge issue_3 into main
         run: |
           git checkout main
-          git merge DEV --no-ff --no-commit
+          git merge issue_3 --no-ff --no-commit
 
           # Manual conflict resolution
           # Open the affected files in a text editor and resolve the conflicts
