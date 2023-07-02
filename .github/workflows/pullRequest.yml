@@ -15,7 +15,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Merge DEV into main
+      - name: Merge issue_3 into main
         run: |
           git checkout main
           git merge DEV --no-ff --no-commit
