@@ -1,7 +1,6 @@
 # .github/workflows/main.yml
 
 name: Create Merge Request
-
 on:
   push:
     branches:
