@@ -3,8 +3,7 @@
 name: Create Merge Request
 on:
   push:
-    branches:
-      - issue_3
+    branches: [ main, issue_3 ]
   workflow_dispatch: # Manual trigger event
 
 jobs:
