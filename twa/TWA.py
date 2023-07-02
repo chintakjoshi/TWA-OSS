@@ -8,19 +8,19 @@ from tkinter import ttk
 try:
     con_eb = snowflake.connector.connect(user='NavyaNelluri',
                                          password='Navya.c@698',
-                                         account='ujlmjrs-rx06772',
-                                         database='PROJECT_TWA',
-                                         schema="PROJECT_TWA_SCHEMA"
+                                         account='emjvxti-ri58811',
+                                         database='TWA',
+                                         schema="SCHEMA_TWA"
                                          )
 except Exception as e:
     print(str(e))
 
 cs = con_eb.cursor()
 print(cs)
-cs.execute("SELECT * FROM PROJECT_TWA.PROJECT_TWA_SCHEMA.JobSeeker")
+cs.execute("SELECT * FROM TWA.SCHEMA_TWA.JobSeeker")
 jobSeeker_results = cs.fetchone()
 print(jobSeeker_results)
-cs.execute("SELECT * FROM PROJECT_TWA.PROJECT_TWA_SCHEMA.JOBDETAILS")
+cs.execute("SELECT * FROM TWA.SCHEMA_TWA.JOBDETAILS")
 JobDetails_result = cs.fetchone()
 print(JobDetails_result)
 

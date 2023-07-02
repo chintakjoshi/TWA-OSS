@@ -1,0 +1,29 @@
+
+name: Install Snowflake Connector and test
+
+on:
+  push:
+    branches: [ main, issue_3 ]
+  pull_request:
+    branches: [ main, issue_3 ]
+
+jobs:
+  install_dependencies:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.x # Replace with your desired Python version
+
+      - name: Install Snowflake Connector
+        run: |
+          pip install --upgrade snowflake-connector-python
+
+      - name: Verify Installation
+        run: |
+          python -c "import snowflake.connector; print(snowflake.connector.__version__)"
