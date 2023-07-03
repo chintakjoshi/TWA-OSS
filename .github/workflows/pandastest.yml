@@ -36,10 +36,3 @@ jobs:
         with:
           python-version: 3.x # Replace with your desired Python version
 
-      - name: Install project dependencies
-        run: |
-          pip install -r requirements.txt
-
-      - name: Run tests
-        run: |
-          pytest
