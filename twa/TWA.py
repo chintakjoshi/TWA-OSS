@@ -38,6 +38,8 @@ def option_selected(*args):
     else:
         label1.config(text="")
         label2.config(text="Sorry! No matching jobs")
+
+
 def fetching_details(*args):
     master1 = Tk()
     master1.geometry("400x300")
@@ -46,10 +48,10 @@ def fetching_details(*args):
     label_JsName = Label(master1, text="Please Select Job Seeker Name!", bg="lightgray", pady=10, font=("Arial", 12))
     label_JsName.pack()
 
-    label1 = Label(master1, text="", font=("Arial", 12))
+    label1 = Label(master1, text="", bg="lightgray", font=("Arial", 12))
     label1.pack()
 
-    label2 = Label(master1, text="", font=("Arial", 12))
+    label2 = Label(master1, text="", bg="lightgray", font=("Arial", 12))
     label2.pack()
 
     style = ttk.Style()
@@ -57,7 +59,6 @@ def fetching_details(*args):
 
     variable = StringVar(master1)
     variable.set("select jobseeker")  # default value
-    # variable.trace("w")
 
     def update_labels(*args):
         selected_option = variable.get()
@@ -71,6 +72,7 @@ def fetching_details(*args):
 
         query = "SELECT JOB_POSITIONS FROM  TWA.SCHEMA_TWA.JOBDETAILS WHERE OFFENSE_EXEMPTIONS NOT LIKE %s "
         cs.execute(query,'%'+string_cr_record+'%')
+        query_select = "select * from TWA.SCHEMA_TWA.JOBDETAILS"
         JobDetails_result = cs.fetchone()
         if selected_option != "select jobseeker":
             label1.config(text="Selected Job Seeker: " + selected_option)
@@ -91,16 +93,10 @@ def fetching_details(*args):
     master.destroy()
 
 
-
 master = Tk()
-master.geometry("400x300")  # Set the default size to 400 pixels wide and 300 pixels high
+master.geometry("400x300")
 master.title("Project_TWA")
 
-#variable = StringVar(master)
-#variable.set("select jobseeker")  # default value
-#variable.trace("w", option_selected)
-
-# Colors and spacing
 master.configure(bg="lightgray")
 
 label_info = Label(master, text="Select one of the categories below!", bg="lightgray", pady=10, font=("Arial", 12))
@@ -116,4 +112,4 @@ button3 = Button(master, text="Fetch Details", bg="blue", fg="white", padx=10, p
 button3.pack()
 
 
-master.mainloop()
+master.mainloop
