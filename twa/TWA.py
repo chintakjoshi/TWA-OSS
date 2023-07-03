@@ -72,6 +72,7 @@ def fetching_details(*args):
 
         query = "SELECT JOB_POSITIONS FROM  TWA.SCHEMA_TWA.JOBDETAILS WHERE OFFENSE_EXEMPTIONS NOT LIKE %s "
         cs.execute(query,'%'+string_cr_record+'%')
+        query_select = "select * from TWA.SCHEMA_TWA.JOBDETAILS"
         JobDetails_result = cs.fetchone()
         if selected_option != "select jobseeker":
             label1.config(text="Selected Job Seeker: " + selected_option)
