@@ -2,11 +2,9 @@ name: Install Pandas and Test
 
 on:
   push:
-    branches:
-      - main
+    branches: [ main, issue_5 ]
   pull_request:
-    branches:
-      - main
+    branches: [ main, issue_5 ]
 
 jobs:
   install_dependencies:
