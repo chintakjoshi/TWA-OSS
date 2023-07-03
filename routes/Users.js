@@ -94,6 +94,7 @@ users.post('/apply', (req, res) => {
   const applyData = {
     first_name: req.body.firstName,
     last_name: req.body.lastName,
+    job_type: req.body.jobType,
     // additional fields for your form
   }
 
@@ -103,6 +104,7 @@ users.post('/apply', (req, res) => {
     where: {
       first_name: applyData.first_name,
       last_name: applyData.last_name,
+      job_type: applyData.job_type,
       // additional fields for your form
     }
   })
