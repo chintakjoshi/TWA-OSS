@@ -1,0 +1,38 @@
+name: Install Pandas and Test
+
+on:
+  push:
+    branches: [ main, issue_5 ]
+  pull_request:
+    branches: [ main, issue_5 ]
+
+jobs:
+  install_dependencies:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.x # Replace with your desired Python version
+
+      - name: Install Pandas package
+        run: |
+          pip install pandas
+
+  run_tests:
+    needs: install_dependencies
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.x # Replace with your desired Python version
+
