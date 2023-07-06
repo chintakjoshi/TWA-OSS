@@ -8,4 +8,4 @@ This project is to help the justice involved jobseekers and the second chance em
 
 ## [Documentation](DOCUMENTATION.md)
 
-## [LICENSE](LICENSE)
+## [License](LICENSE)
