@@ -9,20 +9,18 @@ Front-end (react.js, css)
 Back-end (node.js)
 MySQL Workbench
 
-## Running the application
-
-***Running Frontend*** 
+## Running Frontend
 
 ```cd client\src```
 Then ```npm install``` to install the dependencies.
 After installing the dependencies run ```npm start```.
 This will start the frontend.
 
-***Running Backend***
+## Running Backend
 
 Go to the ```root directory``` and do ```npm install```. Once the dependencies are installed Run ```node serve.js```.
 
-***Setting up MySql workbench***
+## Setting up MySql workbench
 
 Create new a local instance keeping the user and password ```root```. The local instance should run on the localhost:3306.
 
