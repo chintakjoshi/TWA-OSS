@@ -1,4 +1,4 @@
-name: Install Pandas and Test
+name: Install Pandas and Test the package
 
 on:
   push:
