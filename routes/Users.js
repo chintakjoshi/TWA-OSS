@@ -3,6 +3,7 @@ const users = express.Router()
 const cors = require('cors')
 const jwt = require('jsonwebtoken')
 const bcrypt = require('bcryptjs');
+const Apply = require('../models/ApplyModel');
 
 const User = require('../models/User')
 users.use(cors())
@@ -89,4 +90,45 @@ users.get('/profile', (req, res) => {
     })
 })
 
-module.exports = users
+users.post('/apply', (req, res) => {
+  const applyData = {
+    first_name: req.body.firstName,
+    last_name: req.body.lastName,
+    job_type: req.body.jobType,
+    // additional fields for your form
+  }
+
+  console.log('Checking for existing application with data: ', applyData);
+
+  Apply.findOne({
+    where: {
+      first_name: applyData.first_name,
+      last_name: applyData.last_name,
+      job_type: applyData.job_type,
+      // additional fields for your form
+    }
+  })
+  .then(application => {
+    if (application) {
+      console.log('Existing application found: ', application.toJSON());
+      res.json({ status: 'You have already applied, Thank you' })
+    } else {
+      console.log('No existing application found, creating a new one.');
+      Apply.create(applyData)
+        .then(apply => {
+          res.json({ status: 'Application submitted!' })
+        })
+        .catch(err => {
+          console.error('Error while creating application: ', err);
+          res.send('error: ' + err)
+        })
+    }
+  })
+  .catch(err => {
+    console.error('Error while checking for existing application: ', err);
+    res.send('error: ' + err)
+  })
+});
+
+
+module.exports = users;
