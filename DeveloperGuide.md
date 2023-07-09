@@ -28,6 +28,26 @@ Attaching DML Statements:
 
 [DML.txt](https://github.com/chintakjoshi/TWA-OSS/files/11961201/DML.txt)
 
+CREATE DATABASE TWA;
+CREATE SCHEMA SCHEMA_TWA;
+
+CREATE TABLE TWA.SCHEMA_TWA.JobDetails(recruiter_Name varchar,
+Industry_Name varchar,
+Industry_Locations varchar,
+Contact_Information varchar,
+Job_positions varchar,
+Pay_Rate varchar,
+Benefits varchar,
+Shifts_Available varchar,
+Offense_Exemptions varchar,
+Note varchar);
+
+
+CREATE TABLE TWA.SCHEMA_TWA.JobSeeker(FIRST_NAME varchar,
+LAST_NAME varchar,
+PHONE varchar,
+EMAIL varchar);
+
 # **4. Connecting Snowflake and Python:**
 
 We are using snowflake-connector package to connect to snowflake databas.
@@ -50,6 +70,9 @@ https://docs.snowflake.com/en/developer-guide/python-connector/python-connector
 "Python Connector for Snowflake: Enabling Data Engineering and Data Science with Snowflake" by Jonathan Goldschmidt
 
 Those two references helped us as a point of initial approach for our development.
+
+https://docs.snowflake.com/en/developer-guide/python-connector/python-connector1
+
 
 
 
