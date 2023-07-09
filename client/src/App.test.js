@@ -21,10 +21,25 @@ describe('Register component', () => {
     render(<Register />);
   });
 
-  test('updates state when first name is entered', () => {
+   test('updates state when first name is entered', () => {
     const { getByPlaceholderText } = render(<Register />);
     const input = getByPlaceholderText('Enter your first name');
     fireEvent.change(input, { target: { value: 'John' } });
     expect(input.value).toBe('John');
   });
-});
+
+  test('updates state when password is entered', () => {
+    const { getByPlaceholderText } = render(<Login />);
+    const input = getByPlaceholderText('Enter password');
+    fireEvent.change(input, { target: { value: 'password123' } });
+    expect(input.value).toBe('password123');
+  });
+
+  test('updates state when last name is entered', () => {
+    const { getByPlaceholderText } = render(<Register />);
+    const input = getByPlaceholderText('Enter your last name');
+    fireEvent.change(input, { target: { value: 'Doe' } });
+    expect(input.value).toBe('Doe');
+  });
+ });
+
