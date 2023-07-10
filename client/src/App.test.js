@@ -28,3 +28,20 @@ describe('Register component', () => {
     expect(input.value).toBe('John');
   });
 });
+
+import React from 'react';
+import { render, fireEvent } from "@testing-library/react";
+import MyComponent from './components/MyComponent';
+
+describe('MyComponent', () => {
+  test('renders without crashing', () => {
+    render(<MyComponent />);
+  });
+
+  test('updates state when button is clicked', () => {
+    const { getByText } = render(<MyComponent />);
+    const button = getByText('Click me');
+    fireEvent.click(button);
+    expect(button.textContent).toBe('Clicked');
+  });
+});
