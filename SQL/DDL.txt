@@ -1,0 +1,19 @@
+CREATE DATABASE TWA;
+CREATE SCHEMA SCHEMA_TWA;
+
+CREATE TABLE TWA.SCHEMA_TWA.JobDetails(recruiter_Name varchar,
+Industry_Name varchar,
+Industry_Locations varchar,
+Contact_Information varchar,
+Job_positions varchar,
+Pay_Rate varchar,
+Benefits varchar,
+Shifts_Available varchar,
+Offense_Exemptions varchar,
+Note varchar);
+
+
+CREATE TABLE TWA.SCHEMA_TWA.JobSeeker(FIRST_NAME varchar,
+LAST_NAME varchar,
+PHONE varchar,
+EMAIL varchar);
