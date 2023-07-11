@@ -27,11 +27,6 @@ describe('Register component', () => {
     fireEvent.change(input, { target: { value: 'John' } });
     expect(input.value).toBe('John');
   });
-});
-
-import React from 'react';
-import { render, fireEvent } from "@testing-library/react";
-import MyComponent from './components/MyComponent';
 
 describe('MyComponent', () => {
   test('renders without crashing', () => {
@@ -43,5 +38,19 @@ describe('MyComponent', () => {
     const button = getByText('Click me');
     fireEvent.click(button);
     expect(button.textContent).toBe('Clicked');
+  });
+
+  test('updates state when password is entered', () => {
+    const { getByPlaceholderText } = render(<Login />);
+    const input = getByPlaceholderText('Enter password');
+    fireEvent.change(input, { target: { value: 'password123' } });
+    expect(input.value).toBe('password123');
+  });
+
+  test('updates state when last name is entered', () => {
+    const { getByPlaceholderText } = render(<Register />);
+    const input = getByPlaceholderText('Enter your last name');
+    fireEvent.change(input, { target: { value: 'Doe' } });
+    expect(input.value).toBe('Doe');
   });
 });
