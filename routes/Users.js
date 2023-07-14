@@ -92,9 +92,16 @@ users.get('/profile', (req, res) => {
 
 users.post('/apply', (req, res) => {
   const applyData = {
+    JobID: req.body.JobID,
     first_name: req.body.firstName,
     last_name: req.body.lastName,
+    Email: req.body.Email,
+    Phone: req.body.Phone,
+    Gender: req.body.Gender,
+    Date: req.body.Date,
+    referrer: req.body.referrer,
     job_type: req.body.jobType,
+    // resume: req.body.resume,
     // additional fields for your form
   }
 
@@ -102,9 +109,16 @@ users.post('/apply', (req, res) => {
 
   Apply.findOne({
     where: {
+      JobID: applyData.JobID,
       first_name: applyData.first_name,
       last_name: applyData.last_name,
+      Email: applyData.Email,
+      Phone: applyData.Phone,
+      Gender: applyData.Gender,
+      Date: applyData.Date,
+      referrer: applyData.referrer,
       job_type: applyData.job_type,
+      // resume: applyData.resume,
       // additional fields for your form
     }
   })
@@ -130,5 +144,14 @@ users.post('/apply', (req, res) => {
   })
 });
 
+users.get('/apply', (req, res) => {
+  Apply.findAll()
+    .then(apply => {
+      res.json(apply)
+    })
+    .catch(err => {
+      res.send('error: ' + err)
+    })
+})
 
 module.exports = users;

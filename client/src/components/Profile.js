@@ -8,7 +8,8 @@ class Profile extends Component {
       first_name: '',
       last_name: '',
       email: '',
-      errors: {}
+      errors: {},
+      apply: []
     }
   }
 
@@ -20,6 +21,12 @@ class Profile extends Component {
       last_name: decoded.last_name,
       email: decoded.email
     })
+
+    fetch('/Users/apply')
+    .then(res => res.json())
+    .then(apply => this.setState({ apply }))
+    .catch(error => console.error('Error:', error));
+
   }
 
   render() {
@@ -45,6 +52,27 @@ class Profile extends Component {
               </tr>
             </tbody>
           </table>
+        </div>
+        <div className="container">
+        <table className="table col-md-6 mx-auto">
+        <tbody>
+  {this.state.apply.map((apply, index) => (
+    <tr key={index}>
+      <tr><td>First Name</td><td>{apply.JobID}</td></tr>
+      <td>{apply.first_name}</td>
+      <td>{apply.last_name}</td>
+      <td>{apply.Email}</td>
+      <td>{apply.Phone}</td>
+      <td>{apply.Gender}</td>
+      <td>{apply.Date}</td>
+      <td>{apply.referrer}</td>
+      <td>{apply.job_type}</td>
+      {/* Add more fields as necessary */}
+    </tr>
+  ))}
+</tbody>
+</table>
+
         </div>
       </div>
     )
