@@ -27,6 +27,7 @@ describe('Register component', () => {
     fireEvent.change(input, { target: { value: 'John' } });
     expect(input.value).toBe('John');
   });
+}); // Closing bracket added here
 
 describe('MyComponent', () => {
   test('renders without crashing', () => {
