@@ -27,3 +27,5 @@ Create a new local instance keeping the user and password ```root```. The local 
 Create a new schema, Keep the schema name ```nodejs_login1```. Then, Create tables in the schema ```users``` and ```applies```. In which you should keep the query ```SELECT * FROM nodejs_login1.users``` and ```SELECT * FROM nodejs_login1.applies```.
 
 In this way, you should be able to fetch the details from the POST request which is coming from the backend.
+
+Also, we can authenticate the user and they can apply for the jobs. And if the particular user has already applied, the he/she will not be able to apply with the same job ID. 
