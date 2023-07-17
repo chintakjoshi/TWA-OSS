@@ -6,9 +6,9 @@ from tkinter import ttk
 # encapsulating these credentials will be next task
 
 try:
-    con_eb = snowflake.connector.connect(user='NavyaNelluri',
-                                         password='Navya.c@698',
-                                         account='emjvxti-ri58811',
+    con_eb = snowflake.connector.connect(user=os.environ.get('USER')',
+                                         password=os.environ.get('PASSWORD'),
+                                         account=os.environ.get('ACCOUNT'),
                                          database='TWA',
                                          schema="SCHEMA_TWA"
                                          )
