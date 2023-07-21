@@ -1,7 +1,7 @@
 import React, { Component } from 'react'
 import jwt_decode from 'jwt-decode'
 
-class Profile extends Component {
+class MyProfile extends Component {
   constructor() {
     super()
     this.state = {
@@ -34,7 +34,7 @@ class Profile extends Component {
       <div className="container">
         <div className="jumbotron mt-5">
           <div className="col-sm-8 mx-auto">
-            <h1 className="text-center">PROFILE</h1>
+            <h1 className="text-center">MyProfile</h1>
           </div>
           <table className="table col-md-6 mx-auto">
             <tbody>
@@ -53,30 +53,9 @@ class Profile extends Component {
             </tbody>
           </table>
         </div>
-        <div className="container">
-        <table className="table col-md-6 mx-auto">
-        <tbody>
-  {this.state.apply.map((apply, index) => (
-    <tr key={index}>
-      <tr><td>First Name</td><td>{apply.JobID}</td></tr>
-      <td>{apply.first_name}</td>
-      <td>{apply.last_name}</td>
-      <td>{apply.Email}</td>
-      <td>{apply.Phone}</td>
-      <td>{apply.Gender}</td>
-      <td>{apply.Date}</td>
-      <td>{apply.referrer}</td>
-      <td>{apply.job_type}</td>
-      {/* Add more fields as necessary */}
-    </tr>
-  ))}
-</tbody>
-</table>
-
-        </div>
       </div>
     )
   }
 }
 
-export default Profile
+export default MyProfile

@@ -29,7 +29,7 @@ describe('Register component', () => {
   });
 }); // Closing bracket added here
 
-describe('MyComponent', () => {
+describe('ApplyComponent', () => {
   test('renders without crashing', () => {
     render(<MyComponent />);
   });
