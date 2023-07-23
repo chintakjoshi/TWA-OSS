@@ -64,8 +64,8 @@ class Apply extends Component {
     return (
       <div className="container">
         <style>{`
-          body { background-color: darkblue; }
-          .card { max-width: 600px; margin: 0 auto; }
+          // body { background-color: darkblue; }
+          .card { max-width: 600px; margin: 0 auto;}
           .card-title { color: black; }
           .form-group { margin-bottom: 1.5rem; }
           .form-label { color: black; }

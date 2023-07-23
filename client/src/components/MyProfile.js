@@ -11,9 +11,11 @@ class MyProfile extends Component {
       errors: {},
       apply: []
     }
+    this._isMounted = false;
   }
 
   componentDidMount() {
+    this._isMounted = true;
     const token = localStorage.usertoken
     const decoded = jwt_decode(token)
     this.setState({
@@ -23,10 +25,18 @@ class MyProfile extends Component {
     })
 
     fetch('/Users/apply')
-    .then(res => res.json())
-    .then(apply => this.setState({ apply }))
-    .catch(error => console.error('Error:', error));
+      .then(res => res.json())
+      .then(apply => {
+        if (this._isMounted) {
+          this.setState({ apply })
+        }
+      })
+      .catch(error => console.error('Error:', error));
 
+  }
+
+  componentWillUnmount() {
+    this._isMounted = false;
   }
 
   render() {

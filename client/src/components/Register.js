@@ -23,6 +23,11 @@ class Register extends Component {
   onSubmit(e) {
     e.preventDefault();
 
+    if (!this.state.first_name || !this.state.last_name || !this.state.email || !this.state.password) {
+      alert('All fields are mandatory');
+      return;
+    }
+
     const newUser = {
       first_name: this.state.first_name,
       last_name: this.state.last_name,
@@ -31,19 +36,25 @@ class Register extends Component {
     };
 
     register(newUser).then(res => {
-      this.props.history.push(`/login`);
+      if (res.error) {
+        alert(res.error);
+      } else {
+        this.props.history.push(`/login`);
+        alert('Registered successfully');
+      }
     });
   }
 
   render() {
     return (
-      <div className="container" style={{ height: '95.9vh' }}>
+      <div className="container" style={{ height: '100vh' }}>
         <div className="row align-items-center justify-content-center h-100">
           <div className="col-md-6">
             <div className="card">
               <div className="card-body">
                 <form noValidate onSubmit={this.onSubmit}>
                   <h1 className="h3 mb-3 font-weight-normal">Register</h1>
+                  {this.state.responseMessage && (<p className="text-danger">{this.state.responseMessage}</p>)}
                   <div className="form-group">
                     <label htmlFor="first_name">First name</label>
                     <input
