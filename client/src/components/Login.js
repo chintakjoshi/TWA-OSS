@@ -20,28 +20,36 @@ class Login extends Component {
 
   onSubmit(e) {
     e.preventDefault();
-
+  
+    if (!this.state.email || !this.state.password) {
+      alert('All fields are mandatory');
+      return;
+    }
+  
     const user = {
       email: this.state.email,
       password: this.state.password,
     };
-
-    login(user).then((res) => {
-      if (res) {
+  
+    login(user)
+      .then((res) => {
         this.props.history.push(`/Dashboard`);
-      }
-    });
-  }
+      })
+      .catch(err => {
+        alert(err);
+      });
+  }  
 
   render() {
     return (
-      <div className="container" style={{height: '95.9vh'}}>
+      <div className="container" style={{height: '100vh'}}>
         <div className="row align-items-center justify-content-center h-100">
           <div className="col-md-6">
             <div className="card">
               <div className="card-body">
                 <form noValidate onSubmit={this.onSubmit}>
                   <h1 className="h3 mb-3 font-weight-normal">Please sign in</h1>
+                  {this.state.responseMessage && (<p className="text-danger">{this.state.responseMessage}</p>)}
                   <div className="form-group">
                     <label htmlFor="email">Email address</label>
                     <input

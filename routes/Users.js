@@ -60,6 +60,9 @@ users.post('/login', (req, res) => {
             expiresIn: 1440
           })
           res.send(token)
+        } else {
+          // This else block is added to handle wrong password case
+          res.status(400).json({ error: 'Invalid password' })
         }
       } else {
         res.status(400).json({ error: 'User does not exist' })
