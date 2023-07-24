@@ -18,7 +18,7 @@ This will run the front end.
 
 ## Running Backend
 
-Go to the ```root directory``` and do ```npm install```. Once the dependencies are installed Run ```node serveR.js```.
+Go to the ```root directory``` and do ```npm install```. Once the dependencies are installed Run ```node server.js```.
 
 ## Setting up MySql workbench
 
