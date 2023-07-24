@@ -12,13 +12,13 @@ MySQL Workbench
 ## Running Frontend
 
 ```cd client\src```
-Then ```npm install``` to install the dependencies.
+Then ```npm install --force``` to install the dependencies.
 After installing the dependencies run ```npm start```.
 This will run the front end.
 
 ## Running Backend
 
-Go to the ```root directory``` and do ```npm install```. Once the dependencies are installed Run ```node server.js```.
+Go to the ```root directory``` and do ```npm install --force```. Once the dependencies are installed Run ```node server.js```.
 
 ## Setting up MySql workbench
 
