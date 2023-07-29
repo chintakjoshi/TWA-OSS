@@ -1,75 +1,84 @@
+body {
+  font-family: 'Arial', sans-serif;
+  background-color: #f4f4f4;
+}
+
 .dashboard-container {
-    margin-top: 3rem;
-    background-color: white;
-    color: black;
-    font-family: 'Roboto', sans-serif;
-    padding: 2rem;
-    border-radius: 8px;
-    box-shadow: 0px 0px 10px 0px rgba(0, 0, 0, 0.1);
-  }
-  
-  .dashboard-header {
-    text-align: center;
-    font-size: 2.5rem;
-    margin-bottom: 2rem;
-  }
-  
+  width: 90%;
+  margin: 2rem auto;
+  border-radius: 10px;
+  background-color: #fff;
+  box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.dashboard-header {
+  text-align: center;
+  padding: 2rem 0;
+  color: #333;
+  font-size: 2rem;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.filter-search-container {
+  display: flex;
+  justify-content: space-between;
+  padding: 2rem;
+}
+
+.filter-container, .search-container {
+  display: flex;
+  align-items: center;
+}
+
+#filter, .search-input {
+  padding: 0.5rem;
+  border: 1px solid #f0f0f0;
+  border-radius: 5px;
+  outline: none;
+}
+
+#filter {
+  width: 200px;
+}
+
+.search-input {
+  width: 300px;
+  margin-left: 1rem;
+}
+
+.no-match-found {
+  text-align: center;
+  padding: 2rem 0;
+  color: #fd0404;
+}
+
+.applications-table {
+  width: 100%;
+  text-align: left;
+  border-collapse: collapse;
+  margin-bottom: 2rem;
+}
+
+.applications-table th, .applications-table td {
+  padding: 1rem;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.applications-table th {
+  background-color: #fafafa;
+}
+
+@media (max-width: 768px) {
   .filter-search-container {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 2rem;
-    align-items: center;
+    flex-direction: column;
   }
-  
-  .filter-container {
-    display: flex;
-    align-items: center;
-  }
-  
-  #filter {
-    margin-left: 1rem;
-    padding: 0.5rem;
-    border: none;
-    border-radius: 8px;
-  }
-  
-  .no-match-found {
-    color: #dc3545;
-    font-size: 1.5rem;
-    text-align: center;
-  }
-  
-  .loader {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    text-align: center;
-  }
-  
-  .loader::before {
-    content: '';
-    display: inline-block;
-    width: 80px;
-    height: 80px;
-    border: 3px solid white;
-    border-radius: 50%;
-    border-top-color: darkblue;
-    animation: spin 1s ease-in-out infinite;
-    -webkit-animation: spin 1s ease-in-out infinite;
-  }
-  
-  .applications-table {
+
+  .filter-container, .search-container {
     width: 100%;
-    text-align: left;
-    border-collapse: collapse;
+    margin-bottom: 1rem;
   }
-  
-  .applications-table th, .applications-table td {
-    padding: 1rem;
-    border-bottom: 1px solid black;
+
+  #filter, .search-input {
+    width: 100%;
   }
-  
-  @keyframes spin {
-    to {transform: rotate(360deg);}
-  }  
+}

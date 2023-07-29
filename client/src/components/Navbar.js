@@ -18,8 +18,8 @@ const Navbar = styled.nav`
     }
   }
   .navbar-nav .nav-item.active .nav-link {
-    color: #fff;
-    background-color: #343a40;
+    color: black;
+    background-color: white;
   }
 `;
 
@@ -37,17 +37,12 @@ class Landing extends Component {
       <ul className="navbar-nav">
         <li className={`nav-item ${pathname === '/login' ? 'active' : ''}`}>
           <Link to="/login" className="nav-link">
-            Login
-          </Link>
-        </li>
-        <li className={`nav-item ${pathname === '/register' ? 'active' : ''}`}>
-          <Link to="/register" className="nav-link">
-            Register
+            Admin Login
           </Link>
         </li>
       </ul>
     )
-
+    
     const userLink = (
       <ul className="navbar-nav">
         <li className={`nav-item ${pathname === '/Dashboard' ? 'active' : ''}`}>
@@ -60,13 +55,18 @@ class Landing extends Component {
             My Profile
           </Link>
         </li>
+        <li className={`nav-item ${pathname === '/register' ? 'active' : ''}`}>
+          <Link to="/register" className="nav-link">
+            Register Admin
+          </Link>
+        </li>
         <li className="nav-item">
           <a href="" onClick={this.logOut.bind(this)} className="nav-link">
             Logout
           </a>
         </li>
       </ul>
-    )
+    )    
 
     return (
       <Navbar className="navbar navbar-expand-lg">

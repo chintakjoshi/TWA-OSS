@@ -1,12 +1,22 @@
 import React, { Component } from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import { Link } from 'react-router-dom';
+import slulogo from '../componentstyles/slu.png';
 
 class Landing extends Component {
   render() {
     return (
       <div className="container">
         <div className="jumbotron mt-5 text-black">
+        <div style={{
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              height: '150px', // Adjust based on your image's aspect ratio
+              marginBottom: '3rem'
+            }}>
+              <img src={slulogo} alt="slu"/>
+        </div>
           <h1 className="display-4">Welcome to SLU-Transformative Workforce Academy</h1>
           <p className="lead">Connecting Justice-Involved Jobseekers and Second Chance Employers.</p>
           <hr className="my-4" />
