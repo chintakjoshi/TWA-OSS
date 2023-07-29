@@ -44,7 +44,7 @@ class MyProfile extends Component {
       <div className="container">
         <div className="jumbotron mt-5">
           <div className="col-sm-8 mx-auto">
-            <h1 className="text-center">MyProfile</h1>
+            <h1 className="text-center">My Profile</h1>
           </div>
           <table className="table col-md-6 mx-auto">
             <tbody>

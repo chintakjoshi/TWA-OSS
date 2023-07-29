@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
 import axios from 'axios';
+import slulogo from '../componentstyles/slu.png';
 
 class Apply extends Component {
   state = {
@@ -65,7 +66,7 @@ class Apply extends Component {
       <div className="container">
         <style>{`
           // body { background-color: darkblue; }
-          .card { max-width: 600px; margin: 0 auto;}
+          .card { max-width: 800px; margin: 0 auto;}
           .card-title { color: black; }
           .form-group { margin-bottom: 1.5rem; }
           .form-label { color: black; }
@@ -75,6 +76,14 @@ class Apply extends Component {
           .message { color: ${this.state.color}; font-weight: bold; }
         `}</style>
         <div className="card mt-5">
+        <div style={{
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              height: '150px', // Adjust based on your image's aspect ratio
+            }}>
+              <img src={slulogo} alt="slu"/>
+        </div>
           <div className="card-body bg-blue text-white">
             <h1 className="card-title text-center">Enter the Details</h1>
             <p className="message">{this.state.message}</p>

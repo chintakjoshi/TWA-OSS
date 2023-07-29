@@ -2,6 +2,7 @@ import React, { Component } from 'react'
 import jwt_decode from 'jwt-decode'
 import Search from './Search'
 import '../componentstyles/Dashboard.css'
+import slulogo from '../componentstyles/slu.png'
 
 class Dashboard extends Component {
   constructor() {
@@ -70,6 +71,14 @@ class Dashboard extends Component {
     
     return (
       <div className="dashboard-container">
+      <div style={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        height: '150px', // Adjust based on your image's aspect ratio
+        }}>
+        <img src={slulogo} alt="slu"/>
+      </div>
         <h1 className="dashboard-header">User Dashboard</h1>
 
         <div className="filter-search-container">

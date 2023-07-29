@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
 import { register } from './UserFunctions';
+import slulogo from '../componentstyles/slu.png';
 
 class Register extends Component {
   constructor() {
@@ -14,6 +15,13 @@ class Register extends Component {
 
     this.onChange = this.onChange.bind(this);
     this.onSubmit = this.onSubmit.bind(this);
+  }
+
+  componentDidMount() {
+    // Redirect to login if user is not logged in
+    if (!localStorage.usertoken) {
+      this.props.history.push(`/login`);
+    }
   }
 
   onChange(e) {
@@ -51,9 +59,17 @@ class Register extends Component {
         <div className="row align-items-center justify-content-center h-100">
           <div className="col-md-6">
             <div className="card">
+            <div style={{
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              height: '150px', // Adjust based on your image's aspect ratio
+            }}>
+              <img src={slulogo} alt="slu"/>
+        </div>
               <div className="card-body">
                 <form noValidate onSubmit={this.onSubmit}>
-                  <h1 className="h3 mb-3 font-weight-normal">Register</h1>
+                  <h1 className="h3 mb-3 font-weight-normal text-center">Register Here</h1>
                   {this.state.responseMessage && (<p className="text-danger">{this.state.responseMessage}</p>)}
                   <div className="form-group">
                     <label htmlFor="first_name">First name</label>

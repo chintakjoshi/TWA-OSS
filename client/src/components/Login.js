@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
 import { login } from './UserFunctions';
+import slulogo from '../componentstyles/slu.png';
 
 class Login extends Component {
   constructor() {
@@ -46,9 +47,17 @@ class Login extends Component {
         <div className="row align-items-center justify-content-center h-100">
           <div className="col-md-6">
             <div className="card">
+            <div style={{
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              height: '150px', // Adjust based on your image's aspect ratio
+            }}>
+              <img src={slulogo} alt="slu"/>
+            </div>
               <div className="card-body">
                 <form noValidate onSubmit={this.onSubmit}>
-                  <h1 className="h3 mb-3 font-weight-normal">Please sign in</h1>
+                  <h1 className="h3 mb-3 font-weight-normal text-center">Sign in here</h1>
                   {this.state.responseMessage && (<p className="text-danger">{this.state.responseMessage}</p>)}
                   <div className="form-group">
                     <label htmlFor="email">Email address</label>
