@@ -1,0 +1,74 @@
+import snowflake.connector
+from tkinter import *
+from tkinter import ttk
+
+class ProjectTWAApp:
+    def __init__(self, master):
+        self.master = master
+        self.master.geometry("400x300")
+        self.master.title("Project_TWA")
+
+        self.fetch_button = Button(self.master, text="Fetch Details", command=self.fetch_details)
+        self.fetch_button.pack()
+
+    def connect_to_database(self):
+        try:
+            con_eb = snowflake.connector.connect(
+                user='Sardarni',
+                password='Sardarni@510',
+                account='ujlmjrs-rx06772.snowflakecomputing.com',
+                database='PROJECT_TWA',
+                schema='PROJECT_TWA_SCHEMA'
+            )
+            return con_eb
+        except Exception as e:
+            print("Error connecting to the database:", str(e))
+            return None
+
+    def fetch_job_seekers(self, cursor):
+        cursor.execute("SELECT * FROM PROJECT_TWA.PROJECT_TWA_SCHEMA.JobSeeker")
+        return cursor.fetchall()
+
+    def fetch_job_details(self, cursor):
+        cursor.execute("SELECT * FROM PROJECT_TWA.PROJECT_TWA_SCHEMA.JOBDETAILS")
+        return cursor.fetchall()
+
+    def fetch_details(self):
+        con_eb = self.connect_to_database()
+        if con_eb is not None:
+            cursor = con_eb.cursor()
+            jobSeeker_result = self.fetch_job_seekers(cursor)
+            JobDetails_result = self.fetch_job_details(cursor)
+            cursor.close()
+            con_eb.close()
+
+            if jobSeeker_result and JobDetails_result:
+                # Display the job seeker and job details in a new window
+                self.show_fetched_data(jobSeeker_result, JobDetails_result)
+            else:
+                print("No data found.")
+
+    def show_fetched_data(self, jobSeeker_result, jobDetails_result):
+        new_window = Toplevel(self.master)
+        new_window.title("Fetched Data")
+
+        # Create and populate a treeview with the fetched data
+        tree = ttk.Treeview(new_window)
+        tree["columns"] = ("1", "2", "3")
+        tree.heading("#1", text="Column 1")
+        tree.heading("#2", text="Column 2")
+        tree.heading("#3", text="Column 3")
+
+        for row in jobSeeker_result:
+            tree.insert("", "end", values=row)
+
+        for row in jobDetails_result:
+            tree.insert("", "end", values=row)
+
+        tree.pack(fill="both", expand=True)
+
+
+if __name__ == "__main__":
+    root = Tk()
+    app = ProjectTWAApp(root)
+    root.mainloop()
