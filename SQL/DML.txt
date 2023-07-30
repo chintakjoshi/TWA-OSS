@@ -1,3 +1,4 @@
+
 INSERT INTO  TWA.SCHEMA_TWA.JobDetails
 (recruiter_Name ,
 Industry_Name ,

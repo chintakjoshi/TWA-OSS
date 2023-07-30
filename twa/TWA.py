@@ -6,9 +6,9 @@ from tkinter import ttk
 # encapsulating these credentials will be next task
 
 try:
-    con_eb = snowflake.connector.connect(user=os.environ.get('USER')',
-                                         password=os.environ.get('PASSWORD'),
-                                         account=os.environ.get('ACCOUNT'),
+    con_eb = snowflake.connector.connect(user='NavyaNelluri',
+                                         password='Navya.c@698',
+                                         account='emjvxti-ri58811',
                                          database='TWA',
                                          schema="SCHEMA_TWA"
                                          )
@@ -38,8 +38,41 @@ def option_selected(*args):
     else:
         label1.config(text="")
         label2.config(text="Sorry! No matching jobs")
+def Employe_details(master2):
+    cs.execute("SELECT RECRUITER_NAME,INDUSTRY_NAME FROM TWA.SCHEMA_TWA.JOBDETAILS ")
+    label1 = Label(master2, text="", font=("Arial", 12))
+    label1.pack()
+    label1.config(text=cs.fetchall())        
+def load_employer(*args):
+    master2 = Tk()
+    master2.geometry("400x300")
+    master2.title("Employer Details")
 
+    
+    button4 = Button(master2, text="click to see loaded Employe Details", 
+    bg="blue", fg="white", padx=10, pady=5, font=("Arial", 10, "bold"),
+    command = lambda : Employe_details(master2))
+    button4.pack()
+    master2.mainloop()
+    master.withdraw()
+    master.destroy()
 
+def jobseeker_details(master2):
+    cs.execute("SELECT FIRST_NAME,LAST_NAME FROM TWA.SCHEMA_TWA.JOBSEEKER")
+    label2 = Label(master2, text="", font=("Arial", 12))
+    label2.pack()
+    label2.config(text=cs.fetchall())        
+def load_jobseeker(*args):
+    master3 = Tk()
+    master3.geometry("400x300")
+    master3.title("jobseeker Details")
+    button5 = Button(master3, text="click to see loaded jobseeker Details", 
+    bg="blue", fg="white", padx=10, pady=5, font=("Arial", 10, "bold"),
+    command = lambda : jobseeker_details(master3))
+    button5.pack()
+    master3.mainloop()
+    master.withdraw()
+    master.destroy()  
 def fetching_details(*args):
     master1 = Tk()
     master1.geometry("400x300")
@@ -48,10 +81,10 @@ def fetching_details(*args):
     label_JsName = Label(master1, text="Please Select Job Seeker Name!", bg="lightgray", pady=10, font=("Arial", 12))
     label_JsName.pack()
 
-    label1 = Label(master1, text="", bg="lightgray", font=("Arial", 12))
+    label1 = Label(master1, text="", font=("Arial", 12))
     label1.pack()
 
-    label2 = Label(master1, text="", bg="lightgray", font=("Arial", 12))
+    label2 = Label(master1, text="", font=("Arial", 12))
     label2.pack()
 
     style = ttk.Style()
@@ -59,6 +92,7 @@ def fetching_details(*args):
 
     variable = StringVar(master1)
     variable.set("select jobseeker")  # default value
+    # variable.trace("w")
 
     def update_labels(*args):
         selected_option = variable.get()
@@ -72,7 +106,6 @@ def fetching_details(*args):
 
         query = "SELECT JOB_POSITIONS FROM  TWA.SCHEMA_TWA.JOBDETAILS WHERE OFFENSE_EXEMPTIONS NOT LIKE %s "
         cs.execute(query,'%'+string_cr_record+'%')
-        query_select = "select * from TWA.SCHEMA_TWA.JOBDETAILS"
         JobDetails_result = cs.fetchone()
         if selected_option != "select jobseeker":
             label1.config(text="Selected Job Seeker: " + selected_option)
@@ -93,23 +126,32 @@ def fetching_details(*args):
     master.destroy()
 
 
+
 master = Tk()
-master.geometry("400x300")
+master.geometry("400x300")  # Set the default size to 400 pixels wide and 300 pixels high
 master.title("Project_TWA")
 
+#variable = StringVar(master)
+#variable.set("select jobseeker")  # default value
+#variable.trace("w", option_selected)
+
+# Colors and spacing
 master.configure(bg="lightgray")
 
 label_info = Label(master, text="Select one of the categories below!", bg="lightgray", pady=10, font=("Arial", 12))
 label_info.pack()
 
-button1 = Button(master, text="Load JobSeeker Details", bg="blue", fg="white", padx=10, pady=5, font=("Arial", 10, "bold"))
+button1 = Button(master, text="Load JobSeeker Details",
+ bg="blue", fg="white", padx=10, pady=5, font=("Arial", 10, "bold")
+ , command=load_jobseeker)
 button1.pack()
 
-button2 = Button(master, text="Load Employer Details", bg="blue", fg="white", padx=10, pady=5, font=("Arial", 10, "bold"))
+button2 = Button(master, text="Load Employer Details", bg="blue",
+ fg="white", padx=10, pady=5, font=("Arial", 10, "bold"), command=load_employer)
 button2.pack()
 
 button3 = Button(master, text="Fetch Details", bg="blue", fg="white", padx=10, pady=5, font=("Arial", 10, "bold"), command=fetching_details)
 button3.pack()
 
 
-master.mainloop
+master.mainloop()
