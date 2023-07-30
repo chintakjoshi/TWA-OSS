@@ -1,0 +1,112 @@
+import snowflake.connector
+from tkinter import *
+from tkinter import ttk
+
+# Function to establish a database connection
+def connect_to_database():
+    try:
+        con_eb = snowflake.connector.connect(user='Sardarni',
+                                             password='Sardarni@510',
+                                             account='emjvxti-ri59912',
+                                             database='TWA',
+                                             schema="SCHEMA_TWA")
+        return con_eb
+    except Exception as e:
+        print("Error connecting to the database:", str(e))
+        return None
+
+def get_jobseeker_names(cursor):
+    try:
+        cursor.execute("SELECT FIRST_NAME FROM TWA.SCHEMA_TWA.JobSeeker")
+        jobSeeker_results = cursor.fetchall()
+        return jobSeeker_results
+    except Exception as e:
+        print("Error fetching job seeker names:", str(e))
+        return []
+
+def get_job_details(cursor, selected_option):
+    try:
+        cursor.execute("SELECT CRIMINAL_RECORD FROM TWA.SCHEMA_TWA.JobSeeker WHERE FIRST_NAME=%s", (selected_option,))
+        cr_record = cursor.fetchone()
+        if cr_record:
+            cr_record_str = str(cr_record[0])
+            query = "SELECT JOB_POSITIONS FROM TWA.SCHEMA_TWA.JOBDETAILS WHERE OFFENSE_EXEMPTIONS NOT LIKE %s"
+            cursor.execute(query, '%' + cr_record_str + '%')
+            jobDetails_result = cursor.fetchone()
+            if jobDetails_result:
+                return jobDetails_result[0]
+    except Exception as e:
+        print("Error fetching job details:", str(e))
+    return None
+
+def fetching_details(master1):
+    con_eb = connect_to_database()
+    if not con_eb:
+        return
+
+    master1.geometry("400x300")
+    master1.title("Fetching Details")
+
+    label_JsName = Label(master1, text="Please Select Job Seeker Name!", bg="lightgray", pady=10, font=("Arial", 12))
+    label_JsName.pack()
+
+    label1 = Label(master1, text="", font=("Arial", 12))
+    label1.pack()
+
+    label2 = Label(master1, text="", font=("Arial", 12))
+    label2.pack()
+
+    jobSeeker_results = get_jobseeker_names(con_eb.cursor())
+
+    style = ttk.Style()
+    style.configure('TMenubutton', background='white', font=("Arial", 10))
+
+    variable = StringVar(master1)
+    variable.set("select jobseeker")  # default value
+
+    def update_labels(*args):
+        selected_option = variable.get()
+        if selected_option == "select jobseeker":
+            label1.config(text="")
+            label2.config(text="")
+        else:
+            jobDetails_result = get_job_details(con_eb.cursor(), selected_option)
+            if jobDetails_result:
+                label1.config(text="Selected Job Seeker: " + selected_option)
+                label2.config(text="Available Jobs: " + jobDetails_result)
+            else:
+                label1.config(text="Selected Job Seeker: " + selected_option)
+                label2.config(text="Sorry! No matching jobs")
+
+    variable.trace("w", update_labels)
+
+    combobox = ttk.Combobox(master1, textvariable=variable, values=[item[0] for item in jobSeeker_results])
+    combobox.pack()  # Place ComboBox in row 0, column 0
+
+    master1.mainloop()
+
+    con_eb.close()
+
+if __name__ == "__main__":
+    master = Tk()
+    master.geometry("400x300")
+    master.title("Project_TWA")
+
+    master.configure(bg="lightgray")
+
+    label_info = Label(master, text="Select one of the categories below!", bg="lightgray", pady=10, font=("Arial", 12))
+    label_info.pack()
+
+    button1 = Button(master, text="Load JobSeeker Details", bg="blue", fg="white", padx=10, pady=5,
+                     font=("Arial", 10, "bold"), command=lambda: fetching_details(master))
+    button1.pack()
+
+    button2 = Button(master, text="Load Employer Details", bg="blue", fg="white", padx=10, pady=5,
+                     font=("Arial", 10, "bold"), command=lambda: load_employer(master))
+    button2.pack()
+
+    button3 = Button(master, text="Fetch Details", bg="blue", fg="white", padx=10, pady=5,
+                     font=("Arial", 10, "bold"), command=lambda: fetching_details(master))
+    button3.pack()
+
+    master.mainloop()
