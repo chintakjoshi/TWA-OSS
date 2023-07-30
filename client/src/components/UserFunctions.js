@@ -10,6 +10,11 @@ export const register = newUser => {
     })
     .then(response => {
       console.log('Registered')
+      return response.data;
+    })
+    .catch(err => {
+      console.log(err)
+      return { error: 'This email address is already in use.' }
     })
 }
 
@@ -20,10 +25,15 @@ export const login = user => {
       password: user.password
     })
     .then(response => {
-      localStorage.setItem('usertoken', response.data)
-      return response.data
+      if(response.status !== 200) {
+        return Promise.reject(response.data.error);
+      }
+
+      localStorage.setItem('usertoken', response.data);
+      return response.data;
     })
     .catch(err => {
-      console.log(err)
+      console.log(err);
+      return Promise.reject(err.response.data.error);
     })
 }

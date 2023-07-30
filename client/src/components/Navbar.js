@@ -1,34 +1,63 @@
-import React, { Component } from 'react'
-import { Link, withRouter } from 'react-router-dom'
+import React, { Component } from 'react';
+import { Link, withRouter } from 'react-router-dom';
+import styled from 'styled-components';
+
+// Styles for the Navbar component
+const Navbar = styled.nav`
+  background-color: black;
+  padding: 0.5rem 1rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  .navbar-brand {
+    color: #fff;
+    font-size: 1.5rem;
+  }
+  .navbar-nav .nav-link {
+    color: #ddd;
+    &:hover {
+      color: #fff;
+    }
+  }
+  .navbar-nav .nav-item.active .nav-link {
+    color: black;
+    background-color: white;
+  }
+`;
 
 class Landing extends Component {
   logOut(e) {
-    e.preventDefault()
-    localStorage.removeItem('usertoken')
-    this.props.history.push(`/`)
+    e.preventDefault();
+    localStorage.removeItem('usertoken');
+    this.props.history.push(`/`);
   }
 
   render() {
+    const { location: { pathname } } = this.props;
+
     const loginRegLink = (
       <ul className="navbar-nav">
-        <li className="nav-item">
-          <Link to="/login" className="nav-link text-white">
-            Login
-          </Link>
-        </li>
-        <li className="nav-item">
-          <Link to="/register" className="nav-link text-white">
-            Register
+        <li className={`nav-item ${pathname === '/login' ? 'active' : ''}`}>
+          <Link to="/login" className="nav-link">
+            Admin Login
           </Link>
         </li>
       </ul>
     )
-
+    
     const userLink = (
       <ul className="navbar-nav">
-        <li className="nav-item">
-          <Link to="/profile" className="nav-link">
-            User
+        <li className={`nav-item ${pathname === '/Dashboard' ? 'active' : ''}`}>
+          <Link to="/Dashboard" className="nav-link">
+            Dashboard
+          </Link>
+        </li>
+        <li className={`nav-item ${pathname === '/MyProfile' ? 'active' : ''}`}>
+          <Link to="/MyProfile" className="nav-link">
+            My Profile
+          </Link>
+        </li>
+        <li className={`nav-item ${pathname === '/register' ? 'active' : ''}`}>
+          <Link to="/register" className="nav-link">
+            Register Admin
           </Link>
         </li>
         <li className="nav-item">
@@ -37,10 +66,13 @@ class Landing extends Component {
           </a>
         </li>
       </ul>
-    )
+    )    
 
     return (
-      <nav className="navbar navbar-expand-lg navbar-dark bg-black">
+      <Navbar className="navbar navbar-expand-lg">
+        <Link to="/" className={`navbar-brand ${pathname === '/' ? 'active' : ''}`}>
+          TWA
+        </Link>
         <button
           className="navbar-toggler"
           type="button"
@@ -52,23 +84,15 @@ class Landing extends Component {
         >
           <span className="navbar-toggler-icon" />
         </button>
-
         <div
           className="collapse navbar-collapse justify-content-md-center"
           id="navbarsExample10"
         >
-          <ul className="navbar-nav">
-            <li className="nav-item">
-              <Link to="/" className="nav-link text-white">
-                Home
-              </Link>
-            </li>
-          </ul>
           {localStorage.usertoken ? userLink : loginRegLink}
         </div>
-      </nav>
+      </Navbar>
     )
   }
 }
 
-export default withRouter(Landing)
+export default withRouter(Landing);
