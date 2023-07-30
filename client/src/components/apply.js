@@ -1,11 +1,19 @@
 import React, { Component } from 'react';
 import axios from 'axios';
+import slulogo from '../componentstyles/slu.png';
 
 class Apply extends Component {
   state = {
+    JobID: '',
     firstName: '',
     lastName: '',
+    Email: '',
+    Gender: '',
+    Date: '',
+    referrer: '',
+    Phone: '',
     jobType: '',
+    // resume: '',
     message: '',
     color: 'black',
     // additional state fields for your form
@@ -20,9 +28,9 @@ class Apply extends Component {
   handleSubmit = (e) => {
     e.preventDefault();
 
-    const { firstName, lastName, jobType } = this.state;
+    const { JobID, firstName, lastName, Email, Gender, Date, referrer, Phone, jobType } = this.state;
 
-    if (firstName === '' || lastName === '' || jobType === '') {
+    if (JobID === '' || firstName === '' || lastName === '' || Email === '' || Gender === '' || Date === '' || referrer === '' || Phone === '' || jobType === '') {
       this.setState({
         message: 'All fields are required.',
         color: 'red'
@@ -57,8 +65,8 @@ class Apply extends Component {
     return (
       <div className="container">
         <style>{`
-          body { background-color: darkblue; }
-          .card { max-width: 600px; margin: 0 auto; }
+          // body { background-color: darkblue; }
+          .card { max-width: 800px; margin: 0 auto;}
           .card-title { color: black; }
           .form-group { margin-bottom: 1.5rem; }
           .form-label { color: black; }
@@ -68,9 +76,22 @@ class Apply extends Component {
           .message { color: ${this.state.color}; font-weight: bold; }
         `}</style>
         <div className="card mt-5">
+        <div style={{
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              height: '150px', // Adjust based on your image's aspect ratio
+            }}>
+              <img src={slulogo} alt="slu"/>
+        </div>
           <div className="card-body bg-blue text-white">
             <h1 className="card-title text-center">Enter the Details</h1>
+            <p className="message">{this.state.message}</p>
             <form onSubmit={this.handleSubmit}>
+            <div className="form-group">
+                <label htmlFor="JobID" className="form-label">Enter the JobID as advertised:</label>
+                <input type="text" id="JobID" className="form-input" onChange={this.handleChange} />
+              </div>
               <div className="form-group">
                 <label htmlFor="firstName" className="form-label">Enter your First Name:</label>
                 <input type="text" id="firstName" className="form-input" onChange={this.handleChange} />
@@ -80,18 +101,47 @@ class Apply extends Component {
                 <input type="text" id="lastName" className="form-input" onChange={this.handleChange} />
               </div>
               <div className="form-group">
+                <label htmlFor="Email" className="form-label">Enter your Email:</label>
+                <input type="text" id="Email" className="form-input" onChange={this.handleChange} />
+              </div>
+              <div className="form-group">
+                <label htmlFor="Phone" className="form-label">Enter your Phone Number:</label>
+                <input type="text" id="Phone" className="form-input" onChange={this.handleChange} />
+              </div>
+              <div className="form-group">
+                <label htmlFor="Gender" className="form-label">Your Gender:</label>
+                <select id="Gender" className="form-select" onChange={this.handleChange}>
+                  <option value="">--Please choose an option--</option>
+                  <option value="Male">Male</option>
+                  <option value="Female">Female</option>
+                  <option value="other">Other</option>
+                  <option value="prefer not to say">Prefer not to say</option>
+                </select>
+              </div>
+              <div className="form-group">
+                <label htmlFor="Date" className="form-label">Today's Date:</label>
+                <input type="date" id="Date" className="form-input" onChange={this.handleChange} />
+              </div>
+              <div className="form-group">
+                <label htmlFor="referrer" className="form-label">Who is referring you?</label>
+                <input type="text" id="referrer" className="form-input" onChange={this.handleChange} />
+              </div>
+              <div className="form-group">
                 <label htmlFor="jobType" className="form-label">Job Type:</label>
                 <select id="jobType" className="form-select" onChange={this.handleChange}>
                   <option value="">--Please choose an option--</option>
-                  <option value="fullTime">Full-Time</option>
-                  <option value="partTime">Part-Time</option>
-                  <option value="contract">Contract</option>
+                  <option value="FullTime">Full-Time</option>
+                  <option value="PartTime">Part-Time</option>
+                  <option value="Contract">Contract</option>
                 </select>
               </div>
+              {/* <div className="form-group">
+                <label htmlFor="resume" className="form-label">Submit your resume:</label>
+                <input type="file" id="resume" className="form-input" onChange={this.handleChange} />
+              </div> */}
               {/* Additional fields for your form */}
-              <button type="submit" className="submit-btn">Submit</button>
+              <button type="submit" className="submit-btn">Apply</button>
             </form>
-            <p className="message">{this.state.message}</p>
           </div>
         </div>
       </div>
