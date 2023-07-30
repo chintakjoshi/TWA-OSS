@@ -6,9 +6,9 @@ from tkinter import ttk
 # encapsulating these credentials will be next task
 
 try:
-    con_eb = snowflake.connector.connect(user=os.environ.get('USER')',
-                                         password=os.environ.get('PASSWORD'),
-                                         account=os.environ.get('ACCOUNT'),
+    con_eb = snowflake.connector.connect(user='NavyaNelluri',
+                                         password='Navya.c@698',
+                                         account='emjvxti-ri58811',
                                          database='TWA',
                                          schema="SCHEMA_TWA"
                                          )
@@ -38,6 +38,25 @@ def option_selected(*args):
     else:
         label1.config(text="")
         label2.config(text="Sorry! No matching jobs")
+def Employe_details(master2):
+    cs.execute("SELECT RECRUITER_NAME,INDUSTRY_NAME FROM TWA.SCHEMA_TWA.JOBDETAILS ")
+    label1 = Label(master2, text="", font=("Arial", 12))
+    label1.pack()
+    label1.config(text=cs.fetchall())        
+def load_employer(*args):
+    master2 = Tk()
+    master2.geometry("400x300")
+    master2.title("Employer Details")
+
+    
+    button4 = Button(master2, text="click to see loaded Employe Details", 
+    bg="blue", fg="white", padx=10, pady=5, font=("Arial", 10, "bold"),
+    command = lambda : Employe_details(master2))
+    button4.pack()
+    master2.mainloop()
+    master.withdraw()
+    master.destroy()
+    
 
 
 def fetching_details(*args):
@@ -105,7 +124,8 @@ label_info.pack()
 button1 = Button(master, text="Load JobSeeker Details", bg="blue", fg="white", padx=10, pady=5, font=("Arial", 10, "bold"))
 button1.pack()
 
-button2 = Button(master, text="Load Employer Details", bg="blue", fg="white", padx=10, pady=5, font=("Arial", 10, "bold"))
+button2 = Button(master, text="Load Employer Details", bg="blue",
+ fg="white", padx=10, pady=5, font=("Arial", 10, "bold"), command=load_employer)
 button2.pack()
 
 button3 = Button(master, text="Fetch Details", bg="blue", fg="white", padx=10, pady=5, font=("Arial", 10, "bold"), command=fetching_details)
