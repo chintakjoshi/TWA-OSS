@@ -30,3 +30,6 @@ module.exports = db.sequelize.define(
     timestamps: false
   }
 )
+
+//when using docker uncomment this
+db.sequelize.sync();

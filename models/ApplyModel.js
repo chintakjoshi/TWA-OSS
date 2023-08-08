@@ -42,3 +42,6 @@ const Apply = db.sequelize.define(
 );
 
 module.exports = Apply;
+
+//when using docker uncomment this
+db.sequelize.sync();
