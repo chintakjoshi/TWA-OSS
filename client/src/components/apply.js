@@ -19,6 +19,10 @@ class Apply extends Component {
     // additional state fields for your form
   };
 
+  componentDidMount() {
+    window.scrollTo(0, 0);
+  }
+
   handleChange = (e) => {
     this.setState({
       [e.target.id]: e.target.value
@@ -27,6 +31,7 @@ class Apply extends Component {
 
   handleSubmit = (e) => {
     e.preventDefault();
+    window.scrollTo(0, 0);
 
     const { JobID, firstName, lastName, Email, Gender, Date, referrer, Phone, jobType } = this.state;
 
@@ -39,26 +44,24 @@ class Apply extends Component {
     }
 
     axios.post('/users/apply', this.state)
-      .then(response => {
-        if (response.data.status === 'Application submitted!') {
-          this.setState({
-            message: 'Thank you for filling the form, We will get back to you shortly!!!',
-            color: 'green'
-          });
+    .then(response => {
+    if (response.data.status === 'Application submitted!') {
+      this.setState({
+      message: 'Thank you for filling the form, We will get back to you shortly!!!',
+      color: 'green'
+      });
+      } else if (response.data.status === 'You have already applied, Thank you') {
+        this.setState({
+          message: 'You have already applied for this JobID, Thank you!!!',
+          color: 'red'
+        });
         } else {
-          this.setState({
-            message: 'You have already applied, Thank you!!!',
-            color: 'red'
-          });
-        }
-      })
-      .catch(error => {
-        console.log(error);
         this.setState({
           message: 'An error occurred.',
           color: 'red'
         });
-      });
+      }
+    });
   }
 
   render() {

@@ -19,8 +19,6 @@
     "test": "react-scripts test --env=jsdom",
     "eject": "react-scripts eject"
   },
-  "proxy": "http://localhost:5000",
-  "devDependencies": {
-    "@testing-library/react": "^14.0.0"
-  }
+  "proxy": "http://backend:5000",
+  "comment": "when using docker keep proxy backend:5000 and when using localhost keep proxy localhost:5000"
 }

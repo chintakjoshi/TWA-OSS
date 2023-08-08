@@ -116,13 +116,7 @@ users.post('/apply', (req, res) => {
       first_name: applyData.first_name,
       last_name: applyData.last_name,
       Email: applyData.Email,
-      Phone: applyData.Phone,
-      Gender: applyData.Gender,
-      Date: applyData.Date,
-      referrer: applyData.referrer,
       job_type: applyData.job_type,
-      // resume: applyData.resume,
-      // additional fields for your form
     }
   })
   .then(application => {
