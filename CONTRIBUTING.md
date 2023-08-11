@@ -29,4 +29,4 @@ If you're adding a new feature, make sure to include corresponding documentation
 ## Community and Behavioral Expectations
 Please read and follow our [Code Of Conduct](CODE_OF_CONDUCT.md) to ensure our community remains welcoming and respectful to all contributors.
 
-## Thank you for your interest in contributing to [Your Project Name]! We look forward to reviewing your contribution and, hopefully, merging it into the project.
+## Thank you for your interest in contributing to TWA! We look forward to reviewing your contribution and, hopefully, merging it into the project.
