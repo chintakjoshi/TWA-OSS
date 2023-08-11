@@ -35,7 +35,13 @@ The initial approach to this project involves the following steps:
 
 ## API Reference
 POST /register: Used for user registration. It expects the following data in the request body: first_name, last_name, email, and password. It checks if the user already exists and then hashes the password before creating a new user in the database.
+Checks if the provided email already exists in the database.
+Hashes the provided password for security.
+Creates a new user record in the database with the provided data.
 
 POST /login: Used for user login. It expects the user's email and password in the request body. It verifies the user's credentials, and if valid, generates a JWT token that is sent as the response.
+Verifies the provided email against the database records.
+Compares the provided password with the hashed password stored in the database.
+If the credentials are valid, generates a JSON Web Token (JWT) as a response.
 
 GET /profile: Used to retrieve the user's profile. It expects a valid JWT token in the Authorization header. It verifies the token, retrieves the user's profile based on the decoded token, and returns the user's data.
