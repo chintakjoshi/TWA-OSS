@@ -1,4 +1,4 @@
-# Purpose
+# Our Mission
 
 A primary goal of Transformative Workforce Academy is to be inclusive to the largest number of contributors, with the most varied and diverse backgrounds possible. As such, we are committed to providing a friendly, safe, and welcoming environment for all, regardless of gender, sexual orientation, ability, ethnicity, socioeconomic status, and religion (or lack thereof).
 
@@ -51,6 +51,14 @@ Additionally, community organizers are available to help community members engag
 ## Addressing Grievances
 
 If you feel you have been falsely or unfairly accused of violating this Code of Conduct, you should notify the project team with a concise description of your grievance. Your grievance will be handled in accordance with our existing governing policies.
+
+## Constructive Feedback
+
+Offer feedback in a constructive manner, rather than in a negative or harmful way. Constructive criticism helps the community grow and improve.
+
+## Encourage Community Growth
+
+Encourage and support new members. A growing community is a healthy one, and every member was once new and looking for guidance.
 
 ## Scope
 

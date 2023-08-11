@@ -18,13 +18,38 @@ First off, thank you for considering contributing to TWA. It's people like you t
 5. Submit a Pull Request: Go to the main repository's page, and you should see a button that says "New pull request". Click it, compare your fork, and submit the request.
 
 ## Code Style and Linters
+* **Comments:** Comment your code where necessary. This helps others understand the purpose and functionality of your code.
+* **Variable Naming:** Use descriptive variable names that convey the purpose of the variable.
+
 Please adhere to the coding conventions used throughout the project. If the project uses a linter or has a style guide, make sure your contributions respect them.
 
 ## Testing
+* **Regression Tests:** Ensure that your changes don't break existing functionality.
+* **Add Test Cases:** For new features, add test cases to cover the new functionality.
+
 Ensure that your code includes adequate tests if applicable and that all tests pass before submitting a pull request.
 
 ## Documentation
-If you're adding a new feature, make sure to include corresponding documentation. If you're fixing a bug or changing existing functionality, ensure the existing documentation is up-to-date.
+* **Inline Documentation:** For complex code snippets, provide inline documentation.
+* **User Guide Updates:** If your changes affect how users interact with the project, update the user guide accordingly.
+
+## Engage with the Community
+* **Join Meetings:** Participate in regular community meetings to stay updated and share your insights.
+* **Mentorship:** Consider mentoring new contributors. Sharing your expertise can help grow and strengthen the community.
+
+## Feedback Loop
+* **Act on Review Feedback:** When your pull request is reviewed, there might be feedback or changes requested. Act on this feedback promptly.
+* **Review Others' PRs:** Reviewing others' pull requests can give you a new perspective and help you understand the project better.
+
+## Respect and Recognition
+* **Acknowledge Others:** If you used someone's code or idea, give them credit.
+* **Celebrate Success:** Celebrate when your pull request gets merged or when you achieve a significant contribution milestone.
+
+## Stay Updated
+Make sure to regularly pull from the main repository to keep your fork up-to-date with the latest changes. This will help avoid merge conflicts.
+
+## Seeking Help
+If you're unsure about something or need assistance, don't hesitate to ask. Reach out on our community chat or discussion forums.
 
 ## Community and Behavioral Expectations
 Please read and follow our [Code Of Conduct](CODE_OF_CONDUCT.md) to ensure our community remains welcoming and respectful to all contributors.
