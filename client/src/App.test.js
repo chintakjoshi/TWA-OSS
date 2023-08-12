@@ -16,31 +16,7 @@ describe('Login component', () => {
   });
 });
 
-describe('Register component', () => {
-  test('renders without crashing', () => {
-    render(<Register />);
-  });
-
-  test('updates state when first name is entered', () => {
-    const { getByPlaceholderText } = render(<Register />);
-    const input = getByPlaceholderText('Enter your first name');
-    fireEvent.change(input, { target: { value: 'John' } });
-    expect(input.value).toBe('John');
-  });
-
-describe('MyComponent', () => {
-  test('renders without crashing', () => {
-    render(<MyComponent />);
-  });
-
-  test('updates state when button is clicked', () => {
-    const { getByText } = render(<MyComponent />);
-    const button = getByText('Click me');
-    fireEvent.click(button);
-    expect(button.textContent).toBe('Clicked');
-  });
-
-  test('updates state when password is entered', () => {
+test('updates state when password is entered', () => {
     const { getByPlaceholderText } = render(<Login />);
     const input = getByPlaceholderText('Enter password');
     fireEvent.change(input, { target: { value: 'password123' } });
@@ -54,3 +30,16 @@ describe('MyComponent', () => {
     expect(input.value).toBe('Doe');
   });
 });
+
+describe('Register component', () => {
+  test('renders without crashing', () => {
+    render(<Register />);
+  });
+
+   test('updates state when first name is entered', () => {
+    const { getByPlaceholderText } = render(<Register />);
+    const input = getByPlaceholderText('Enter your first name');
+    fireEvent.change(input, { target: { value: 'John' } });
+    expect(input.value).toBe('John');
+  });
+
