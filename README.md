@@ -8,7 +8,7 @@ This project is to help the justice involved jobseekers and the second chance em
 
 ## [Contributing to TWA](CONTRIBUTING.md)
 
-## [Developer Guide](DEVELOPERGUIDETWA.md)
+## [Developer Guide](DEVELOPER_GUIDE.md)
 
 ## [Documentation](DOCUMENTATION.md)
 
