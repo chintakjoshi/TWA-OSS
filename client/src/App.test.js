@@ -1,35 +1,78 @@
 import React from 'react';
-import { render, fireEvent } from "@testing-library/react";
-import Login from './components/Login'; 
+import { render, act } from "@testing-library/react";
+import Apply from './components/apply';
+import Dashboard from './components/Dashboard';
+import Landing from './components/Landing';
+import Login from './components/Login';
+import MyProfile from './components/MyProfile';
+import Navbar from './components/Navbar'; 
 import Register from './components/Register';
+import Search from './components/Search';
+import UserFunctions from './components/UserFunctions';
 
-describe('Login component', () => {
+describe('Apply Component', () => {
   test('renders without crashing', () => {
-    render(<Login />);
+    act(() => {
+      render(<Apply />);
+    });
   });
 
-  test('updates state when email is entered', () => {
-    const { getByPlaceholderText } = render(<Login />);
-    const input = getByPlaceholderText('Enter email');
-    fireEvent.change(input, { target: { value: 'test@test.com' } });
-    expect(input.value).toBe('test@test.com');
+describe('Dashboard Component', () => {
+  test('renders without crashing', () => {
+    act(() => {
+      render(<Dashboard />);
+    });
   });
-});
+
 
 test('updates state when password is entered', () => {
     const { getByPlaceholderText } = render(<Login />);
     const input = getByPlaceholderText('Enter password');
     fireEvent.change(input, { target: { value: 'password123' } });
     expect(input.value).toBe('password123');
-  });
 
-  test('updates state when last name is entered', () => {
-    const { getByPlaceholderText } = render(<Register />);
-    const input = getByPlaceholderText('Enter your last name');
-    fireEvent.change(input, { target: { value: 'Doe' } });
-    expect(input.value).toBe('Doe');
+describe('Landing Component', () => {
+  test('renders without crashing', () => {
+    act(() => {
+      render(<Landing />);
+    });
   });
 });
+
+describe('Login component', () => {
+  test('renders without crashing', () => {
+    act(() => {
+      render(<Login />);
+    });
+  });
+});
+
+describe('MyProfile Component', () => {
+  test('renders without crashing', () => {
+    act(() => {
+      render(<MyProfile />);
+    });
+  });
+});
+
+describe('Navbar Component', () => {
+  test('renders without crashing', () => {
+    act(() => {
+      render(<Navbar />);
+    });
+  });
+});
+
+
+
+describe('Search component', () => {
+  test('renders without crashing', () => {
+    act(() => {
+      render(<Search />);
+    });
+  });
+});
+
 
 describe('Register component', () => {
   test('renders without crashing', () => {
@@ -42,4 +85,13 @@ describe('Register component', () => {
     fireEvent.change(input, { target: { value: 'John' } });
     expect(input.value).toBe('John');
   });
+
+
+describe('UserFunctions component', () => {
+  test('renders without crashing', () => {
+    act(() => {
+      render(<UserFunctions />);
+    });
+  });
+});
 

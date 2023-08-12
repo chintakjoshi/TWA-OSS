@@ -1,21 +1,36 @@
-const Sequelize = require('sequelize')
-const db = {}
-const sequelize = new Sequelize('nodejs_login1', 'root', 'root', {
-  host: 'localhost',
-  port: '3306',
-  dialect: 'mysql',
-  operatorsAliases: false,
+const Sequelize = require('sequelize');
+const db = {};
 
-  pool: {
-    max: 5,
-    min: 0,
-    acquire: 30000,
-    idle: 10000
-  }
-})
+let sequelize;
 
-db.sequelize = sequelize
-db.Sequelize = Sequelize
+if (process.env.DATABASE_URL) {
+    sequelize = new Sequelize(process.env.DATABASE_URL, {
+        dialect: 'mysql',
+        operatorsAliases: false,
+        pool: {
+            max: 5,
+            min: 0,
+            acquire: 30000,
+            idle: 10000
+        }
+    });
+} else {
+    sequelize = new Sequelize('nodejs_login1', 'root', 'root', {
+        host: 'localhost',
+        port: '3306',
+        dialect: 'mysql',
+        operatorsAliases: false,
+        pool: {
+            max: 5,
+            min: 0,
+            acquire: 30000,
+            idle: 10000
+        }
+    });
+}
 
-module.exports = db
+db.sequelize = sequelize;
+db.Sequelize = Sequelize;
+
+module.exports = db;
 sequelize.sync();

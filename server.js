@@ -16,6 +16,13 @@ var Users = require('./routes/Users')
 
 app.use('/users', Users)
 
-app.listen(port, function() {
+
+//when using localhost uncomment this
+// app.listen(port, function() {
+//   console.log('Server is running on port: ' + port)
+// })
+
+// when configuring docker uncomment this
+app.listen(port, '0.0.0.0', function() {
   console.log('Server is running on port: ' + port)
 })
