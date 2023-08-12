@@ -80,8 +80,19 @@ Then ```npm install``` to install the dependencies.
 After installing the dependencies run ```npm start```.
 This will start the frontend.
 
+***How to setup MySql workbench***
+Create new a local instance keeping the user and password "root". The local instance should run on the localhost:3306.
+
+Create a new schema, Keep the schema name "nodejs_login1". Then, Create tables in the schema "users" and "applies". In which you should keep the query "SELECT * FROM nodejs_login1.users" and "SELECT * FROM nodejs_login1.applies".
+
+By this way, you should be able to fetch the details from the POST request which is coming from the backend.
+
 ### API Reference
-TBD
+POST /register: Used for user registration. It expects the following data in the request body: first_name, last_name, email, and password. It checks if the user already exists and then hashes the password before creating a new user in the database.
+
+POST /login: Used for user login. It expects the user's email and password in the request body. It verifies the user's credentials, and if valid, generates a JWT token that is sent as the response.
+
+GET /profile: Used to retrieve the user's profile. It expects a valid JWT token in the Authorization header. It verifies the token, retrieves the user's profile based on the decoded token, and returns the user's data.
 
 ### Contributing
 Chintak Joshi - Frontend (react.js)
