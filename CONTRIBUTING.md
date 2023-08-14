@@ -2,8 +2,8 @@
 First off, thank you for considering contributing to TWA. It's people like you that make TWA such a great tool.
 
 ## Where to Start?
-1. Beginner: If you're new to the project and want to help, start by checking out the issues labeled good first issue. These are typically simpler tasks that are great for first-timers.
-2. Experienced: If you're familiar with the project and are looking for a challenge, look for issues labeled help wanted.
+1. Novice Contributor: If you're just getting started with the project and are eager to contribute, begin by exploring the issues tagged as "good first issue." These tasks are usually more straightforward and provide an excellent opportunity for newcomers to get involved.
+2. Seasoned Contributor: For those who are well-acquainted with the project and are seeking a more advanced task, seek out issues marked as "help wanted." These tasks often offer challenges and are ideal for experienced contributors looking to make a meaningful impact.
 
 ## Ways to Contribute
 * Reporting Bugs: If you find a bug, please search the issues to see if it has already been reported. If not, open a new issue with a descriptive title and clear description.
