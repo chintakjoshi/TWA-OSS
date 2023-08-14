@@ -22,12 +22,29 @@ Go to the ```root directory``` and do ```npm install --force```. Once the depend
 
 ## Setting up MySql workbench
 
-Create a new local instance keeping the user and password ```root```. The local instance should run on the localhost:3306.
+Set Up a Local Database Instance and Schema for Node.js Application
 
-Create a new schema, Keep the schema name ```nodejs_login1```. Then, Create tables in the schema ```users``` and ```applies```. In which you should keep the query ```SELECT * FROM nodejs_login1.users``` and ```SELECT * FROM nodejs_login1.applies```.
+1. **Setting Up Local Database:**
+   Begin by creating a local instance of a MySQL database with the following parameters:
+   - Username: `root`
+   - Password: `root`
+   - Host: `localhost`
+   - Port: `3306`
 
-In this way, you should be able to fetch the details from the POST request which is coming from the backend.
+2. **Creating a Schema:**
+   Within the local instance, create a new schema named `nodejs_login1`.
 
+3. **Creating Tables:**
+   Inside the `nodejs_login1` schema, establish two tables: `users` and `applies`.
+
+4. **Defining Queries:**
+   You can then employ the queries below to retrieve data from the respective tables:
+   - For the `users` table: `SELECT * FROM nodejs_login1.users`
+   - For the `applies` table: `SELECT * FROM nodejs_login1.applies`
+
+By setting up this database structure, you'll be able to efficiently fetch the required details from incoming POST requests from the backend. This ensures seamless interaction between your Node.js application and the database, facilitating data retrieval and management.
+
+Remember to adapt these instructions according to your specific database management system and environment.
 # Deploying the Application on Docker
 
 To Deploy the application on docker, you need to install docker and docker-compose in your system. In the mean time, go to the files ```server.js```, ```models/User.js```, ```models/ApplyModel.js```, ```client/package.json```. Uncomment the docker configuration code and vice-versa. 
