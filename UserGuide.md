@@ -28,5 +28,4 @@ con_eb = snowflake.connector.connect(user='NavyaNelluri',
 # 6. save the file and re-run again.
 
 7. you should be able to see below screen
-![image](https://github.com/chintakjoshi/TWA-OSS/assets/120769407/2731a610-00b2-4862-9181-faee0e6238b2)
-
+![image](https://github.com/chintakjoshi/TWA-OSS/assets/120769407/2731a610-00b2-4862-9181-faee0e6238b2).
