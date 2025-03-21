@@ -12,5 +12,9 @@
     "jsonwebtoken": "^9.0.1",
     "mysql2": "^3.4.5",
     "sequelize": "^6.32.1"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "seed": "node seed.js"
   }
 }
