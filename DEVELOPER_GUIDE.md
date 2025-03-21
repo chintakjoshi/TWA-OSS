@@ -26,8 +26,6 @@ Create a new local instance keeping the user and password ```root```. The local 
 
 Create a new schema, Keep the schema name ```nodejs_login1```. Then, Create tables in the schema ```users``` and ```applies```. In which you should keep the query ```SELECT * FROM nodejs_login1.users``` and ```SELECT * FROM nodejs_login1.applies```.
 
-Default Email and Password: ```admin@example.com``` and ```mypassword123```
-
 In this way, you should be able to fetch the details from the POST request which is coming from the backend.
 
 # Deploying the Application on Docker
@@ -35,5 +33,9 @@ In this way, you should be able to fetch the details from the POST request which
 To Deploy the application on docker, you need to install docker and docker-compose in your system. In the mean time, go to the files ```server.js```, ```models/User.js```, ```models/ApplyModel.js```, ```client/package.json```. Uncomment the docker configuration code and vice-versa. 
 
 Once the docker gets installed, go to the root directory and run the command ```docker-compose up --build```. This will start creating the containers for frontend, backend and database. Once the Image is generated the cliend, backend and database will automatically start at ```localhost:3000```. By this way, you can start the whole web application with a single click.
+
+Once the Docker is up, go to backend's container termainal and execute ```node seed.js```. This will create a default account.
+
+Default Email and Password: ```admin@example.com``` and ```mypassword123```
 
 To stop docker, RUN: ```docker-compose stop``` OR If you want to delete the containers RUN: ```docker-compose down```.
