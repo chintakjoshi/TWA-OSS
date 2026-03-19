@@ -1,4 +1,4 @@
-# Transformative Workforce Academy [![Tests](https://github.com/chintakjoshi/TWA-OSS/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/chintakjoshi/TWA-OSS/actions/workflows/ci.yml)
+# Transformative Workforce Academy [![CI Tests](https://github.com/chintakjoshi/TWA-OSS/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/chintakjoshi/TWA-OSS/actions/workflows/ci.yml)
 
 TWA is a web application for Saint Louis University's Transformative Workforce Academy. It connects justice-involved jobseekers with fair-chance employers and gives TWA staff tools to manage approvals, matching, applications, placements, notifications, and audit history.
 
