@@ -97,6 +97,7 @@ export function EmployerListingsPage() {
           {items.map((listing) => (
             <ListingCard key={listing.id} listing={listing}>
               <Link className="button button-secondary" to={`/listings/${listing.id}`}>View listing</Link>
+              <Link className="button button-ghost" to={`/listings/${listing.id}/applicants`}>Applicants</Link>
             </ListingCard>
           ))}
         </div>
