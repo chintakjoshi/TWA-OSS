@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session
 from app.core.exceptions import AppError
 from app.models import AppUser, Employer, Jobseeker
 from app.models.enums import AppRole, EmployerReviewStatus
+from app.services.jobseeker import is_jobseeker_profile_complete
 
 
 @dataclass(slots=True)
@@ -27,6 +28,7 @@ class AuthMeResult:
     profile_complete: bool
     employer_review_status: str | None
     next_step: str | None
+
 
 
 def get_auth_provider_identity(request: Request) -> AuthProviderIdentity:
@@ -48,6 +50,7 @@ def get_auth_provider_identity(request: Request) -> AuthProviderIdentity:
         raise AppError(status_code=401, code="INVALID_IDENTITY", detail="Authenticated identity has an invalid subject.") from exc
 
     return AuthProviderIdentity(auth_user_id=auth_user_id, email=email, auth_provider_role=role)
+
 
 
 def resolve_auth_context(*, request: Request, session: Session, identity) -> object:
@@ -72,9 +75,11 @@ def resolve_auth_context(*, request: Request, session: Session, identity) -> obj
     return auth_context
 
 
+
 def get_app_user_by_auth_user_id(session: Session, auth_user_id: UUID) -> AppUser | None:
     statement = select(AppUser).where(AppUser.auth_user_id == auth_user_id)
     return session.execute(statement).scalar_one_or_none()
+
 
 
 def bootstrap_user(
@@ -137,6 +142,7 @@ def bootstrap_user(
     return app_user, next_step
 
 
+
 def build_auth_me(*, session: Session, identity: AuthProviderIdentity) -> AuthMeResult:
     app_user = get_app_user_by_auth_user_id(session, identity.auth_user_id)
     if app_user is None:
@@ -170,12 +176,3 @@ def build_auth_me(*, session: Session, identity: AuthProviderIdentity) -> AuthMe
         employer_review_status=employer_review_status,
         next_step=next_step,
     )
-
-
-def is_jobseeker_profile_complete(jobseeker: Jobseeker | None) -> bool:
-    if jobseeker is None:
-        return False
-    required_fields = [jobseeker.full_name, jobseeker.phone, jobseeker.address, jobseeker.city, jobseeker.zip]
-    if any(value is None or not str(value).strip() for value in required_fields):
-        return False
-    return jobseeker.transit_type is not None

@@ -13,6 +13,7 @@ from app.db.session import get_db_session
 from app.models import Employer
 from app.models.enums import EmployerReviewStatus
 from app.services.auth import AuthProviderIdentity, get_auth_provider_identity, resolve_auth_context
+from app.services.jobseeker import get_jobseeker_by_app_user_id, is_jobseeker_profile_complete
 
 AppRole = Literal["jobseeker", "employer", "staff"]
 
@@ -58,6 +59,21 @@ def require_role(*allowed_roles: AppRole):
 
 
 def require_jobseeker(auth_context: AuthContext = Depends(require_role("jobseeker"))) -> AuthContext:
+    return auth_context
+
+
+
+def require_completed_jobseeker(
+    auth_context: AuthContext = Depends(require_jobseeker),
+    session: Session = Depends(get_db_session),
+) -> AuthContext:
+    jobseeker = get_jobseeker_by_app_user_id(session, auth_context.app_user_id)
+    if not is_jobseeker_profile_complete(jobseeker):
+        raise AppError(
+            status_code=403,
+            code="PROFILE_INCOMPLETE",
+            detail="This jobseeker profile must be completed before using this resource.",
+        )
     return auth_context
 
 

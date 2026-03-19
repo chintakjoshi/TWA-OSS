@@ -17,6 +17,12 @@ from app.schemas.employer import (
     UpdateListingReviewRequest,
     UpdateListingReviewResponse,
 )
+from app.schemas.jobseeker import (
+    AdminJobseekerDetailResponse,
+    AdminJobseekerUpdateRequest,
+    AdminJobseekerUpdateResponse,
+    JobseekerListItemPayload,
+)
 from app.services.common import PaginationParams, SortParams, ensure_found, get_pagination_params, get_sort_params
 from app.services.employer import (
     get_employer_by_id,
@@ -27,6 +33,13 @@ from app.services.employer import (
     review_listing,
     serialize_employer,
     serialize_listing,
+)
+from app.services.jobseeker import (
+    build_admin_jobseeker_detail,
+    get_jobseeker_by_id,
+    list_jobseekers,
+    serialize_jobseeker_update_result,
+    update_jobseeker_profile,
 )
 
 router = APIRouter(prefix="/api/v1/admin", tags=["admin"])
@@ -120,3 +133,63 @@ def patch_listing_review(
         review_note=payload.review_note,
     )
     return UpdateListingReviewResponse(listing=serialize_listing(listing))
+
+
+@router.get("/jobseekers", response_model=PaginatedResponse[JobseekerListItemPayload])
+def get_all_jobseekers(
+    search: str | None = Query(default=None),
+    status: str | None = Query(default=None),
+    transit_type: str | None = Query(default=None),
+    charge_sex_offense: bool | None = Query(default=None),
+    charge_violent: bool | None = Query(default=None),
+    charge_armed: bool | None = Query(default=None),
+    charge_children: bool | None = Query(default=None),
+    charge_drug: bool | None = Query(default=None),
+    charge_theft: bool | None = Query(default=None),
+    pagination: PaginationParams = Depends(get_pagination_params),
+    sort: SortParams = Depends(get_sort_params),
+    _: AuthContext = Depends(require_staff),
+    session: Session = Depends(get_db_session),
+) -> PaginatedResponse[JobseekerListItemPayload]:
+    return list_jobseekers(
+        session,
+        pagination=pagination,
+        sort=sort,
+        search=search,
+        status=status,
+        transit_type=transit_type,
+        charge_sex_offense=charge_sex_offense,
+        charge_violent=charge_violent,
+        charge_armed=charge_armed,
+        charge_children=charge_children,
+        charge_drug=charge_drug,
+        charge_theft=charge_theft,
+    )
+
+
+@router.get("/jobseekers/{jobseeker_id}", response_model=AdminJobseekerDetailResponse)
+def get_admin_jobseeker_detail(
+    jobseeker_id: UUID,
+    _: AuthContext = Depends(require_staff),
+    session: Session = Depends(get_db_session),
+) -> AdminJobseekerDetailResponse:
+    jobseeker = ensure_found(get_jobseeker_by_id(session, jobseeker_id), entity_name="Jobseeker")
+    return build_admin_jobseeker_detail(jobseeker)
+
+
+@router.patch("/jobseekers/{jobseeker_id}", response_model=AdminJobseekerUpdateResponse)
+def patch_admin_jobseeker(
+    jobseeker_id: UUID,
+    payload: AdminJobseekerUpdateRequest,
+    auth_context: AuthContext = Depends(require_staff),
+    session: Session = Depends(get_db_session),
+) -> AdminJobseekerUpdateResponse:
+    jobseeker = ensure_found(get_jobseeker_by_id(session, jobseeker_id), entity_name="Jobseeker")
+    jobseeker = update_jobseeker_profile(
+        session,
+        jobseeker=jobseeker,
+        payload=payload,
+        actor_id=auth_context.app_user_id,
+        action="admin.jobseeker_updated",
+    )
+    return AdminJobseekerUpdateResponse(jobseeker=serialize_jobseeker_update_result(jobseeker))
