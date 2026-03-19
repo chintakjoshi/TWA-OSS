@@ -25,6 +25,7 @@ from app.services.employer import (
     serialize_listing,
     update_employer_profile,
 )
+from app.services.geocoding import GeocodeResult, geocode_address
 from app.services.jobseeker import (
     build_admin_jobseeker_detail,
     get_jobseeker_by_app_user_id,
@@ -35,11 +36,19 @@ from app.services.jobseeker import (
     serialize_jobseeker_update_result,
     update_jobseeker_profile,
 )
+from app.services.transit import (
+    TransitComputationResult,
+    compute_transit_accessibility,
+    load_gtfs_stops,
+    zip_to_job_distance_miles,
+)
 
 __all__ = [
     "AuthProviderIdentity",
+    "GeocodeResult",
     "PaginationParams",
     "SortParams",
+    "TransitComputationResult",
     "apply_filters",
     "apply_pagination",
     "apply_sorting",
@@ -47,9 +56,11 @@ __all__ = [
     "build_auth_me",
     "build_paginated_response",
     "bootstrap_user",
+    "compute_transit_accessibility",
     "create_listing",
     "ensure_found",
     "ensure_permission",
+    "geocode_address",
     "get_auth_provider_identity",
     "get_employer_by_app_user_id",
     "get_employer_by_id",
@@ -63,6 +74,7 @@ __all__ = [
     "list_employers",
     "list_jobseekers",
     "list_listings",
+    "load_gtfs_stops",
     "resolve_auth_context",
     "review_employer",
     "review_listing",
@@ -72,4 +84,5 @@ __all__ = [
     "serialize_listing",
     "update_employer_profile",
     "update_jobseeker_profile",
+    "zip_to_job_distance_miles",
 ]
