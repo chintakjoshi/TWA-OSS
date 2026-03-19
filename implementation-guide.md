@@ -14,6 +14,10 @@ The guide assumes:
 - `authSDK` as the external authentication service
 - `auth-service-sdk` middleware in the TWA backend
 - TWA-local app roles stored in the TWA database
+- Alembic for TWA database migrations
+- Docker Compose for the full local stack, including `authSDK`
+- MailHog for local email testing and Adminer for database inspection
+- Swagger UI and ReDoc for local API exploration
 - Email and in-app notifications
 - Employers may view applicant charge-category fields
 - System-generated audit log entries may use `actor_id = NULL`
@@ -92,11 +96,20 @@ TWA-OSS/
    - Backend: `ruff`, `black`, `pytest`
    - Frontend: `eslint`, `prettier`
 
-7. Add a simple `docker-compose.yml` for local PostgreSQL if the team wants repeatable setup.
+7. Add a local `docker-compose.yml` for the full development stack.
+   - TWA PostgreSQL
+   - TWA backend
+   - three frontend apps
+   - `authSDK` service and its dependencies
+   - Adminer
+   - MailHog
 
 8. Prepare local `authSDK` usage.
-   - Decide whether development points to `C:\Users\chint\Desktop\authSDK` locally or to a deployed auth service
+   - Default local path can point to `C:\Users\chint\Desktop\authSDK`
    - Record `AUTH_BASE_URL` and `TWA_AUTH_AUDIENCE=twa-api`
+   - Make the Docker setup work with a sibling checkout of `authSDK`
+
+9. Add Alembic scaffolding early so migrations are part of the developer workflow from the start.
 
 ### Deliverables
 
@@ -104,7 +117,10 @@ TWA-OSS/
 - Local backend app boots
 - Local frontend apps boot
 - Database available locally
+- Full local Docker stack available for TWA plus `authSDK`
+- Adminer and MailHog available locally
 - Auth-service integration target decided for local development
+- Alembic migration pipeline initialized
 
 ---
 
@@ -135,17 +151,23 @@ Stand up the FastAPI app with clean module boundaries.
    - auth context utilities
    - response models
 
-4. Add a health endpoint:
+4. Add health endpoints:
    - `GET /health`
+   - `GET /api/v1/health`
 
 5. Add API versioning early:
    - `/api/v1/...`
 
+6. Keep FastAPI OpenAPI docs enabled from the beginning.
+   - Swagger UI at `/docs`
+   - ReDoc at `/redoc`
+
 ### Deliverables
 
 - FastAPI server starts
-- health endpoint works
+- health endpoints work
 - router structure in place
+- Swagger UI and ReDoc are available locally
 
 ---
 
@@ -202,8 +224,9 @@ Build these first:
 
 1. Configure SQLAlchemy models.
 2. Configure Alembic migrations.
-3. Write the initial migration.
-4. Seed:
+3. Add a bootstrap migration so the migration path is executable before the real schema lands.
+4. Write the initial schema migration.
+5. Seed:
    - one staff app user linked to an auth identity
    - default notification config row
 
