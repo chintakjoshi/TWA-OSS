@@ -25,6 +25,16 @@ from app.services.employer import (
     serialize_listing,
     update_employer_profile,
 )
+from app.services.jobseeker import (
+    build_admin_jobseeker_detail,
+    get_jobseeker_by_app_user_id,
+    get_jobseeker_by_id,
+    is_jobseeker_profile_complete,
+    list_jobseekers,
+    serialize_jobseeker,
+    serialize_jobseeker_update_result,
+    update_jobseeker_profile,
+)
 
 __all__ = [
     "AuthProviderIdentity",
@@ -33,6 +43,7 @@ __all__ = [
     "apply_filters",
     "apply_pagination",
     "apply_sorting",
+    "build_admin_jobseeker_detail",
     "build_auth_me",
     "build_paginated_response",
     "bootstrap_user",
@@ -42,16 +53,23 @@ __all__ = [
     "get_auth_provider_identity",
     "get_employer_by_app_user_id",
     "get_employer_by_id",
+    "get_jobseeker_by_app_user_id",
+    "get_jobseeker_by_id",
     "get_listing_by_id",
     "get_pagination_params",
     "get_sort_params",
+    "is_jobseeker_profile_complete",
     "list_employer_listings",
     "list_employers",
+    "list_jobseekers",
     "list_listings",
     "resolve_auth_context",
     "review_employer",
     "review_listing",
     "serialize_employer",
+    "serialize_jobseeker",
+    "serialize_jobseeker_update_result",
     "serialize_listing",
     "update_employer_profile",
+    "update_jobseeker_profile",
 ]

@@ -14,9 +14,23 @@ from app.schemas.employer import (
     UpdateListingReviewResponse,
 )
 from app.schemas.health import HealthResponse
+from app.schemas.jobseeker import (
+    AdminJobseekerDetailResponse,
+    AdminJobseekerUpdateRequest,
+    AdminJobseekerUpdateResponse,
+    JobseekerApplicationSummaryPayload,
+    JobseekerListItemPayload,
+    JobseekerProfilePayload,
+    JobseekerProfileResponse,
+    JobseekerProfileUpdateRequest,
+    JobseekerProfileUpdateResponse,
+)
 from app.schemas.meta import ApiVersionResponse
 
 __all__ = [
+    "AdminJobseekerDetailResponse",
+    "AdminJobseekerUpdateRequest",
+    "AdminJobseekerUpdateResponse",
     "ApiVersionResponse",
     "AppUserPayload",
     "AuthBootstrapRequest",
@@ -31,6 +45,12 @@ __all__ = [
     "JobListingListItemPayload",
     "JobListingPayload",
     "JobListingResponse",
+    "JobseekerApplicationSummaryPayload",
+    "JobseekerListItemPayload",
+    "JobseekerProfilePayload",
+    "JobseekerProfileResponse",
+    "JobseekerProfileUpdateRequest",
+    "JobseekerProfileUpdateResponse",
     "UpdateEmployerReviewRequest",
     "UpdateEmployerReviewResponse",
     "UpdateListingReviewRequest",
