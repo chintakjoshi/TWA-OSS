@@ -1,6 +1,4 @@
-# Transformative Workforce Academy
-
-[![TWA CI](https://github.com/chintakjoshi/TWA-OSS/actions/workflows/test.yml/badge.svg?branch=main)](https://github.com/chintakjoshi/TWA-OSS/actions/workflows/test.yml)
+# Transformative Workforce Academy [![TWA CI](https://github.com/chintakjoshi/TWA-OSS/actions/workflows/test.yml/badge.svg?branch=main)](https://github.com/chintakjoshi/TWA-OSS/actions/workflows/test.yml)
 
 ## Project Overview
 
