@@ -2,16 +2,16 @@ import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 
 import { useAuth } from '@shared/auth/AuthProvider'
-import { Alert, Badge, Card, CardBody } from '@shared/ui/primitives'
+import { Badge, Card, CardBody } from '@shared/ui/primitives'
 
 import { getEmployerListing } from '../api/employerApi'
 import { ApplicantsPanel } from '../components/ApplicantsPanel'
 import { EmployerHeader } from '../components/EmployerHeader'
 import { ErrorState, LoadingState } from '../components/PageState'
-import { formatChargeFlags, formatDate, formatDateTime, formatTransitAccessibility, formatTransitRequirement } from '../lib/formatting'
+import { formatDate, formatDateTime, formatStatusLabel, formatTransitAccessibility, formatTransitRequirement } from '../lib/formatting'
 import type { JobListing } from '../types/employer'
 
-export function EmployerListingDetailPage() {
+export function EmployerApplicantsPage() {
   const auth = useAuth()
   const { listingId = '' } = useParams()
   const [listing, setListing] = useState<JobListing | null>(null)
@@ -27,9 +27,9 @@ export function EmployerListingDetailPage() {
         if (!active) return
         setListing(response.listing)
       })
-      .catch((nextError) => {
+      .catch((nextError: Error) => {
         if (!active) return
-        setError(nextError instanceof Error ? nextError.message : 'Unable to load the listing right now.')
+        setError(nextError.message)
       })
       .finally(() => {
         if (active) setIsLoading(false)
@@ -44,7 +44,7 @@ export function EmployerListingDetailPage() {
     return (
       <div className="page-frame stack-md employer-shell-page">
         <EmployerHeader />
-        <LoadingState title="Loading listing details..." />
+        <LoadingState title="Loading applicants screen..." />
       </div>
     )
   }
@@ -53,14 +53,13 @@ export function EmployerListingDetailPage() {
     return (
       <div className="page-frame stack-md employer-shell-page">
         <EmployerHeader />
-        <ErrorState title="Listing unavailable" message={error ?? 'The listing could not be loaded.'} />
+        <ErrorState title="Applicants unavailable" message={error ?? 'The applicants screen could not be loaded.'} />
       </div>
     )
   }
 
   const reviewTone = listing.review_status === 'approved' ? 'success' : listing.review_status === 'rejected' ? 'danger' : 'warning'
   const lifecycleTone = listing.lifecycle_status === 'open' ? 'success' : 'neutral'
-  const chargeLabels = formatChargeFlags(listing.disqualifying_charges)
 
   return (
     <div className="page-frame stack-md employer-shell-page">
@@ -70,7 +69,7 @@ export function EmployerListingDetailPage() {
         <CardBody className="stack-md">
           <div className="cluster" style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <div className="stack-sm">
-              <p className="portal-eyebrow">Listing Detail</p>
+              <p className="portal-eyebrow">Applicants Screen</p>
               <h2 className="card-title">{listing.title}</h2>
               <p className="card-copy">{listing.location_address ?? 'Address not provided'}{listing.city ? `, ${listing.city}` : ''}{listing.zip ? ` ${listing.zip}` : ''}</p>
             </div>
@@ -80,36 +79,31 @@ export function EmployerListingDetailPage() {
             </div>
           </div>
 
-          {listing.review_note ? <Alert tone={listing.review_status === 'rejected' ? 'danger' : 'info'}><p>{listing.review_note}</p></Alert> : null}
-
           <div className="detail-grid">
-            <div className="stack-sm">
-              <h3 className="detail-heading">Description</h3>
-              <p className="card-copy">{listing.description ?? 'No description added yet.'}</p>
-            </div>
             <div className="stack-sm">
               <h3 className="detail-heading">Transit</h3>
               <p className="card-copy">{formatTransitRequirement(listing.transit_required)}</p>
               <p className="card-copy">{formatTransitAccessibility(listing.transit_accessible)}</p>
             </div>
             <div className="stack-sm">
-              <h3 className="detail-heading">Disqualifying charges</h3>
-              <p className="card-copy">{chargeLabels.length > 0 ? chargeLabels.join(', ') : 'No disqualifying charge categories configured.'}</p>
-            </div>
-            <div className="stack-sm">
-              <h3 className="detail-heading">Dates</h3>
+              <h3 className="detail-heading">Tracking</h3>
               <p className="card-copy">Submitted: {formatDate(listing.created_at)}</p>
               <p className="card-copy">Last updated: {formatDateTime(listing.updated_at)}</p>
             </div>
           </div>
 
           <div className="inline-actions">
-            <Link className="button button-secondary" to={`/listings/${listing.id}/applicants`}>Open applicants screen</Link>
+            <Link className="button button-secondary" to={`/listings/${listing.id}`}>Back to listing detail</Link>
+            <Link className="button button-ghost" to="/listings">Back to listings</Link>
           </div>
         </CardBody>
       </Card>
 
-      <ApplicantsPanel listingId={listing.id} />
+      <ApplicantsPanel
+        listingId={listing.id}
+        title="Review applicants in a dedicated employer screen."
+        description={`This route keeps applicant review separate from listing metadata. Listing status is ${formatStatusLabel(listing.lifecycle_status)}.`}
+      />
     </div>
   )
 }

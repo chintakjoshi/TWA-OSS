@@ -4,6 +4,7 @@ import { AuthProvider, useAuth } from '@shared/auth/AuthProvider'
 import { RequireRole } from '@shared/auth/RouteGuards'
 
 import { employerAuthClient } from './authClient'
+import { EmployerApplicantsPage } from '../pages/ApplicantsPage'
 import { EmployerAuthPage } from '../pages/AuthPage'
 import { EmployerDashboardPage } from '../pages/DashboardPage'
 import { EmployerLandingPage } from '../pages/LandingPage'
@@ -25,6 +26,7 @@ function EmployerRoutes() {
       <Route path="/listings" element={<RequireRole role="employer"><EmployerListingsPage /></RequireRole>} />
       <Route path="/listings/new" element={<RequireRole role="employer"><EmployerNewListingPage /></RequireRole>} />
       <Route path="/listings/:listingId" element={<RequireRole role="employer"><EmployerListingDetailPage /></RequireRole>} />
+      <Route path="/listings/:listingId/applicants" element={<RequireRole role="employer"><EmployerApplicantsPage /></RequireRole>} />
       <Route path="/workspace" element={<Navigate replace to="/dashboard" />} />
       <Route path="*" element={<Navigate replace to="/" />} />
     </Routes>
