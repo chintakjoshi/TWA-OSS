@@ -10,7 +10,7 @@ from app.core.responses import PaginatedResponse
 from app.db.session import get_db_session
 from app.schemas.employer import (
     CreateJobListingRequest,
-    EmployerProfilePayload,
+    EmployerListingApplicantPayload,
     EmployerProfileResponse,
     EmployerProfileUpdateRequest,
     JobListingPayload,
@@ -21,6 +21,7 @@ from app.services.employer import (
     create_listing,
     get_employer_by_app_user_id,
     get_listing_by_id,
+    list_employer_listing_applicants,
     list_employer_listings,
     serialize_employer,
     serialize_listing,
@@ -90,3 +91,15 @@ def get_employer_listing(
     listing = ensure_found(get_listing_by_id(session, listing_id), entity_name="Job listing")
     ensure_permission(listing.employer.app_user_id == auth_context.app_user_id)
     return JobListingResponse(listing=serialize_listing(listing))
+
+
+@router.get("/api/v1/employer/listings/{listing_id}/applicants", response_model=PaginatedResponse[EmployerListingApplicantPayload])
+def get_employer_listing_applicants(
+    listing_id: UUID,
+    pagination: PaginationParams = Depends(get_pagination_params),
+    auth_context: AuthContext = Depends(require_employer),
+    session: Session = Depends(get_db_session),
+) -> PaginatedResponse[EmployerListingApplicantPayload]:
+    listing = ensure_found(get_listing_by_id(session, listing_id), entity_name="Job listing")
+    ensure_permission(listing.employer.app_user_id == auth_context.app_user_id)
+    return list_employer_listing_applicants(session, listing=listing, pagination=pagination)

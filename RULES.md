@@ -79,6 +79,8 @@ This document defines the baseline engineering and design rules for TWA. These a
 - Keep forms accessible, labeled, and validation-friendly.
 - Respect color contrast, keyboard navigation, and visible focus states.
 - Prefer reusable UI primitives over one-off styling when patterns repeat.
+- Keep frontend structure modular. App.tsx should stay thin and mostly compose providers, routing, or high-level shells rather than containing large page implementations.
+- Break pages into dedicated modules such as pages/, components/, features/, hooks/, or app/ when the screen starts carrying real workflow logic.
 - Do not hide important status information behind ambiguous icons or vague labels.
 - Avoid generic template-looking interfaces when a clearer, more intentional design is possible.
 - New UI should feel trustworthy, calm, and operationally clear.
@@ -102,3 +104,4 @@ This document defines the baseline engineering and design rules for TWA. These a
 ## Decision Rule
 
 When in doubt, choose the path that improves reliability, readability, security, accessibility, and operational clarity or simply ask questions.
+

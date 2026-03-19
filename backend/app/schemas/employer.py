@@ -77,6 +77,27 @@ class JobListingListItemPayload(JobListingPayload):
     employer: EmployerProfilePayload | None = None
 
 
+class EmployerApplicantJobseekerPayload(BaseModel):
+    id: UUID
+    full_name: str | None
+    phone: str | None
+    address: str | None
+    city: str | None
+    zip: str | None
+    transit_type: Literal["own_car", "public_transit", "both"] | None
+    charges: ChargeFlagsPayload
+    profile_complete: bool
+    status: Literal["active", "hired"]
+
+
+class EmployerListingApplicantPayload(BaseModel):
+    application_id: UUID
+    status: Literal["submitted", "reviewed", "hired"]
+    applied_at: datetime
+    updated_at: datetime | None
+    jobseeker: EmployerApplicantJobseekerPayload
+
+
 class CreateJobListingRequest(BaseModel):
     title: str = Field(min_length=1, max_length=255)
     description: str | None = None

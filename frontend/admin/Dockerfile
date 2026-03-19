@@ -1,11 +1,12 @@
 FROM node:22-alpine
 
-WORKDIR /app
+WORKDIR /workspace/frontend/admin
 
-COPY package*.json ./
+COPY ./frontend/admin/package*.json ./
 RUN npm install
 
-COPY . ./
+COPY ./frontend/admin ./
+COPY ./shared ../../shared
 
 EXPOSE 5175
 

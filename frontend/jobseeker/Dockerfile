@@ -1,11 +1,12 @@
 FROM node:22-alpine
 
-WORKDIR /app
+WORKDIR /workspace/frontend/jobseeker
 
-COPY package*.json ./
+COPY ./frontend/jobseeker/package*.json ./
 RUN npm install
 
-COPY . ./
+COPY ./frontend/jobseeker ./
+COPY ./shared ../../shared
 
 EXPOSE 5173
 

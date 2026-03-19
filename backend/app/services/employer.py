@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session, joinedload
 
 from app.audit import write_audit
 from app.core.exceptions import AppError
-from app.models import AppUser, Employer, JobListing
+from app.models import AppUser, Application, Employer, JobListing, Jobseeker
 from app.models.enums import EmployerReviewStatus, ListingLifecycleStatus, ListingReviewStatus, TransitRequirement
 from app.schemas.employer import ChargeFlagsPayload
 from app.services.common import (
@@ -21,6 +21,8 @@ from app.services.common import (
     ensure_found,
 )
 from app.services.geocoding import geocode_address
+from app.services.jobseeker import is_jobseeker_profile_complete, serialize_charge_flags
+from app.services.notifications import get_notification_config
 from app.services.notifications import notify_employer_review_decision, notify_listing_review_decision
 from app.services.transit import compute_transit_accessibility
 
@@ -117,6 +119,30 @@ def serialize_listing(listing: JobListing, *, include_employer: bool = False):
     return payload_type(**kwargs)
 
 
+
+
+def serialize_employer_applicant(application: Application):
+    from app.schemas.employer import EmployerApplicantJobseekerPayload, EmployerListingApplicantPayload
+
+    jobseeker = application.jobseeker
+    return EmployerListingApplicantPayload(
+        application_id=application.id,
+        status=application.status.value,
+        applied_at=application.applied_at,
+        updated_at=application.updated_at,
+        jobseeker=EmployerApplicantJobseekerPayload(
+            id=jobseeker.id,
+            full_name=jobseeker.full_name,
+            phone=jobseeker.phone,
+            address=jobseeker.address,
+            city=jobseeker.city,
+            zip=jobseeker.zip,
+            transit_type=jobseeker.transit_type.value if jobseeker.transit_type else None,
+            charges=serialize_charge_flags(jobseeker),
+            profile_complete=is_jobseeker_profile_complete(jobseeker),
+            status=jobseeker.status.value,
+        ),
+    )
 
 def _enrich_listing_location_data(listing: JobListing) -> str | None:
     if not listing.location_address or not listing.city or not listing.zip:
@@ -387,3 +413,35 @@ def review_listing(
     if listing.review_status != previous_review_status and listing.review_status.value in {"approved", "rejected"}:
         notify_listing_review_decision(session, listing=listing)
     return listing
+
+
+def list_employer_listing_applicants(
+    session: Session,
+    *,
+    listing: JobListing,
+    pagination: PaginationParams,
+):
+    config = get_notification_config(session)
+    if not config.share_applicants_with_employer:
+        raise AppError(
+            status_code=403,
+            code="APPLICANT_VISIBILITY_DISABLED",
+            detail="Applicant visibility is currently disabled for employers.",
+        )
+
+    base_statement = (
+        select(Application)
+        .options(
+            joinedload(Application.jobseeker).joinedload(Jobseeker.app_user),
+            joinedload(Application.job_listing).joinedload(JobListing.employer),
+        )
+        .where(Application.job_listing_id == listing.id)
+    )
+    total_items = session.execute(select(func.count()).select_from(base_statement.subquery())).scalar_one()
+    statement = apply_pagination(base_statement.order_by(Application.applied_at.desc()), pagination)
+    items = session.execute(statement).unique().scalars().all()
+    return build_paginated_response(
+        items=[serialize_employer_applicant(item) for item in items],
+        total_items=total_items,
+        pagination=pagination,
+    )
