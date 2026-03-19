@@ -23,6 +23,7 @@ from app.schemas.jobseeker import (
     AdminJobseekerUpdateResponse,
     JobseekerListItemPayload,
 )
+from app.schemas.matching import JobForJobseekerMatchResponse, JobseekerForListingMatchResponse
 from app.services.common import PaginationParams, SortParams, ensure_found, get_pagination_params, get_sort_params
 from app.services.employer import (
     get_employer_by_id,
@@ -41,6 +42,7 @@ from app.services.jobseeker import (
     serialize_jobseeker_update_result,
     update_jobseeker_profile,
 )
+from app.services.matching import get_eligible_jobs_for_jobseeker, get_eligible_jobseekers_for_job
 
 router = APIRouter(prefix="/api/v1/admin", tags=["admin"])
 
@@ -193,3 +195,21 @@ def patch_admin_jobseeker(
         action="admin.jobseeker_updated",
     )
     return AdminJobseekerUpdateResponse(jobseeker=serialize_jobseeker_update_result(jobseeker))
+
+
+@router.get("/match/jobseeker/{jobseeker_id}", response_model=JobForJobseekerMatchResponse)
+def get_matches_for_jobseeker(
+    jobseeker_id: UUID,
+    _: AuthContext = Depends(require_staff),
+    session: Session = Depends(get_db_session),
+) -> JobForJobseekerMatchResponse:
+    return JobForJobseekerMatchResponse(items=get_eligible_jobs_for_jobseeker(session, jobseeker_id))
+
+
+@router.get("/match/listing/{listing_id}", response_model=JobseekerForListingMatchResponse)
+def get_matches_for_listing(
+    listing_id: UUID,
+    _: AuthContext = Depends(require_staff),
+    session: Session = Depends(get_db_session),
+) -> JobseekerForListingMatchResponse:
+    return JobseekerForListingMatchResponse(items=get_eligible_jobseekers_for_job(session, listing_id))

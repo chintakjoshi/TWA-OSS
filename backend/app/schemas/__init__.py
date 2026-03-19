@@ -25,6 +25,14 @@ from app.schemas.jobseeker import (
     JobseekerProfileUpdateRequest,
     JobseekerProfileUpdateResponse,
 )
+from app.schemas.matching import (
+    JobForJobseekerMatchItem,
+    JobForJobseekerMatchResponse,
+    JobseekerForListingMatchItem,
+    JobseekerForListingMatchResponse,
+    MatchJobSummaryPayload,
+    MatchJobseekerSummaryPayload,
+)
 from app.schemas.meta import ApiVersionResponse
 
 __all__ = [
@@ -42,15 +50,21 @@ __all__ = [
     "EmployerProfileResponse",
     "EmployerProfileUpdateRequest",
     "HealthResponse",
+    "JobForJobseekerMatchItem",
+    "JobForJobseekerMatchResponse",
     "JobListingListItemPayload",
     "JobListingPayload",
     "JobListingResponse",
     "JobseekerApplicationSummaryPayload",
+    "JobseekerForListingMatchItem",
+    "JobseekerForListingMatchResponse",
     "JobseekerListItemPayload",
     "JobseekerProfilePayload",
     "JobseekerProfileResponse",
     "JobseekerProfileUpdateRequest",
     "JobseekerProfileUpdateResponse",
+    "MatchJobSummaryPayload",
+    "MatchJobseekerSummaryPayload",
     "UpdateEmployerReviewRequest",
     "UpdateEmployerReviewResponse",
     "UpdateListingReviewRequest",
