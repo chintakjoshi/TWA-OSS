@@ -1,7 +1,10 @@
 from functools import lru_cache
+from pathlib import Path
 
 from pydantic import AliasChoices, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+BASE_DIR = Path(__file__).resolve().parents[2]
 
 
 class Settings(BaseSettings):
@@ -31,6 +34,17 @@ class Settings(BaseSettings):
     cors_origins: str = Field(
         default="http://localhost:5173,http://localhost:5174,http://localhost:5175",
         validation_alias="TWA_CORS_ORIGINS",
+    )
+    gtfs_feed_path: Path = Field(
+        default=BASE_DIR / "data" / "metro_stl_gtfs.zip",
+        validation_alias="TWA_GTFS_FEED_PATH",
+    )
+    transit_stop_radius_miles: float = Field(default=0.5, validation_alias="TWA_TRANSIT_STOP_RADIUS_MILES")
+    geocoding_timeout_seconds: float = Field(default=10.0, validation_alias="TWA_GEOCODING_TIMEOUT_SECONDS")
+    geocoding_user_agent: str = Field(default="twa-backend/0.1.0", validation_alias="TWA_GEOCODING_USER_AGENT")
+    geocoding_base_url: str = Field(
+        default="https://nominatim.openstreetmap.org/search",
+        validation_alias="TWA_GEOCODING_BASE_URL",
     )
 
     model_config = SettingsConfigDict(

@@ -23,7 +23,7 @@ The TWA backend uses `auth-service-sdk` middleware to trust `authSDK` bearer tok
 Copy-Item .env.example .env
 ```
 
-2. Make sure the local auth checkout exists at `\Desktop\authSDK-1.0.2` or update `AUTHSDK_PATH` in `.env`. This is only needed for the local Docker auth service build.
+2. Make sure the local auth checkout exists at `C:\Users\srava\Desktop\authSDK-1.0.2` or update `AUTHSDK_PATH` in `.env`. This is only needed for the local Docker auth service build.
 
 3. Start the full stack:
 
@@ -84,6 +84,12 @@ cd ..\employer; npm run dev
 cd ..\admin; npm run dev
 ```
 
+## Transit Data
+
+Transit accessibility uses the official Metro St. Louis GTFS feed at `https://www.metrostlouis.org/Transit/google_transit.zip` and stores the local copy at `backend/data/metro_stl_gtfs.zip`.
+
+If the feed is missing or geocoding fails, listing creation still succeeds, but `job_lat`, `job_lon`, and `transit_accessible` may remain `null` until a later recompute.
+
 ## Database Migrations
 
 Alembic is configured in `backend/alembic.ini` and `backend/migrations/`.
@@ -133,9 +139,6 @@ The backend now installs `auth-service-sdk` from the official `authSDK` GitHub r
 - [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)
 - [LICENSE](LICENSE)
 
-
 ## CI
 
 GitHub Actions CI lives in `.github/workflows/ci.yml` and currently runs backend tests plus builds all three frontend apps on every push, pull request, and manual dispatch.
-
-

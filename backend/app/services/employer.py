@@ -20,6 +20,8 @@ from app.services.common import (
     build_paginated_response,
     ensure_found,
 )
+from app.services.geocoding import geocode_address
+from app.services.transit import compute_transit_accessibility
 
 
 EMPLOYER_ALLOWED_FILTERS = {
@@ -42,6 +44,7 @@ LISTING_ALLOWED_SORTS = {
 }
 
 
+
 def _charge_flags_payload(*, sex_offense: bool, violent: bool, armed: bool, children: bool, drug: bool, theft: bool) -> ChargeFlagsPayload:
     return ChargeFlagsPayload(
         sex_offense=sex_offense,
@@ -51,6 +54,7 @@ def _charge_flags_payload(*, sex_offense: bool, violent: bool, armed: bool, chil
         drug=drug,
         theft=theft,
     )
+
 
 
 def serialize_employer(employer: Employer):
@@ -73,6 +77,7 @@ def serialize_employer(employer: Employer):
         created_at=employer.created_at,
         updated_at=employer.updated_at,
     )
+
 
 
 def serialize_listing(listing: JobListing, *, include_employer: bool = False):
@@ -112,18 +117,57 @@ def serialize_listing(listing: JobListing, *, include_employer: bool = False):
     return payload_type(**kwargs)
 
 
-def get_employer_by_app_user_id(session: Session, app_user_id: UUID) -> Employer | None:
-    statement = (
-        select(Employer)
-        .options(joinedload(Employer.app_user))
-        .where(Employer.app_user_id == app_user_id)
+
+def _enrich_listing_location_data(listing: JobListing) -> str | None:
+    if not listing.location_address or not listing.city or not listing.zip:
+        listing.job_lat = None
+        listing.job_lon = None
+        listing.transit_accessible = None
+        return "Listing location is incomplete, so geocoding and transit computation were skipped."
+
+    geocoded = geocode_address(
+        address=listing.location_address,
+        city=listing.city,
+        zip_code=listing.zip,
     )
+    if geocoded is None:
+        listing.job_lat = None
+        listing.job_lon = None
+        listing.transit_accessible = None
+        return "Geocoding failed for the listing address."
+
+    listing.job_lat = geocoded.latitude
+    listing.job_lon = geocoded.longitude
+    transit_result = compute_transit_accessibility(job_lat=listing.job_lat, job_lon=listing.job_lon)
+    listing.transit_accessible = transit_result.transit_accessible
+    return transit_result.warning
+
+
+
+def _write_location_warning_audit(session: Session, *, actor_id: UUID, listing: JobListing, warning: str | None) -> None:
+    if warning is None:
+        return
+    write_audit(
+        session,
+        actor_id=actor_id,
+        action="listing.location_warning",
+        entity_type="job_listing",
+        entity_id=listing.id,
+        new_value={"warning": warning},
+    )
+
+
+
+def get_employer_by_app_user_id(session: Session, app_user_id: UUID) -> Employer | None:
+    statement = select(Employer).options(joinedload(Employer.app_user)).where(Employer.app_user_id == app_user_id)
     return session.execute(statement).unique().scalar_one_or_none()
+
 
 
 def get_employer_by_id(session: Session, employer_id: UUID) -> Employer | None:
     statement = select(Employer).options(joinedload(Employer.app_user)).where(Employer.id == employer_id)
     return session.execute(statement).unique().scalar_one_or_none()
+
 
 
 def get_listing_by_id(session: Session, listing_id: UUID) -> JobListing | None:
@@ -133,6 +177,7 @@ def get_listing_by_id(session: Session, listing_id: UUID) -> JobListing | None:
         .where(JobListing.id == listing_id)
     )
     return session.execute(statement).unique().scalar_one_or_none()
+
 
 
 def update_employer_profile(session: Session, employer: Employer, payload) -> Employer:
@@ -145,6 +190,7 @@ def update_employer_profile(session: Session, employer: Employer, payload) -> Em
     return employer
 
 
+
 def create_listing(session: Session, employer: Employer, payload) -> JobListing:
     listing = JobListing(
         employer_id=employer.id,
@@ -154,9 +200,6 @@ def create_listing(session: Session, employer: Employer, payload) -> JobListing:
         city=payload.city,
         zip=payload.zip,
         transit_required=TransitRequirement(payload.transit_required),
-        transit_accessible=payload.transit_accessible,
-        job_lat=payload.job_lat,
-        job_lon=payload.job_lon,
         disq_sex_offense=payload.disqualifying_charges.sex_offense,
         disq_violent=payload.disqualifying_charges.violent,
         disq_armed=payload.disqualifying_charges.armed,
@@ -166,8 +209,10 @@ def create_listing(session: Session, employer: Employer, payload) -> JobListing:
         review_status=ListingReviewStatus.PENDING,
         lifecycle_status=ListingLifecycleStatus.OPEN,
     )
+    warning = _enrich_listing_location_data(listing)
     session.add(listing)
     session.flush()
+    _write_location_warning_audit(session, actor_id=employer.app_user_id, listing=listing, warning=warning)
     write_audit(
         session,
         actor_id=employer.app_user_id,
@@ -179,6 +224,7 @@ def create_listing(session: Session, employer: Employer, payload) -> JobListing:
     session.commit()
     session.refresh(listing)
     return ensure_found(get_listing_by_id(session, listing.id), entity_name="Job listing")
+
 
 
 def list_employer_listings(
@@ -207,6 +253,7 @@ def list_employer_listings(
     )
 
 
+
 def list_employers(
     session: Session,
     *,
@@ -229,6 +276,7 @@ def list_employers(
         total_items=total_items,
         pagination=pagination,
     )
+
 
 
 def list_listings(
@@ -261,6 +309,7 @@ def list_listings(
     )
 
 
+
 def review_employer(session: Session, *, employer: Employer, reviewer: AppUser, review_status: str, review_note: str | None) -> Employer:
     old_value = serialize_employer(employer).model_dump(mode="json")
     employer.review_status = EmployerReviewStatus(review_status)
@@ -280,6 +329,7 @@ def review_employer(session: Session, *, employer: Employer, reviewer: AppUser, 
     session.commit()
     session.refresh(employer)
     return employer
+
 
 
 def review_listing(
@@ -303,7 +353,13 @@ def review_listing(
         listing.review_note = review_note
     listing.reviewed_by = reviewer.id
     listing.reviewed_at = datetime.now(timezone.utc)
+
+    warning = None
+    if review_status == ListingReviewStatus.APPROVED.value:
+        warning = _enrich_listing_location_data(listing)
+
     session.flush()
+    _write_location_warning_audit(session, actor_id=reviewer.id, listing=listing, warning=warning)
 
     if lifecycle_status == ListingLifecycleStatus.CLOSED.value:
         action = "listing.closed"

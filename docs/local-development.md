@@ -43,4 +43,4 @@ The repo supports two local workflows:
 - When you use the full Docker workflow, rebuild with `docker compose up --build` after source changes so containers pick up new code.
 - Run `uv run python -m app.db.seed` after migrations if you want the default notification config and an optional staff bootstrap user.
 - `backend/pyproject.toml` pins `auth-service-sdk` to the official `authSDK` GitHub source for `v1.0.2`, so backend installs and CI do not rely on a sibling SDK checkout.
-
+- Transit accessibility uses the official Metro St. Louis GTFS feed at `https://www.metrostlouis.org/Transit/google_transit.zip`, stored locally at `backend/data/metro_stl_gtfs.zip`.
