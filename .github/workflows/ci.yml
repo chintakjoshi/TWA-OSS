@@ -1,0 +1,77 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  backend:
+    name: Backend
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Install backend dependencies
+        run: uv sync --group dev
+
+      - name: Run backend tests
+        run: uv run pytest
+
+      - name: Verify app import
+        run: uv run python -c "from app.main import app; print(app.title)"
+
+  frontend:
+    name: Frontend (${{ matrix.app.name }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        app:
+          - name: jobseeker
+            path: frontend/jobseeker
+          - name: employer
+            path: frontend/employer
+          - name: admin
+            path: frontend/admin
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: ${{ matrix.app.path }}/package-lock.json
+
+      - name: Install frontend dependencies
+        working-directory: ${{ matrix.app.path }}
+        run: npm ci
+
+      - name: Build frontend
+        working-directory: ${{ matrix.app.path }}
+        run: npm run build

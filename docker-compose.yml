@@ -116,7 +116,7 @@ services:
 
   auth-service:
     build:
-      context: ${AUTHSDK_PATH:-../authSDK-1.0.2/authSDK-1.0.2}
+      context: ${AUTHSDK_PATH:-../authSDK-1.0.2}
       dockerfile: docker/Dockerfile
     image: auth-service:local
     container_name: auth-service

@@ -50,22 +50,13 @@ wheels = [
 [[package]]
 name = "auth-service-sdk"
 version = "1.0.2"
-source = { directory = "../../authSDK-1.0.2/authSDK-1.0.2/sdk" }
+source = { git = "https://github.com/chintakjoshi/authSDK.git?subdirectory=sdk&rev=b8a05c17a4ffd045087c12db741cfd9a0df57c27#b8a05c17a4ffd045087c12db741cfd9a0df57c27" }
 dependencies = [
     { name = "cachetools" },
     { name = "fastapi" },
     { name = "httpx" },
     { name = "python-jose", extra = ["cryptography"] },
     { name = "starlette" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "cachetools", specifier = "==5.5.2" },
-    { name = "fastapi", specifier = "==0.129.2" },
-    { name = "httpx", specifier = "==0.28.1" },
-    { name = "python-jose", extras = ["cryptography"], specifier = "==3.5.0" },
-    { name = "starlette", specifier = "==0.41.3" },
 ]
 
 [[package]]
@@ -838,7 +829,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "alembic", specifier = ">=1.16.4" },
-    { name = "auth-service-sdk", directory = "../../authSDK-1.0.2/authSDK-1.0.2/sdk" },
+    { name = "auth-service-sdk", git = "https://github.com/chintakjoshi/authSDK.git?subdirectory=sdk&rev=b8a05c17a4ffd045087c12db741cfd9a0df57c27" },
     { name = "fastapi", specifier = ">=0.116.0" },
     { name = "psycopg", extras = ["binary"], specifier = ">=3.2.9" },
     { name = "pydantic-settings", specifier = ">=2.10.0" },
