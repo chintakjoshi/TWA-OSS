@@ -10,8 +10,4 @@ This project is to help justice-involved jobseekers and second-chance employees.
 
 ## [Contributing to TWA](CONTRIBUTING.md)
 
-## [Developer Guide](DEVELOPER_GUIDE.md)
-
-## [Documentation](DOCUMENTATION.md)
-
 ## [License](LICENSE)
