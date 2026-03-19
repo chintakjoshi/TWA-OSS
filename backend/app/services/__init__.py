@@ -1,3 +1,4 @@
+from app.services.admin import get_admin_dashboard_summary, list_audit_logs, serialize_audit_log
 from app.services.applications import (
     build_job_detail_for_jobseeker,
     create_application,
@@ -115,6 +116,7 @@ __all__ = [
     "ensure_permission",
     "evaluate_jobseeker_listing_match",
     "geocode_address",
+    "get_admin_dashboard_summary",
     "get_application_by_id",
     "get_auth_provider_identity",
     "get_eligible_jobs_for_jobseeker",
@@ -133,6 +135,7 @@ __all__ = [
     "get_visible_job_listing_by_id",
     "is_jobseeker_profile_complete",
     "list_admin_applications",
+    "list_audit_logs",
     "list_employer_listings",
     "list_employers",
     "list_jobseekers",
@@ -154,6 +157,7 @@ __all__ = [
     "serialize_admin_application",
     "serialize_application",
     "serialize_application_update_result",
+    "serialize_audit_log",
     "serialize_employer",
     "serialize_jobseeker",
     "serialize_jobseeker_update_result",

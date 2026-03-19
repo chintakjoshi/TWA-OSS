@@ -1,3 +1,4 @@
+from app.schemas.admin import AdminDashboardPayload, AuditLogPayload
 from app.schemas.applications import (
     AdminApplicationJobSummaryPayload,
     AdminApplicationJobseekerSummaryPayload,
@@ -63,6 +64,7 @@ __all__ = [
     "AdminApplicationJobSummaryPayload",
     "AdminApplicationJobseekerSummaryPayload",
     "AdminApplicationListItemPayload",
+    "AdminDashboardPayload",
     "AdminJobseekerDetailResponse",
     "AdminJobseekerUpdateRequest",
     "AdminJobseekerUpdateResponse",
@@ -71,6 +73,7 @@ __all__ = [
     "ApplicationPayload",
     "ApplicationResponse",
     "AppUserPayload",
+    "AuditLogPayload",
     "AuthBootstrapRequest",
     "AuthBootstrapResponse",
     "AuthMeResponse",
