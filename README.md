@@ -23,7 +23,7 @@ The TWA backend uses `auth-service-sdk` middleware to trust `authSDK` bearer tok
 Copy-Item .env.example .env
 ```
 
-2. Make sure the sibling auth repo exists at `C:\Users\chint\Desktop\authSDK` or update `AUTHSDK_PATH` in `.env`.
+2. Make sure the local auth checkout exists at `C:\Users\chint\Desktop\authSDK-1.0.2\authSDK-1.0.2` or update `AUTHSDK_PATH` in `.env`.
 
 3. Start the full stack:
 
@@ -117,6 +117,10 @@ MailHog is included for local notification testing.
 - SMTP host: `localhost`
 - SMTP port: `1025`
 - Web UI: `http://localhost:8025`
+
+## SDK Integration Note
+
+The backend now consumes `auth-service-sdk` from the sibling `authSDK-1.0.2` checkout via `backend/pyproject.toml` and `tool.uv.sources`. The upstream packaging fix means the real `sdk` package now installs correctly, so `backend/sdk` is no longer needed.
 
 ## Key Docs
 

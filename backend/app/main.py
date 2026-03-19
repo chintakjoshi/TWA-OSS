@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import get_settings
 from app.core.exceptions import register_exception_handlers
+from app.core.middleware import PathAwareJWTAuthMiddleware
 from app.routers import router as api_router
 
 
@@ -25,6 +26,15 @@ def create_app() -> FastAPI:
             allow_credentials=True,
             allow_methods=["*"],
             allow_headers=["*"],
+        )
+
+    if settings.auth_enabled:
+        app.add_middleware(
+            PathAwareJWTAuthMiddleware,
+            auth_base_url=settings.auth_base_url,
+            expected_audience=settings.twa_auth_audience,
+            public_exact_paths={"/health", settings.api_v1_prefix, f"{settings.api_v1_prefix}/health", "/openapi.json"},
+            public_path_prefixes=("/docs", "/redoc"),
         )
 
     register_exception_handlers(app)
