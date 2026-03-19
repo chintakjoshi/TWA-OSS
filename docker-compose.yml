@@ -1,5 +1,42 @@
+x-auth-service-env: &auth-service-env
+  APP__ENVIRONMENT: ${AUTH_SERVICE_ENVIRONMENT:-development}
+  APP__SERVICE: ${AUTH_SERVICE_NAME:-auth-service}
+  APP__HOST: 0.0.0.0
+  APP__PORT: "8000"
+  APP__LOG_LEVEL: ${AUTH_SERVICE_LOG_LEVEL:-INFO}
+  DATABASE__URL: ${AUTH_SERVICE_DATABASE_URL:-postgresql+asyncpg://postgres@auth-postgres:5432/auth_service}
+  REDIS__URL: ${AUTH_SERVICE_REDIS_URL:-redis://auth-redis:6379/0}
+  JWT__ALGORITHM: RS256
+  JWT__ACCESS_TOKEN_TTL_SECONDS: "900"
+  JWT__REFRESH_TOKEN_TTL_SECONDS: "604800"
+  OAUTH__GOOGLE_CLIENT_ID: ${AUTH_GOOGLE_CLIENT_ID:-local-google-client-id}
+  OAUTH__GOOGLE_CLIENT_SECRET: ${AUTH_GOOGLE_CLIENT_SECRET:-local-google-client-secret}
+  OAUTH__GOOGLE_REDIRECT_URI: ${AUTH_GOOGLE_REDIRECT_URI:-http://localhost:8000/auth/oauth/google/callback}
+  OAUTH__REDIRECT_URI_ALLOWLIST: '${AUTH_REDIRECT_URI_ALLOWLIST:-["http://localhost:8000/auth/oauth/google/callback"]}'
+  SAML__SP_ENTITY_ID: ${AUTH_SAML_SP_ENTITY_ID:-local-sp-entity}
+  SAML__SP_ACS_URL: ${AUTH_SAML_SP_ACS_URL:-http://localhost:8000/auth/saml/callback}
+  SAML__SP_X509_CERT: ${AUTH_SAML_SP_X509_CERT:-local-sp-cert}
+  SAML__SP_PRIVATE_KEY: ${AUTH_SAML_SP_PRIVATE_KEY:-local-sp-private-key}
+  SAML__IDP_ENTITY_ID: ${AUTH_SAML_IDP_ENTITY_ID:-local-idp-entity}
+  SAML__IDP_SSO_URL: ${AUTH_SAML_IDP_SSO_URL:-https://idp.example.com/sso}
+  SAML__IDP_X509_CERT: ${AUTH_SAML_IDP_X509_CERT:-local-idp-cert}
+  RATE_LIMIT__DEFAULT_REQUESTS_PER_MINUTE: "120"
+  RATE_LIMIT__LOGIN_REQUESTS_PER_MINUTE: "10"
+  RATE_LIMIT__TOKEN_REQUESTS_PER_MINUTE: "30"
+  RETENTION__ENABLE_RETENTION_PURGE: "false"
+  RETENTION__AUDIT_LOG_RETENTION_DAYS: "90"
+  RETENTION__SESSION_LOG_RETENTION_DAYS: "30"
+  RETENTION__PURGE_CRON: "0 3 * * *"
+  EMAIL__MAILHOG_HOST: mailhog
+  EMAIL__MAILHOG_PORT: "1025"
+  EMAIL__EMAIL_FROM: ${AUTH_EMAIL_FROM:-auth@localhost}
+  EMAIL__EMAIL_VERIFY_TTL_SECONDS: "86400"
+  SIGNING_KEYS__ROTATION_OVERLAP_SECONDS: "900"
+  SIGNING_KEYS__ENCRYPTION_KEY: ${AUTH_SIGNING_KEYS_ENCRYPTION_KEY:-local-dev-signing-keys-encryption-key}
+  WEBHOOK__SECRET_ENCRYPTION_KEY: ${AUTH_WEBHOOK_SECRET_ENCRYPTION_KEY:-local-dev-webhook-secret-encryption-key}
+
 services:
-  postgres:
+  twa-postgres:
     image: postgres:17
     container_name: twa-postgres
     restart: unless-stopped
@@ -7,10 +44,259 @@ services:
       POSTGRES_DB: twa
       POSTGRES_USER: twa
       POSTGRES_PASSWORD: twa
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U twa -d twa"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     ports:
       - "5432:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - twa_postgres_data:/var/lib/postgresql/data
+    networks:
+      - twa-network
+
+  auth-postgres:
+    image: postgres:16
+    container_name: auth-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: auth_service
+      POSTGRES_USER: postgres
+      POSTGRES_HOST_AUTH_METHOD: trust
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d auth_service"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    ports:
+      - "5433:5432"
+    volumes:
+      - auth_postgres_data:/var/lib/postgresql/data
+    networks:
+      - twa-network
+
+  auth-redis:
+    image: redis:7
+    container_name: auth-redis
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    ports:
+      - "6380:6379"
+    networks:
+      - twa-network
+
+  adminer:
+    image: adminer:5
+    container_name: twa-adminer
+    restart: unless-stopped
+    depends_on:
+      twa-postgres:
+        condition: service_healthy
+      auth-postgres:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    networks:
+      - twa-network
+
+  mailhog:
+    image: mailhog/mailhog
+    container_name: twa-mailhog
+    restart: unless-stopped
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+    networks:
+      - twa-network
+
+  auth-service:
+    build:
+      context: ${AUTHSDK_PATH:-../authSDK}
+      dockerfile: docker/Dockerfile
+    image: auth-service:local
+    container_name: auth-service
+    depends_on:
+      auth-postgres:
+        condition: service_healthy
+      auth-redis:
+        condition: service_healthy
+      mailhog:
+        condition: service_started
+    environment:
+      <<: *auth-service-env
+    command: >
+      /bin/sh -c '
+      if [ -z "$$JWT__PRIVATE_KEY_PEM" ] || [ -z "$$JWT__PUBLIC_KEY_PEM" ]; then
+        openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048 -out /tmp/private.pem &&
+        openssl rsa -pubout -in /tmp/private.pem -out /tmp/public.pem &&
+        export JWT__PRIVATE_KEY_PEM="$$(cat /tmp/private.pem)" &&
+        export JWT__PUBLIC_KEY_PEM="$$(cat /tmp/public.pem)";
+      fi;
+      alembic upgrade head &&
+      uvicorn app.main:app --host 0.0.0.0 --port 8000
+      '
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health/ready"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    ports:
+      - "8000:8000"
+    networks:
+      - twa-network
+
+  auth-webhook-worker:
+    image: auth-service:local
+    container_name: auth-webhook-worker
+    depends_on:
+      auth-postgres:
+        condition: service_healthy
+      auth-redis:
+        condition: service_healthy
+      auth-service:
+        condition: service_healthy
+    environment:
+      <<: *auth-service-env
+      WEBHOOK__QUEUE_NAME: ${AUTH_WEBHOOK_QUEUE_NAME:-webhooks}
+      WEBHOOK__REQUEST_TIMEOUT_SECONDS: "10"
+      WEBHOOK__RESPONSE_BODY_MAX_CHARS: "1000"
+    command: >
+      /bin/sh -c '
+      if [ -z "$$JWT__PRIVATE_KEY_PEM" ] || [ -z "$$JWT__PUBLIC_KEY_PEM" ]; then
+        openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048 -out /tmp/private.pem &&
+        openssl rsa -pubout -in /tmp/private.pem -out /tmp/public.pem &&
+        export JWT__PRIVATE_KEY_PEM="$$(cat /tmp/private.pem)" &&
+        export JWT__PUBLIC_KEY_PEM="$$(cat /tmp/public.pem)";
+      fi;
+      alembic upgrade head &&
+      python worker.py
+      '
+    networks:
+      - twa-network
+
+  auth-webhook-scheduler:
+    image: auth-service:local
+    container_name: auth-webhook-scheduler
+    depends_on:
+      auth-postgres:
+        condition: service_healthy
+      auth-redis:
+        condition: service_healthy
+      auth-service:
+        condition: service_healthy
+    environment:
+      <<: *auth-service-env
+      WEBHOOK__QUEUE_NAME: ${AUTH_WEBHOOK_QUEUE_NAME:-webhooks}
+      WEBHOOK__REQUEST_TIMEOUT_SECONDS: "10"
+      WEBHOOK__RESPONSE_BODY_MAX_CHARS: "1000"
+    command: >
+      /bin/sh -c '
+      if [ -z "$$JWT__PRIVATE_KEY_PEM" ] || [ -z "$$JWT__PUBLIC_KEY_PEM" ]; then
+        openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048 -out /tmp/private.pem &&
+        openssl rsa -pubout -in /tmp/private.pem -out /tmp/public.pem &&
+        export JWT__PRIVATE_KEY_PEM="$$(cat /tmp/private.pem)" &&
+        export JWT__PUBLIC_KEY_PEM="$$(cat /tmp/public.pem)";
+      fi;
+      alembic upgrade head &&
+      python scheduler.py
+      '
+    networks:
+      - twa-network
+
+  twa-backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: twa-backend
+    restart: unless-stopped
+    depends_on:
+      twa-postgres:
+        condition: service_healthy
+      auth-service:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql+psycopg://twa:twa@twa-postgres:5432/twa
+      AUTH_BASE_URL: http://auth-service:8000
+      TWA_AUTH_AUDIENCE: twa-api
+      TWA_ENVIRONMENT: development
+      TWA_DEBUG: "true"
+      TWA_CORS_ORIGINS: http://localhost:5173,http://localhost:5174,http://localhost:5175
+    command: >
+      /bin/sh -c '
+      uv run alembic upgrade head &&
+      uv run uvicorn app.main:app --host 0.0.0.0 --port 9000
+      '
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+    ports:
+      - "9000:9000"
+    networks:
+      - twa-network
+
+  frontend-jobseeker:
+    build:
+      context: ./frontend/jobseeker
+      dockerfile: Dockerfile
+    container_name: twa-jobseeker
+    restart: unless-stopped
+    depends_on:
+      twa-backend:
+        condition: service_healthy
+    environment:
+      VITE_TWA_API_BASE_URL: http://localhost:9000
+      VITE_AUTH_BASE_URL: http://localhost:8000
+    ports:
+      - "5173:5173"
+    networks:
+      - twa-network
+
+  frontend-employer:
+    build:
+      context: ./frontend/employer
+      dockerfile: Dockerfile
+    container_name: twa-employer
+    restart: unless-stopped
+    depends_on:
+      twa-backend:
+        condition: service_healthy
+    environment:
+      VITE_TWA_API_BASE_URL: http://localhost:9000
+      VITE_AUTH_BASE_URL: http://localhost:8000
+    ports:
+      - "5174:5174"
+    networks:
+      - twa-network
+
+  frontend-admin:
+    build:
+      context: ./frontend/admin
+      dockerfile: Dockerfile
+    container_name: twa-admin
+    restart: unless-stopped
+    depends_on:
+      twa-backend:
+        condition: service_healthy
+    environment:
+      VITE_TWA_API_BASE_URL: http://localhost:9000
+      VITE_AUTH_BASE_URL: http://localhost:8000
+    ports:
+      - "5175:5175"
+    networks:
+      - twa-network
 
 volumes:
-  postgres_data:
+  twa_postgres_data:
+  auth_postgres_data:
+
+networks:
+  twa-network:
