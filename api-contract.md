@@ -76,9 +76,12 @@ Paginated response shape:
 ```json
 {
   "items": [],
-  "page": 1,
-  "page_size": 20,
-  "total": 125
+  "meta": {
+    "page": 1,
+    "page_size": 20,
+    "total_items": 125,
+    "total_pages": 7
+  }
 }
 ```
 
@@ -542,6 +545,7 @@ If the user is authenticated in `authSDK` but has not been bootstrapped into TWA
 ```
 
 ---
+
 ## Jobseeker Endpoints
 
 ## `GET /api/v1/jobseekers/me`
@@ -658,9 +662,12 @@ Returns all approved, open job listings, including eligibility information for t
       "ineligibility_tag": "14.2 miles from your zip code"
     }
   ],
-  "page": 1,
-  "page_size": 20,
-  "total": 1
+  "meta": {
+    "page": 1,
+    "page_size": 20,
+    "total_items": 1,
+    "total_pages": 1
+  }
 }
 ```
 
@@ -762,9 +769,12 @@ Returns applications for the logged-in jobseeker.
       }
     }
   ],
-  "page": 1,
-  "page_size": 20,
-  "total": 1
+  "meta": {
+    "page": 1,
+    "page_size": 20,
+    "total_items": 1,
+    "total_pages": 1
+  }
 }
 ```
 
@@ -784,7 +794,7 @@ Returns the logged-in employer profile and review state.
 
 ```json
 {
-  "profile": {
+  "employer": {
     "id": "c61c2014-33e8-4d0e-a7ef-f609d5ab0aeb",
     "org_name": "Northside Logistics",
     "contact_name": "Sam Carter",
@@ -823,7 +833,7 @@ Updates the logged-in employer profile.
 
 ```json
 {
-  "profile": {
+  "employer": {
     "id": "c61c2014-33e8-4d0e-a7ef-f609d5ab0aeb",
     "updated_at": "2026-03-18T23:15:00Z"
   }
@@ -907,9 +917,12 @@ Returns listings owned by the logged-in employer.
       "created_at": "2026-03-18T23:15:00Z"
     }
   ],
-  "page": 1,
-  "page_size": 20,
-  "total": 1
+  "meta": {
+    "page": 1,
+    "page_size": 20,
+    "total_items": 1,
+    "total_pages": 1
+  }
 }
 ```
 
@@ -978,9 +991,12 @@ Returns applicants for a listing owned by the logged-in employer.
       }
     }
   ],
-  "page": 1,
-  "page_size": 20,
-  "total": 1
+  "meta": {
+    "page": 1,
+    "page_size": 20,
+    "total_items": 1,
+    "total_pages": 1
+  }
 }
 ```
 
@@ -1033,9 +1049,12 @@ Returns employers pending review.
       "created_at": "2026-03-18T23:15:00Z"
     }
   ],
-  "page": 1,
-  "page_size": 20,
-  "total": 1
+  "meta": {
+    "page": 1,
+    "page_size": 20,
+    "total_items": 1,
+    "total_pages": 1
+  }
 }
 ```
 
@@ -1103,9 +1122,12 @@ Returns all employers with filter support.
       "review_status": "approved"
     }
   ],
-  "page": 1,
-  "page_size": 20,
-  "total": 1
+  "meta": {
+    "page": 1,
+    "page_size": 20,
+    "total_items": 1,
+    "total_pages": 1
+  }
 }
 ```
 
@@ -1134,9 +1156,12 @@ Returns listings pending review.
       "created_at": "2026-03-18T23:15:00Z"
     }
   ],
-  "page": 1,
-  "page_size": 20,
-  "total": 1
+  "meta": {
+    "page": 1,
+    "page_size": 20,
+    "total_items": 1,
+    "total_pages": 1
+  }
 }
 ```
 
@@ -1220,9 +1245,12 @@ Returns all listings with filters.
       "lifecycle_status": "open"
     }
   ],
-  "page": 1,
-  "page_size": 20,
-  "total": 1
+  "meta": {
+    "page": 1,
+    "page_size": 20,
+    "total_items": 1,
+    "total_pages": 1
+  }
 }
 ```
 
@@ -1262,9 +1290,12 @@ Returns all jobseekers with filters.
       "status": "active"
     }
   ],
-  "page": 1,
-  "page_size": 20,
-  "total": 1
+  "meta": {
+    "page": 1,
+    "page_size": 20,
+    "total_items": 1,
+    "total_pages": 1
+  }
 }
 ```
 
@@ -1440,9 +1471,12 @@ Returns all applications with filters.
       }
     }
   ],
-  "page": 1,
-  "page_size": 20,
-  "total": 1
+  "meta": {
+    "page": 1,
+    "page_size": 20,
+    "total_items": 1,
+    "total_pages": 1
+  }
 }
 ```
 
@@ -1574,9 +1608,12 @@ Returns audit entries with filters.
       "timestamp": "2026-03-18T23:15:00Z"
     }
   ],
-  "page": 1,
-  "page_size": 20,
-  "total": 1
+  "meta": {
+    "page": 1,
+    "page_size": 20,
+    "total_items": 1,
+    "total_pages": 1
+  }
 }
 ```
 
@@ -1613,9 +1650,12 @@ Any authenticated role.
       "created_at": "2026-03-18T23:15:00Z"
     }
   ],
-  "page": 1,
-  "page_size": 20,
-  "total": 1
+  "meta": {
+    "page": 1,
+    "page_size": 20,
+    "total_items": 1,
+    "total_pages": 1
+  }
 }
 ```
 
@@ -1703,6 +1743,7 @@ When enabled, the employer receives the full applicant profile including charge 
 - Employers do not receive matching screens unless future requirements add them
 
 ---
+
 ## Audit Requirements
 
 The backend must write audit entries for:
@@ -1762,6 +1803,3 @@ These are not blockers for the contract, but should be decided during implementa
 After this contract, the next most useful document is:
 
 - a database schema and migration spec with final tables, constraints, indexes, and audit behavior
-
-
-

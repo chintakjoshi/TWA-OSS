@@ -19,31 +19,49 @@ function EmployerBootstrapCard() {
   return (
     <Card strong>
       <CardBody className="stack-md">
-        <div className="cluster" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
+        <div
+          className="cluster"
+          style={{ justifyContent: 'space-between', alignItems: 'center' }}
+        >
           <div className="stack-sm">
             <p className="portal-eyebrow">Local Bootstrap</p>
             <h2 className="card-title">Create the TWA employer account.</h2>
-            <p className="card-copy">This is the TWA-specific step after authSDK authentication.</p>
+            <p className="card-copy">
+              This is the TWA-specific step after authSDK authentication.
+            </p>
           </div>
           <Badge tone="warning">Bootstrap required</Badge>
         </div>
-        <form className="stack-md" onSubmit={(event) => {
-          event.preventDefault()
-          const form = new FormData(event.currentTarget)
-          setBusy(true)
-          void auth.bootstrapRole({
-            role: 'employer',
-            employer_profile: {
-              org_name: String(form.get('org_name') ?? ''),
-              contact_name: String(form.get('contact_name') ?? ''),
-              phone: String(form.get('phone') ?? ''),
-            },
-          }).finally(() => setBusy(false))
-        }}>
-          <Field label="Organization name"><input name="org_name" required /></Field>
-          <Field label="Contact name"><input name="contact_name" /></Field>
-          <Field label="Phone"><input name="phone" /></Field>
-          <Button disabled={busy} type="submit">{busy ? 'Bootstrapping...' : 'Bootstrap as Employer'}</Button>
+        <form
+          className="stack-md"
+          onSubmit={(event) => {
+            event.preventDefault()
+            const form = new FormData(event.currentTarget)
+            setBusy(true)
+            void auth
+              .bootstrapRole({
+                role: 'employer',
+                employer_profile: {
+                  org_name: String(form.get('org_name') ?? ''),
+                  contact_name: String(form.get('contact_name') ?? ''),
+                  phone: String(form.get('phone') ?? ''),
+                },
+              })
+              .finally(() => setBusy(false))
+          }}
+        >
+          <Field label="Organization name">
+            <input name="org_name" required />
+          </Field>
+          <Field label="Contact name">
+            <input name="contact_name" />
+          </Field>
+          <Field label="Phone">
+            <input name="phone" />
+          </Field>
+          <Button disabled={busy} type="submit">
+            {busy ? 'Bootstrapping...' : 'Bootstrap as Employer'}
+          </Button>
         </form>
       </CardBody>
     </Card>
@@ -54,7 +72,12 @@ export function EmployerAuthPage() {
   const auth = useAuth()
   const authStateLabel = getAuthStateLabel(auth.authMe)
   const reviewStatus = auth.authMe?.employer_review_status ?? 'pending'
-  const reviewTone = reviewStatus === 'approved' ? 'success' : reviewStatus === 'rejected' ? 'danger' : 'warning'
+  const reviewTone =
+    reviewStatus === 'approved'
+      ? 'success'
+      : reviewStatus === 'rejected'
+        ? 'danger'
+        : 'warning'
 
   return (
     <div className="auth-portal-shell employer-auth-shell">
@@ -65,23 +88,45 @@ export function EmployerAuthPage() {
           supportPoints={portalChecks}
         >
           <div className="stack-md">
-            <Card strong><CardBody className="stack-md"><p className="card-copy">Current state: <strong>{authStateLabel.replaceAll('_', ' ')}</strong></p></CardBody></Card>
+            <Card strong>
+              <CardBody className="stack-md">
+                <p className="card-copy">
+                  Current state:{' '}
+                  <strong>{authStateLabel.replaceAll('_', ' ')}</strong>
+                </p>
+              </CardBody>
+            </Card>
             {!auth.authMe?.app_user ? <EmployerBootstrapCard /> : null}
 
             {auth.authMe?.app_user?.app_role === 'employer' ? (
               <Card strong>
                 <CardBody className="stack-md">
-                  <div className="cluster" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div
+                    className="cluster"
+                    style={{
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                    }}
+                  >
                     <div className="stack-sm">
                       <p className="portal-eyebrow">Employer session</p>
-                      <h2 className="card-title">Your employer workspace is ready.</h2>
-                      <p className="card-copy">The dashboard will show whether you are still waiting for staff approval or can start posting listings.</p>
+                      <h2 className="card-title">
+                        Your employer workspace is ready.
+                      </h2>
+                      <p className="card-copy">
+                        The dashboard will show whether you are still waiting
+                        for staff approval or can start posting listings.
+                      </p>
                     </div>
                     <Badge tone={reviewTone}>{reviewStatus}</Badge>
                   </div>
                   <div className="inline-actions">
-                    <Link className="button button-primary" to="/dashboard">Open dashboard</Link>
-                    <Button tone="secondary" onClick={() => void auth.logout()}>Sign out</Button>
+                    <Link className="button button-primary" to="/dashboard">
+                      Open dashboard
+                    </Link>
+                    <Button tone="secondary" onClick={() => void auth.logout()}>
+                      Sign out
+                    </Button>
                   </div>
                 </CardBody>
               </Card>

@@ -20,6 +20,7 @@ TWA connects justice-involved individuals with fair-chance employers in Missouri
 ## Users and Roles
 
 ### 1. Jobseeker (public-facing portal)
+
 - Justice-involved individuals referred to or self-directed to TWA
 - Self-register through the auth service, then bootstrap into the TWA app
 - Fill out a profile including location, transportation type, and self-reported charge categories
@@ -28,6 +29,7 @@ TWA connects justice-involved individuals with fair-chance employers in Missouri
 - Can be marked as hired by a specific employer
 
 ### 2. Employer (public-facing portal, limited)
+
 - Organizations willing to hire fair-chance candidates
 - Self-register through the auth service, then bootstrap into the TWA app
 - Employer account goes into a pending state until approved by TWA staff
@@ -35,6 +37,7 @@ TWA connects justice-involved individuals with fair-chance employers in Missouri
 - Can view the status of their submitted listings
 
 ### 3. TWA Staff (internal admin panel)
+
 - Manage employer account approval queue
 - Manage job listing review and approval queue
 - Manage jobseeker profiles
@@ -47,11 +50,11 @@ TWA connects justice-involved individuals with fair-chance employers in Missouri
 
 ## Three Interfaces, One Backend
 
-| Interface | Audience | Access |
-|---|---|---|
-| Jobseeker Portal | Jobseekers | Public, requires auth-service signup + TWA bootstrap |
-| Employer Portal | Employers | Public, requires auth-service signup + TWA bootstrap + staff approval |
-| Staff Admin Panel | TWA staff | Internal, staff-created local app accounts tied to auth identities |
+| Interface         | Audience   | Access                                                                |
+| ----------------- | ---------- | --------------------------------------------------------------------- |
+| Jobseeker Portal  | Jobseekers | Public, requires auth-service signup + TWA bootstrap                  |
+| Employer Portal   | Employers  | Public, requires auth-service signup + TWA bootstrap + staff approval |
+| Staff Admin Panel | TWA staff  | Internal, staff-created local app accounts tied to auth identities    |
 
 All three frontends share one TWA backend API and one external auth service.
 
@@ -59,14 +62,14 @@ All three frontends share one TWA backend API and one external auth service.
 
 ## Tech Stack
 
-| Layer | Choice |
-|---|---|
-| Frontend | React + Tailwind CSS |
-| Backend | Python (FastAPI) |
-| Database | PostgreSQL |
-| Auth Service | `authSDK` (`Desktop/authSDK` / `github.com/chintakjoshi/authSDK`) |
-| Auth Integration | `auth-service-sdk` middleware in the TWA backend |
-| Hosting | Railway or Render (suggested starting point) |
+| Layer            | Choice                                                            |
+| ---------------- | ----------------------------------------------------------------- |
+| Frontend         | React + Tailwind CSS                                              |
+| Backend          | Python (FastAPI)                                                  |
+| Database         | PostgreSQL                                                        |
+| Auth Service     | `authSDK` (`Desktop/authSDK` / `github.com/chintakjoshi/authSDK`) |
+| Auth Integration | `auth-service-sdk` middleware in the TWA backend                  |
+| Hosting          | Railway or Render (suggested starting point)                      |
 
 All three frontends share one backend API. Authentication is handled by `authSDK`, while TWA-specific roles and business authorization are handled by the TWA backend.
 
@@ -379,6 +382,7 @@ def write_audit(
 The `old_value` and `new_value` fields are stored as JSONB so they can hold any shape of record snapshot.
 
 Staff can query the audit log in the admin panel filtered by:
+
 - Actor
 - Entity type
 - Entity ID
@@ -390,11 +394,11 @@ Staff can query the audit log in the admin panel filtered by:
 
 A single config record controlled by TWA staff with three independent toggles:
 
-| Setting | Default | Description |
-|---|---|---|
-| Notify staff on apply | ON | Staff receives a notification when a jobseeker submits an application |
-| Notify employer on apply | OFF | Employer receives a notification when a jobseeker applies to their listing |
-| Share applicant info with employer | OFF | When ON, employers can see which jobseekers have applied to their listings. When OFF, applicant data is visible only to TWA staff. |
+| Setting                            | Default | Description                                                                                                                        |
+| ---------------------------------- | ------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| Notify staff on apply              | ON      | Staff receives a notification when a jobseeker submits an application                                                              |
+| Notify employer on apply           | OFF     | Employer receives a notification when a jobseeker applies to their listing                                                         |
+| Share applicant info with employer | OFF     | When ON, employers can see which jobseekers have applied to their listings. When OFF, applicant data is visible only to TWA staff. |
 
 Staff can toggle these at any time from the admin panel. Changes are recorded in the audit log.
 
@@ -408,42 +412,42 @@ When the "share applicant info with employer" toggle is OFF, the employer portal
 
 ### Jobseeker Portal
 
-| Screen | Description |
-|---|---|
-| Signup / Login | Frontend uses `authSDK` for signup, login, password reset, and auth lifecycle |
-| Bootstrap | Choose or confirm local TWA role if needed |
-| Profile Setup | Location, transit type, charge categories, with sensitivity messaging |
-| Job Board | All active listings; each card shows role, employer, location, transit requirement, and a simple eligibility tag. Ineligible listings show a distance tag rather than a detailed reason. No charge-based ineligibility reason is ever surfaced to the jobseeker. |
-| Job Detail | Full listing details, apply button disabled if not eligible |
-| My Applications | List of submitted applications and their statuses |
+| Screen          | Description                                                                                                                                                                                                                                                      |
+| --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Signup / Login  | Frontend uses `authSDK` for signup, login, password reset, and auth lifecycle                                                                                                                                                                                    |
+| Bootstrap       | Choose or confirm local TWA role if needed                                                                                                                                                                                                                       |
+| Profile Setup   | Location, transit type, charge categories, with sensitivity messaging                                                                                                                                                                                            |
+| Job Board       | All active listings; each card shows role, employer, location, transit requirement, and a simple eligibility tag. Ineligible listings show a distance tag rather than a detailed reason. No charge-based ineligibility reason is ever surfaced to the jobseeker. |
+| Job Detail      | Full listing details, apply button disabled if not eligible                                                                                                                                                                                                      |
+| My Applications | List of submitted applications and their statuses                                                                                                                                                                                                                |
 
 ### Employer Portal
 
-| Screen | Description |
-|---|---|
-| Signup / Login | Frontend uses `authSDK` for signup, login, password reset, and auth lifecycle |
-| Bootstrap | Create local employer app record after auth-service signup/login |
-| Dashboard | Status of employer account (pending / approved / rejected) |
-| Submit Job Listing | Title, description, location, transit requirement, disqualifying charge categories |
-| My Listings | All submitted listings with review and lifecycle statuses |
+| Screen                   | Description                                                                                                                                               |
+| ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Signup / Login           | Frontend uses `authSDK` for signup, login, password reset, and auth lifecycle                                                                             |
+| Bootstrap                | Create local employer app record after auth-service signup/login                                                                                          |
+| Dashboard                | Status of employer account (pending / approved / rejected)                                                                                                |
+| Submit Job Listing       | Title, description, location, transit requirement, disqualifying charge categories                                                                        |
+| My Listings              | All submitted listings with review and lifecycle statuses                                                                                                 |
 | Applicants (conditional) | Only visible if TWA staff has enabled applicant sharing. Shows applicants per listing, including charge-category fields under the current business rules. |
 
 ### Staff Admin Panel
 
-| Screen | Description |
-|---|---|
-| Dashboard | Summary counts: pending employer approvals, pending listing reviews, active jobseekers, open applications |
-| Employer Queue | List of pending employer registrations; approve or reject with optional note |
-| Employer List | All employers, filterable by status |
-| Listing Queue | Pending job listings awaiting review; approve, reject, or request changes |
-| Listing Manager | All listings, filterable by status, employer, location |
-| Jobseeker List | All jobseekers, filterable by status, charge categories, transit type |
-| Jobseeker Profile | Full profile view and edit; see applications; mark as hired |
-| Match: Jobseeker View | Select a jobseeker, see all jobs with eligibility indicated |
-| Match: Listing View | Select a listing, see all jobseekers with eligibility indicated |
-| Application Tracker | All applications across all jobseekers; update status; mark as hired |
-| Notification Config | Toggle staff and employer notification settings |
-| Audit Log | Searchable, filterable log of all staff actions |
+| Screen                | Description                                                                                               |
+| --------------------- | --------------------------------------------------------------------------------------------------------- |
+| Dashboard             | Summary counts: pending employer approvals, pending listing reviews, active jobseekers, open applications |
+| Employer Queue        | List of pending employer registrations; approve or reject with optional note                              |
+| Employer List         | All employers, filterable by status                                                                       |
+| Listing Queue         | Pending job listings awaiting review; approve, reject, or request changes                                 |
+| Listing Manager       | All listings, filterable by status, employer, location                                                    |
+| Jobseeker List        | All jobseekers, filterable by status, charge categories, transit type                                     |
+| Jobseeker Profile     | Full profile view and edit; see applications; mark as hired                                               |
+| Match: Jobseeker View | Select a jobseeker, see all jobs with eligibility indicated                                               |
+| Match: Listing View   | Select a listing, see all jobseekers with eligibility indicated                                           |
+| Application Tracker   | All applications across all jobseekers; update status; mark as hired                                      |
+| Notification Config   | Toggle staff and employer notification settings                                                           |
+| Audit Log             | Searchable, filterable log of all staff actions                                                           |
 
 ---
 
@@ -478,10 +482,10 @@ Transit accessibility for each job listing is determined using the official Metr
 
 ### Data Sources
 
-| Source | URL | Format |
-|---|---|---|
-| Metro St. Louis GTFS feed | https://www.metrostlouis.org/developer-resources/ | GTFS (ZIP containing CSV files) |
-| Metro St. Louis Open Data Portal | https://data-metrostl.opendata.arcgis.com | GeoJSON, CSV, WFS API |
+| Source                           | URL                                               | Format                          |
+| -------------------------------- | ------------------------------------------------- | ------------------------------- |
+| Metro St. Louis GTFS feed        | https://www.metrostlouis.org/developer-resources/ | GTFS (ZIP containing CSV files) |
+| Metro St. Louis Open Data Portal | https://data-metrostl.opendata.arcgis.com         | GeoJSON, CSV, WFS API           |
 
 The GTFS feed covers 60 routes and 5,123 stops including MetroBus, MetroLink light rail, and Metro Call-A-Ride. Download `stops.txt` from the feed; it contains the lat/lon of every stop in the network.
 

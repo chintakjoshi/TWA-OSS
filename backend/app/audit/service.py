@@ -10,7 +10,6 @@ from sqlalchemy.orm import Session
 from app.models import AuditLog
 
 
-
 def build_audit_snapshot(value: Any) -> dict[str, Any] | None:
     if value is None:
         return None
@@ -21,7 +20,6 @@ def build_audit_snapshot(value: Any) -> dict[str, Any] | None:
     if isinstance(value, dict):
         return jsonable_encoder(value)
     return jsonable_encoder(value)
-
 
 
 def write_audit(

@@ -10,7 +10,6 @@ class EmailDeliveryError(Exception):
     pass
 
 
-
 def send_email_message(*, recipient: str, subject: str, body: str) -> None:
     settings = get_settings()
     if not settings.notification_email_enabled:

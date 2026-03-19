@@ -14,7 +14,6 @@ class GeocodeResult:
     display_name: str | None = None
 
 
-
 def geocode_address(
     *,
     address: str | None,
@@ -26,7 +25,11 @@ def geocode_address(
         return None
 
     settings = get_settings()
-    query = ", ".join(part for part in [address.strip(), city.strip(), zip_code.strip(), "USA"] if part)
+    query = ", ".join(
+        part
+        for part in [address.strip(), city.strip(), zip_code.strip(), "USA"]
+        if part
+    )
     headers = {"User-Agent": settings.geocoding_user_agent}
     params = {"q": query, "format": "jsonv2", "limit": 1, "countrycodes": "us"}
 
@@ -34,16 +37,23 @@ def geocode_address(
         return _request_geocode(client=client, headers=headers, params=params)
 
     try:
-        with httpx.Client(timeout=settings.geocoding_timeout_seconds, headers=headers) as request_client:
-            return _request_geocode(client=request_client, headers=headers, params=params)
+        with httpx.Client(
+            timeout=settings.geocoding_timeout_seconds, headers=headers
+        ) as request_client:
+            return _request_geocode(
+                client=request_client, headers=headers, params=params
+            )
     except httpx.HTTPError:
         return None
 
 
-
-def _request_geocode(*, client: httpx.Client, headers: dict[str, str], params: dict[str, str | int]) -> GeocodeResult | None:
+def _request_geocode(
+    *, client: httpx.Client, headers: dict[str, str], params: dict[str, str | int]
+) -> GeocodeResult | None:
     try:
-        response = client.get(get_settings().geocoding_base_url, headers=headers, params=params)
+        response = client.get(
+            get_settings().geocoding_base_url, headers=headers, params=params
+        )
         response.raise_for_status()
     except httpx.HTTPError:
         return None

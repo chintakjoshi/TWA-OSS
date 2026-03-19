@@ -7,10 +7,17 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
 from app.models.enums import JobseekerStatus, TransitType, enum_type
-from app.models.mixins import AddressMixin, ChargeFlagsMixin, TimestampMixin, UUIDPrimaryKeyMixin
+from app.models.mixins import (
+    AddressMixin,
+    ChargeFlagsMixin,
+    TimestampMixin,
+    UUIDPrimaryKeyMixin,
+)
 
 
-class Jobseeker(UUIDPrimaryKeyMixin, TimestampMixin, AddressMixin, ChargeFlagsMixin, Base):
+class Jobseeker(
+    UUIDPrimaryKeyMixin, TimestampMixin, AddressMixin, ChargeFlagsMixin, Base
+):
     __tablename__ = "jobseekers"
     __table_args__ = (
         UniqueConstraint("app_user_id", name="uq_jobseekers_app_user_id"),
@@ -19,10 +26,14 @@ class Jobseeker(UUIDPrimaryKeyMixin, TimestampMixin, AddressMixin, ChargeFlagsMi
         Index("ix_jobseekers_zip", "zip"),
     )
 
-    app_user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("app_users.id"), nullable=False)
+    app_user_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("app_users.id"), nullable=False
+    )
     full_name: Mapped[str | None] = mapped_column(String(255))
     phone: Mapped[str | None] = mapped_column(String(32))
-    transit_type: Mapped[TransitType | None] = mapped_column(enum_type(TransitType), nullable=True)
+    transit_type: Mapped[TransitType | None] = mapped_column(
+        enum_type(TransitType), nullable=True
+    )
     status: Mapped[JobseekerStatus] = mapped_column(
         enum_type(JobseekerStatus),
         nullable=False,

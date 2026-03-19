@@ -10,8 +10,15 @@ from sqlalchemy.orm import Session
 
 from app.audit import write_audit
 from app.db.seeds import ensure_notification_config
-from app.models import AppUser, Application, Employer, JobListing, Notification, NotificationConfig
-from app.models.enums import AppRole, ApplicationStatus, NotificationChannel
+from app.models import (
+    Application,
+    AppUser,
+    Employer,
+    JobListing,
+    Notification,
+    NotificationConfig,
+)
+from app.models.enums import ApplicationStatus, AppRole, NotificationChannel
 from app.schemas.notifications import (
     NotificationConfigPayload,
     NotificationPayload,
@@ -33,8 +40,9 @@ class NotificationRecipient:
     email: str
 
 
-
-def serialize_notification_config(config: NotificationConfig) -> NotificationConfigPayload:
+def serialize_notification_config(
+    config: NotificationConfig,
+) -> NotificationConfigPayload:
     return NotificationConfigPayload(
         notify_staff_on_apply=config.notify_staff_on_apply,
         notify_employer_on_apply=config.notify_employer_on_apply,
@@ -42,7 +50,6 @@ def serialize_notification_config(config: NotificationConfig) -> NotificationCon
         updated_by=config.updated_by,
         updated_at=config.updated_at,
     )
-
 
 
 def serialize_notification(notification: Notification) -> NotificationPayload:
@@ -57,19 +64,22 @@ def serialize_notification(notification: Notification) -> NotificationPayload:
     )
 
 
+def serialize_notification_read_result(
+    notification: Notification,
+) -> NotificationReadResultPayload:
+    return NotificationReadResultPayload(
+        id=notification.id, read_at=notification.read_at
+    )
 
-def serialize_notification_read_result(notification: Notification) -> NotificationReadResultPayload:
-    return NotificationReadResultPayload(id=notification.id, read_at=notification.read_at)
 
-
-
-def get_notification_config(session: Session, *, persist_if_missing: bool = False) -> NotificationConfig:
+def get_notification_config(
+    session: Session, *, persist_if_missing: bool = False
+) -> NotificationConfig:
     config = ensure_notification_config(session)
     if persist_if_missing and session.in_transaction():
         session.commit()
         session.refresh(config)
     return config
-
 
 
 def update_notification_config(
@@ -107,7 +117,6 @@ def update_notification_config(
     return config
 
 
-
 def list_notifications_for_user(
     session: Session,
     *,
@@ -122,7 +131,9 @@ def list_notifications_for_user(
     if unread_only:
         base_statement = base_statement.where(Notification.read_at.is_(None))
 
-    total_items = session.execute(select(func.count()).select_from(base_statement.subquery())).scalar_one()
+    total_items = session.execute(
+        select(func.count()).select_from(base_statement.subquery())
+    ).scalar_one()
     statement = base_statement.order_by(Notification.created_at.desc())
     statement = apply_pagination(statement, pagination)
     items = session.execute(statement).scalars().all()
@@ -133,8 +144,9 @@ def list_notifications_for_user(
     )
 
 
-
-def get_notification_for_user(session: Session, *, notification_id: UUID, app_user_id: UUID) -> Notification | None:
+def get_notification_for_user(
+    session: Session, *, notification_id: UUID, app_user_id: UUID
+) -> Notification | None:
     statement = select(Notification).where(
         Notification.id == notification_id,
         Notification.app_user_id == app_user_id,
@@ -143,14 +155,14 @@ def get_notification_for_user(session: Session, *, notification_id: UUID, app_us
     return session.execute(statement).scalar_one_or_none()
 
 
-
-def mark_notification_read(session: Session, *, notification: Notification) -> Notification:
+def mark_notification_read(
+    session: Session, *, notification: Notification
+) -> Notification:
     if notification.read_at is None:
         notification.read_at = datetime.now(timezone.utc)
         session.commit()
         session.refresh(notification)
     return notification
-
 
 
 def _recipient_from_app_user(app_user: AppUser | None) -> NotificationRecipient | None:
@@ -159,12 +171,16 @@ def _recipient_from_app_user(app_user: AppUser | None) -> NotificationRecipient 
     return NotificationRecipient(app_user_id=app_user.id, email=app_user.email)
 
 
-
 def _get_staff_recipients(session: Session) -> list[NotificationRecipient]:
-    statement = select(AppUser).where(AppUser.app_role == AppRole.STAFF, AppUser.is_active.is_(True))
+    statement = select(AppUser).where(
+        AppUser.app_role == AppRole.STAFF, AppUser.is_active.is_(True)
+    )
     users = session.execute(statement).scalars().all()
-    return [recipient for user in users if (recipient := _recipient_from_app_user(user)) is not None]
-
+    return [
+        recipient
+        for user in users
+        if (recipient := _recipient_from_app_user(user)) is not None
+    ]
 
 
 def dispatch_notification(
@@ -198,7 +214,6 @@ def dispatch_notification(
             send_email_message(recipient=recipient.email, subject=title, body=body)
 
 
-
 def safe_dispatch_notification(
     session: Session,
     *,
@@ -220,11 +235,16 @@ def safe_dispatch_notification(
             send_email=send_email,
         )
     except EmailDeliveryError as exc:
-        logger.warning("notification_email_failed", extra={"event_type": event_type, "error": str(exc)})
+        logger.warning(
+            "notification_email_failed",
+            extra={"event_type": event_type, "error": str(exc)},
+        )
     except Exception as exc:
         session.rollback()
-        logger.warning("notification_dispatch_failed", extra={"event_type": event_type, "error": str(exc)})
-
+        logger.warning(
+            "notification_dispatch_failed",
+            extra={"event_type": event_type, "error": str(exc)},
+        )
 
 
 def notify_application_submitted(session: Session, *, application: Application) -> None:
@@ -242,7 +262,9 @@ def notify_application_submitted(session: Session, *, application: Application) 
         )
 
     if config.notify_employer_on_apply:
-        employer_recipient = _recipient_from_app_user(application.job_listing.employer.app_user)
+        employer_recipient = _recipient_from_app_user(
+            application.job_listing.employer.app_user
+        )
         if employer_recipient is not None:
             safe_dispatch_notification(
                 session,
@@ -251,7 +273,6 @@ def notify_application_submitted(session: Session, *, application: Application) 
                 title="New application received",
                 body=f"{jobseeker_name} applied to {listing_title}.",
             )
-
 
 
 def notify_employer_review_decision(session: Session, *, employer: Employer) -> None:
@@ -277,7 +298,6 @@ def notify_employer_review_decision(session: Session, *, employer: Employer) -> 
         )
 
 
-
 def notify_listing_review_decision(session: Session, *, listing: JobListing) -> None:
     recipient = _recipient_from_app_user(listing.employer.app_user)
     if recipient is None:
@@ -299,7 +319,6 @@ def notify_listing_review_decision(session: Session, *, listing: JobListing) -> 
             title="Job listing update",
             body=f"Your job listing '{listing.title}' was not approved. Please review staff feedback and update it when ready.",
         )
-
 
 
 def notify_application_status_changed(

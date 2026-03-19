@@ -122,6 +122,23 @@ The bootstrap migration and the first real schema migration are both included, s
 
 Set `TWA_SEED_STAFF_AUTH_USER_ID` and `TWA_SEED_STAFF_EMAIL` in `.env` if you want the seed command to create or refresh a local staff app user in addition to the default notification config row.
 
+## Code Quality
+
+Backend quality tools are configured in `backend/pyproject.toml`:
+
+```powershell
+cd backend
+uv run ruff check .
+uv run black --check .
+```
+
+Frontend quality tools are configured at the repo root:
+
+```powershell
+npm run lint:frontend
+npm run format:check
+```
+
 ## API Docs
 
 FastAPI serves OpenAPI docs out of the box:

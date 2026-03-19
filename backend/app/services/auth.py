@@ -30,27 +30,45 @@ class AuthMeResult:
     next_step: str | None
 
 
-
 def get_auth_provider_identity(request: Request) -> AuthProviderIdentity:
     user = getattr(request.state, "user", None)
     if not isinstance(user, dict):
-        raise AppError(status_code=401, code="AUTH_REQUIRED", detail="Authentication is required.")
+        raise AppError(
+            status_code=401, code="AUTH_REQUIRED", detail="Authentication is required."
+        )
     if user.get("type") != "user":
-        raise AppError(status_code=403, code="FORBIDDEN", detail="Only authenticated end users may access this resource.")
+        raise AppError(
+            status_code=403,
+            code="FORBIDDEN",
+            detail="Only authenticated end users may access this resource.",
+        )
 
     user_id = user.get("user_id")
     email = user.get("email")
     role = user.get("role")
-    if not isinstance(user_id, str) or not isinstance(email, str) or not isinstance(role, str):
-        raise AppError(status_code=401, code="INVALID_IDENTITY", detail="Authenticated identity is missing required claims.")
+    if (
+        not isinstance(user_id, str)
+        or not isinstance(email, str)
+        or not isinstance(role, str)
+    ):
+        raise AppError(
+            status_code=401,
+            code="INVALID_IDENTITY",
+            detail="Authenticated identity is missing required claims.",
+        )
 
     try:
         auth_user_id = UUID(user_id)
     except ValueError as exc:
-        raise AppError(status_code=401, code="INVALID_IDENTITY", detail="Authenticated identity has an invalid subject.") from exc
+        raise AppError(
+            status_code=401,
+            code="INVALID_IDENTITY",
+            detail="Authenticated identity has an invalid subject.",
+        ) from exc
 
-    return AuthProviderIdentity(auth_user_id=auth_user_id, email=email, auth_provider_role=role)
-
+    return AuthProviderIdentity(
+        auth_user_id=auth_user_id, email=email, auth_provider_role=role
+    )
 
 
 def resolve_auth_context(*, request: Request, session: Session, identity) -> object:
@@ -75,11 +93,11 @@ def resolve_auth_context(*, request: Request, session: Session, identity) -> obj
     return auth_context
 
 
-
-def get_app_user_by_auth_user_id(session: Session, auth_user_id: UUID) -> AppUser | None:
+def get_app_user_by_auth_user_id(
+    session: Session, auth_user_id: UUID
+) -> AppUser | None:
     statement = select(AppUser).where(AppUser.auth_user_id == auth_user_id)
     return session.execute(statement).scalar_one_or_none()
-
 
 
 def bootstrap_user(
@@ -104,7 +122,7 @@ def bootstrap_user(
         if existing_role is not None and existing_role != requested_role:
             raise AppError(
                 status_code=409,
-                code="ROLE_CONFLICT",
+                code="CONFLICT",
                 detail="This account has already been bootstrapped with a different TWA role.",
             )
     else:
@@ -119,12 +137,16 @@ def bootstrap_user(
         session.flush()
 
     if requested_role == "jobseeker":
-        profile = session.execute(select(Jobseeker).where(Jobseeker.app_user_id == app_user.id)).scalar_one_or_none()
+        profile = session.execute(
+            select(Jobseeker).where(Jobseeker.app_user_id == app_user.id)
+        ).scalar_one_or_none()
         if profile is None:
             session.add(Jobseeker(app_user_id=app_user.id))
         next_step = "complete_jobseeker_profile"
     else:
-        profile = session.execute(select(Employer).where(Employer.app_user_id == app_user.id)).scalar_one_or_none()
+        profile = session.execute(
+            select(Employer).where(Employer.app_user_id == app_user.id)
+        ).scalar_one_or_none()
         if profile is None:
             session.add(
                 Employer(
@@ -142,7 +164,6 @@ def bootstrap_user(
     return app_user, next_step
 
 
-
 def build_auth_me(*, session: Session, identity: AuthProviderIdentity) -> AuthMeResult:
     app_user = get_app_user_by_auth_user_id(session, identity.auth_user_id)
     if app_user is None:
@@ -155,20 +176,30 @@ def build_auth_me(*, session: Session, identity: AuthProviderIdentity) -> AuthMe
         )
 
     if not app_user.is_active:
-        raise AppError(status_code=403, code="ACCOUNT_INACTIVE", detail="This account is inactive.")
+        raise AppError(
+            status_code=403, code="ACCOUNT_INACTIVE", detail="This account is inactive."
+        )
 
     profile_complete = True
     employer_review_status = None
     next_step = None
 
     if app_user.app_role == AppRole.JOBSEEKER:
-        profile = session.execute(select(Jobseeker).where(Jobseeker.app_user_id == app_user.id)).scalar_one_or_none()
+        profile = session.execute(
+            select(Jobseeker).where(Jobseeker.app_user_id == app_user.id)
+        ).scalar_one_or_none()
         profile_complete = is_jobseeker_profile_complete(profile)
         next_step = None if profile_complete else "complete_jobseeker_profile"
     elif app_user.app_role == AppRole.EMPLOYER:
-        employer = session.execute(select(Employer).where(Employer.app_user_id == app_user.id)).scalar_one_or_none()
+        employer = session.execute(
+            select(Employer).where(Employer.app_user_id == app_user.id)
+        ).scalar_one_or_none()
         employer_review_status = employer.review_status.value if employer else None
-        next_step = None if employer_review_status == EmployerReviewStatus.APPROVED.value else "await_staff_approval"
+        next_step = (
+            None
+            if employer_review_status == EmployerReviewStatus.APPROVED.value
+            else "await_staff_approval"
+        )
 
     return AuthMeResult(
         app_user=app_user,

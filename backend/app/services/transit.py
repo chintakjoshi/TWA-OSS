@@ -30,8 +30,9 @@ _STOP_CACHE: dict[Path, tuple[float, list[TransitStop]]] = {}
 _US_ZIP_LOOKUP = pgeocode.Nominatim("us")
 
 
-
-def load_gtfs_stops(feed_path: Path | None = None, *, force_refresh: bool = False) -> list[TransitStop]:
+def load_gtfs_stops(
+    feed_path: Path | None = None, *, force_refresh: bool = False
+) -> list[TransitStop]:
     settings = get_settings()
     resolved_path = Path(feed_path or settings.gtfs_feed_path).resolve()
     if not resolved_path.exists():
@@ -60,20 +61,25 @@ def load_gtfs_stops(feed_path: Path | None = None, *, force_refresh: bool = Fals
     return stops
 
 
-
-def haversine_distance_miles(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
+def haversine_distance_miles(
+    lat1: float, lon1: float, lat2: float, lon2: float
+) -> float:
     earth_radius_miles = 3958.7613
     lat1_rad, lon1_rad = math.radians(lat1), math.radians(lon1)
     lat2_rad, lon2_rad = math.radians(lat2), math.radians(lon2)
     d_lat = lat2_rad - lat1_rad
     d_lon = lon2_rad - lon1_rad
-    a = math.sin(d_lat / 2) ** 2 + math.cos(lat1_rad) * math.cos(lat2_rad) * math.sin(d_lon / 2) ** 2
+    a = (
+        math.sin(d_lat / 2) ** 2
+        + math.cos(lat1_rad) * math.cos(lat2_rad) * math.sin(d_lon / 2) ** 2
+    )
     c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
     return earth_radius_miles * c
 
 
-
-def compute_transit_accessibility(*, job_lat: float | None, job_lon: float | None) -> TransitComputationResult:
+def compute_transit_accessibility(
+    *, job_lat: float | None, job_lon: float | None
+) -> TransitComputationResult:
     if job_lat is None or job_lon is None:
         return TransitComputationResult(
             transit_accessible=None,
@@ -92,7 +98,10 @@ def compute_transit_accessibility(*, job_lat: float | None, job_lon: float | Non
         )
 
     nearest_distance = min(
-        (haversine_distance_miles(job_lat, job_lon, stop.latitude, stop.longitude) for stop in stops),
+        (
+            haversine_distance_miles(job_lat, job_lon, stop.latitude, stop.longitude)
+            for stop in stops
+        ),
         default=None,
     )
     if nearest_distance is None:
@@ -109,8 +118,9 @@ def compute_transit_accessibility(*, job_lat: float | None, job_lon: float | Non
     )
 
 
-
-def zip_to_job_distance_miles(zip_code: str | None, *, job_lat: float | None, job_lon: float | None) -> float | None:
+def zip_to_job_distance_miles(
+    zip_code: str | None, *, job_lat: float | None, job_lon: float | None
+) -> float | None:
     if not zip_code or job_lat is None or job_lon is None:
         return None
 
@@ -120,6 +130,8 @@ def zip_to_job_distance_miles(zip_code: str | None, *, job_lat: float | None, jo
     if zip_lat is None or zip_lon is None:
         return None
     try:
-        return haversine_distance_miles(float(zip_lat), float(zip_lon), job_lat, job_lon)
+        return haversine_distance_miles(
+            float(zip_lat), float(zip_lon), job_lat, job_lon
+        )
     except (TypeError, ValueError):
         return None

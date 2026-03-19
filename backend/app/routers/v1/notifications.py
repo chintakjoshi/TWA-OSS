@@ -19,7 +19,9 @@ from app.services.notifications import (
 )
 
 settings = get_settings()
-router = APIRouter(prefix=f"{settings.api_v1_prefix}/notifications", tags=["notifications"])
+router = APIRouter(
+    prefix=f"{settings.api_v1_prefix}/notifications", tags=["notifications"]
+)
 
 
 @router.get("/me", response_model=PaginatedResponse[NotificationPayload])
@@ -44,8 +46,14 @@ def patch_notification_read(
     session: Session = Depends(get_db_session),
 ) -> NotificationReadResponse:
     notification = ensure_found(
-        get_notification_for_user(session, notification_id=notification_id, app_user_id=auth_context.app_user_id),
+        get_notification_for_user(
+            session,
+            notification_id=notification_id,
+            app_user_id=auth_context.app_user_id,
+        ),
         entity_name="Notification",
     )
     notification = mark_notification_read(session, notification=notification)
-    return NotificationReadResponse(notification=serialize_notification_read_result(notification))
+    return NotificationReadResponse(
+        notification=serialize_notification_read_result(notification)
+    )

@@ -17,10 +17,18 @@ export function EmployerLandingPage() {
         <CardBody className="stack-md">
           <p className="portal-eyebrow">Employer Portal</p>
           <h1>Hire through a reviewed, staff-supported TWA workflow.</h1>
-          <p className="portal-copy">Phase 13C turns the employer app into a real workflow: auth, employer profile, approval status, listing submission, listing monitoring, and applicants when sharing is enabled.</p>
+          <p className="portal-copy">
+            Phase 13C turns the employer app into a real workflow: auth,
+            employer profile, approval status, listing submission, listing
+            monitoring, and applicants when sharing is enabled.
+          </p>
           <div className="portal-actions">
-            <Link className="button button-primary" to="/auth">Open employer auth flow</Link>
-            <a className="button button-secondary" href={publicAppUrl}>Back to Welcome Page</a>
+            <Link className="button button-primary" to="/auth">
+              Open employer auth flow
+            </Link>
+            <a className="button button-secondary" href={publicAppUrl}>
+              Back to Welcome Page
+            </a>
           </div>
         </CardBody>
       </Card>
@@ -29,9 +37,16 @@ export function EmployerLandingPage() {
         <CardBody className="portal-panel-body">
           <div>
             <p className="portal-label">What 13C adds</p>
-            <ul className="portal-list">{portalChecks.map((item) => <li key={item}>{item}</li>)}</ul>
+            <ul className="portal-list">
+              {portalChecks.map((item) => (
+                <li key={item}>{item}</li>
+              ))}
+            </ul>
           </div>
-          <div className="portal-meter"><span>Employer flow</span><strong>Review, post, monitor</strong></div>
+          <div className="portal-meter">
+            <span>Employer flow</span>
+            <strong>Review, post, monitor</strong>
+          </div>
         </CardBody>
       </Card>
     </main>

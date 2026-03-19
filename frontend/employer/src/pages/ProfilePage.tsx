@@ -3,7 +3,10 @@ import { useEffect, useState } from 'react'
 import { useAuth } from '@shared/auth/AuthProvider'
 import { Alert, Badge, Card, CardBody } from '@shared/ui/primitives'
 
-import { getMyEmployerProfile, updateMyEmployerProfile } from '../api/employerApi'
+import {
+  getMyEmployerProfile,
+  updateMyEmployerProfile,
+} from '../api/employerApi'
 import { EmployerHeader } from '../components/EmployerHeader'
 import { ErrorState, LoadingState } from '../components/PageState'
 import { EmployerProfileForm } from '../components/EmployerProfileForm'
@@ -40,7 +43,9 @@ export function EmployerProfilePage() {
     }
   }, [auth])
 
-  async function handleSubmit(values: Parameters<typeof updateMyEmployerProfile>[1]) {
+  async function handleSubmit(
+    values: Parameters<typeof updateMyEmployerProfile>[1]
+  ) {
     setIsSaving(true)
     setError(null)
     setSuccess(null)
@@ -48,40 +53,84 @@ export function EmployerProfilePage() {
       const response = await updateMyEmployerProfile(auth.requestTwa, values)
       setProfile(response.employer)
       await auth.reload()
-      setSuccess('Employer profile saved. Staff can review the latest details from here.')
+      setSuccess(
+        'Employer profile saved. Staff can review the latest details from here.'
+      )
     } catch (nextError) {
-      setError(nextError instanceof Error ? nextError.message : 'Unable to save the employer profile right now.')
+      setError(
+        nextError instanceof Error
+          ? nextError.message
+          : 'Unable to save the employer profile right now.'
+      )
     } finally {
       setIsSaving(false)
     }
   }
 
-  const reviewStatus = profile?.review_status ?? auth.authMe?.employer_review_status ?? 'pending'
-  const reviewTone = reviewStatus === 'approved' ? 'success' : reviewStatus === 'rejected' ? 'danger' : 'warning'
+  const reviewStatus =
+    profile?.review_status ?? auth.authMe?.employer_review_status ?? 'pending'
+  const reviewTone =
+    reviewStatus === 'approved'
+      ? 'success'
+      : reviewStatus === 'rejected'
+        ? 'danger'
+        : 'warning'
 
   return (
     <div className="page-frame stack-md employer-shell-page">
       <EmployerHeader />
       <Card strong>
         <CardBody className="stack-md">
-          <div className="cluster" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
+          <div
+            className="cluster"
+            style={{ justifyContent: 'space-between', alignItems: 'center' }}
+          >
             <div className="stack-sm">
               <p className="portal-eyebrow">Employer Profile</p>
-              <h2 className="card-title">Keep the organization record ready for staff review.</h2>
-              <p className="card-copy">This profile is the source of truth for employer approval and future reassessment.</p>
+              <h2 className="card-title">
+                Keep the organization record ready for staff review.
+              </h2>
+              <p className="card-copy">
+                This profile is the source of truth for employer approval and
+                future reassessment.
+              </p>
             </div>
             <Badge tone={reviewTone}>{reviewStatus}</Badge>
           </div>
 
-          {success ? <Alert tone="success"><p>{success}</p></Alert> : null}
-          {profile?.review_note ? <Alert tone={reviewStatus === 'rejected' ? 'danger' : 'info'}><p>{profile.review_note}</p></Alert> : null}
-          {profile?.reviewed_at ? <p className="card-copy">Last reviewed: {formatDateTime(profile.reviewed_at)}</p> : null}
-          {error ? <Alert tone="danger"><p>{error}</p></Alert> : null}
+          {success ? (
+            <Alert tone="success">
+              <p>{success}</p>
+            </Alert>
+          ) : null}
+          {profile?.review_note ? (
+            <Alert tone={reviewStatus === 'rejected' ? 'danger' : 'info'}>
+              <p>{profile.review_note}</p>
+            </Alert>
+          ) : null}
+          {profile?.reviewed_at ? (
+            <p className="card-copy">
+              Last reviewed: {formatDateTime(profile.reviewed_at)}
+            </p>
+          ) : null}
+          {error ? (
+            <Alert tone="danger">
+              <p>{error}</p>
+            </Alert>
+          ) : null}
 
-          {isLoading ? <LoadingState title="Loading employer profile..." /> : null}
-          {!isLoading && error && !profile ? <ErrorState title="Profile unavailable" message={error} /> : null}
+          {isLoading ? (
+            <LoadingState title="Loading employer profile..." />
+          ) : null}
+          {!isLoading && error && !profile ? (
+            <ErrorState title="Profile unavailable" message={error} />
+          ) : null}
           {!isLoading && (!error || profile) ? (
-            <EmployerProfileForm isSubmitting={isSaving} onSubmit={handleSubmit} profile={profile} />
+            <EmployerProfileForm
+              isSubmitting={isSaving}
+              onSubmit={handleSubmit}
+              profile={profile}
+            />
           ) : null}
         </CardBody>
       </Card>

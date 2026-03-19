@@ -49,7 +49,11 @@ def auth_identity() -> AuthProviderIdentity:
 
 
 @pytest.fixture()
-def client(monkeypatch: pytest.MonkeyPatch, session_factory, auth_identity: AuthProviderIdentity) -> Generator[TestClient, None, None]:
+def client(
+    monkeypatch: pytest.MonkeyPatch,
+    session_factory,
+    auth_identity: AuthProviderIdentity,
+) -> Generator[TestClient, None, None]:
     monkeypatch.setenv("TWA_AUTH_ENABLED", "false")
     get_settings.cache_clear()
     app = create_app()
@@ -81,7 +85,9 @@ def session(session_factory) -> Generator[Session, None, None]:
         yield session
 
 
-def test_auth_me_returns_bootstrap_step_for_unbootstrapped_user(client: TestClient) -> None:
+def test_auth_me_returns_bootstrap_step_for_unbootstrapped_user(
+    client: TestClient,
+) -> None:
     response = client.get("/api/v1/auth/me")
 
     assert response.status_code == 200
@@ -93,7 +99,9 @@ def test_auth_me_returns_bootstrap_step_for_unbootstrapped_user(client: TestClie
     }
 
 
-def test_bootstrap_jobseeker_creates_local_user_and_profile(client: TestClient, session: Session) -> None:
+def test_bootstrap_jobseeker_creates_local_user_and_profile(
+    client: TestClient, session: Session
+) -> None:
     response = client.post("/api/v1/auth/bootstrap", json={"role": "jobseeker"})
 
     assert response.status_code == 200
@@ -114,7 +122,9 @@ def test_bootstrap_employer_requires_profile(client: TestClient) -> None:
     assert response.status_code == 422
 
 
-def test_bootstrap_employer_creates_pending_employer_profile(client: TestClient, session: Session) -> None:
+def test_bootstrap_employer_creates_pending_employer_profile(
+    client: TestClient, session: Session
+) -> None:
     response = client.post(
         "/api/v1/auth/bootstrap",
         json={
@@ -149,10 +159,12 @@ def test_bootstrap_rejects_role_conflicts(client: TestClient) -> None:
 
     assert first.status_code == 200
     assert second.status_code == 409
-    assert second.json()["error"]["code"] == "ROLE_CONFLICT"
+    assert second.json()["error"]["code"] == "CONFLICT"
 
 
-def test_bootstrap_blocks_non_end_user_role(monkeypatch: pytest.MonkeyPatch, session_factory) -> None:
+def test_bootstrap_blocks_non_end_user_role(
+    monkeypatch: pytest.MonkeyPatch, session_factory
+) -> None:
     monkeypatch.setenv("TWA_AUTH_ENABLED", "false")
     get_settings.cache_clear()
     app = create_app()
@@ -172,7 +184,9 @@ def test_bootstrap_blocks_non_end_user_role(monkeypatch: pytest.MonkeyPatch, ses
     app.dependency_overrides[get_auth_provider_identity] = override_identity
 
     with TestClient(app) as test_client:
-        response = test_client.post("/api/v1/auth/bootstrap", json={"role": "jobseeker"})
+        response = test_client.post(
+            "/api/v1/auth/bootstrap", json={"role": "jobseeker"}
+        )
 
     assert response.status_code == 403
     assert response.json()["error"]["code"] == "FORBIDDEN"
@@ -209,7 +223,9 @@ def test_require_role_blocks_non_staff_users(client: TestClient) -> None:
     assert response.json()["error"]["code"] == "FORBIDDEN"
 
 
-def test_require_role_allows_staff_users(monkeypatch: pytest.MonkeyPatch, session_factory) -> None:
+def test_require_role_allows_staff_users(
+    monkeypatch: pytest.MonkeyPatch, session_factory
+) -> None:
     monkeypatch.setenv("TWA_AUTH_ENABLED", "false")
     get_settings.cache_clear()
     app = create_app()
@@ -226,7 +242,11 @@ def test_require_role_allows_staff_users(monkeypatch: pytest.MonkeyPatch, sessio
             if config is None:
                 session.add(NotificationConfig(id=1))
                 session.flush()
-            user = session.execute(select(AppUser).where(AppUser.auth_user_id == staff_identity.auth_user_id)).scalar_one_or_none()
+            user = session.execute(
+                select(AppUser).where(
+                    AppUser.auth_user_id == staff_identity.auth_user_id
+                )
+            ).scalar_one_or_none()
             if user is None:
                 session.add(
                     AppUser(

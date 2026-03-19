@@ -11,4 +11,5 @@ export const employerAuthClient = createAuthClient({
   storageKey: 'twa-employer-session',
 })
 
-export const publicAppUrl = import.meta.env.VITE_PUBLIC_APP_URL ?? 'http://localhost:5173'
+export const publicAppUrl =
+  import.meta.env.VITE_PUBLIC_APP_URL ?? 'http://localhost:5173'

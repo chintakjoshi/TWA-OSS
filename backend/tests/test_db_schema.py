@@ -49,7 +49,9 @@ def test_ensure_notification_config_is_idempotent(session: Session) -> None:
     assert len(rows) == 1
 
 
-def test_seed_defaults_creates_staff_user_and_notification_config(session: Session) -> None:
+def test_seed_defaults_creates_staff_user_and_notification_config(
+    session: Session,
+) -> None:
     auth_user_id = uuid.uuid4()
 
     results = seed_defaults(
@@ -59,7 +61,9 @@ def test_seed_defaults_creates_staff_user_and_notification_config(session: Sessi
         staff_auth_provider_role="admin",
     )
 
-    app_user = session.execute(select(AppUser).where(AppUser.auth_user_id == auth_user_id)).scalar_one()
+    app_user = session.execute(
+        select(AppUser).where(AppUser.auth_user_id == auth_user_id)
+    ).scalar_one()
     config = session.get(NotificationConfig, 1)
 
     assert results == {"notification_config_created": True, "staff_seeded": True}

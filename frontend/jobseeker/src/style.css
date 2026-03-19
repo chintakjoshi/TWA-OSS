@@ -2,8 +2,16 @@
   --accent: #166b65;
   --accent-strong: #10231f;
   --bg-base:
-    radial-gradient(circle at top left, rgba(250, 197, 98, 0.28), transparent 32%),
-    radial-gradient(circle at 85% 18%, rgba(26, 115, 107, 0.22), transparent 26%),
+    radial-gradient(
+      circle at top left,
+      rgba(250, 197, 98, 0.28),
+      transparent 32%
+    ),
+    radial-gradient(
+      circle at 85% 18%,
+      rgba(26, 115, 107, 0.22),
+      transparent 26%
+    ),
     linear-gradient(180deg, #fff7eb 0%, #eef6f4 48%, #e6efef 100%);
 }
 
@@ -115,7 +123,11 @@ body {
 }
 
 .hero-copy {
-  background: linear-gradient(135deg, rgba(255, 250, 242, 0.94), rgba(248, 255, 252, 0.8));
+  background: linear-gradient(
+    135deg,
+    rgba(255, 250, 242, 0.94),
+    rgba(248, 255, 252, 0.8)
+  );
 }
 
 .hero-panel {

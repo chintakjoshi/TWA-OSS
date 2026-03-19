@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from uuid import UUID
-
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
@@ -28,7 +26,10 @@ def get_my_jobseeker_profile(
     auth_context: AuthContext = Depends(require_jobseeker),
     session: Session = Depends(get_db_session),
 ) -> JobseekerProfileResponse:
-    jobseeker = ensure_found(get_jobseeker_by_app_user_id(session, auth_context.app_user_id), entity_name="Jobseeker")
+    jobseeker = ensure_found(
+        get_jobseeker_by_app_user_id(session, auth_context.app_user_id),
+        entity_name="Jobseeker",
+    )
     return JobseekerProfileResponse(profile=serialize_jobseeker(jobseeker))
 
 
@@ -38,7 +39,10 @@ def patch_my_jobseeker_profile(
     auth_context: AuthContext = Depends(require_jobseeker),
     session: Session = Depends(get_db_session),
 ) -> JobseekerProfileUpdateResponse:
-    jobseeker = ensure_found(get_jobseeker_by_app_user_id(session, auth_context.app_user_id), entity_name="Jobseeker")
+    jobseeker = ensure_found(
+        get_jobseeker_by_app_user_id(session, auth_context.app_user_id),
+        entity_name="Jobseeker",
+    )
     jobseeker = update_jobseeker_profile(
         session,
         jobseeker=jobseeker,
@@ -46,4 +50,6 @@ def patch_my_jobseeker_profile(
         actor_id=auth_context.app_user_id,
         action="jobseeker.profile_updated",
     )
-    return JobseekerProfileUpdateResponse(profile=serialize_jobseeker_update_result(jobseeker))
+    return JobseekerProfileUpdateResponse(
+        profile=serialize_jobseeker_update_result(jobseeker)
+    )

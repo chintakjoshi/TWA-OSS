@@ -31,7 +31,10 @@ from app.schemas.jobseeker import (
     AdminJobseekerUpdateResponse,
     JobseekerListItemPayload,
 )
-from app.schemas.matching import JobForJobseekerMatchResponse, JobseekerForListingMatchResponse
+from app.schemas.matching import (
+    JobForJobseekerMatchResponse,
+    JobseekerForListingMatchResponse,
+)
 from app.schemas.notifications import (
     NotificationConfigPayload,
     NotificationConfigResponse,
@@ -44,7 +47,13 @@ from app.services.applications import (
     serialize_application_update_result,
     update_application_status,
 )
-from app.services.common import PaginationParams, SortParams, ensure_found, get_pagination_params, get_sort_params
+from app.services.common import (
+    PaginationParams,
+    SortParams,
+    ensure_found,
+    get_pagination_params,
+    get_sort_params,
+)
 from app.services.employer import (
     get_employer_by_id,
     get_listing_by_id,
@@ -62,7 +71,10 @@ from app.services.jobseeker import (
     serialize_jobseeker_update_result,
     update_jobseeker_profile,
 )
-from app.services.matching import get_eligible_jobs_for_jobseeker, get_eligible_jobseekers_for_job
+from app.services.matching import (
+    get_eligible_jobs_for_jobseeker,
+    get_eligible_jobseekers_for_job,
+)
 from app.services.notifications import (
     get_notification_config,
     serialize_notification_config,
@@ -80,7 +92,9 @@ def get_admin_dashboard(
     return get_admin_dashboard_summary(session)
 
 
-@router.get("/queue/employers", response_model=PaginatedResponse[EmployerProfilePayload])
+@router.get(
+    "/queue/employers", response_model=PaginatedResponse[EmployerProfilePayload]
+)
 def get_pending_employer_queue(
     pagination: PaginationParams = Depends(get_pagination_params),
     sort: SortParams = Depends(get_sort_params),
@@ -98,7 +112,9 @@ def get_all_employers(
     _: AuthContext = Depends(require_staff),
     session: Session = Depends(get_db_session),
 ) -> PaginatedResponse[EmployerProfilePayload]:
-    return list_employers(session, pagination=pagination, sort=sort, review_status=review_status)
+    return list_employers(
+        session, pagination=pagination, sort=sort, review_status=review_status
+    )
 
 
 @router.patch("/employers/{employer_id}", response_model=UpdateEmployerReviewResponse)
@@ -108,8 +124,12 @@ def patch_employer_review(
     auth_context: AuthContext = Depends(require_staff),
     session: Session = Depends(get_db_session),
 ) -> UpdateEmployerReviewResponse:
-    employer = ensure_found(get_employer_by_id(session, employer_id), entity_name="Employer")
-    reviewer = ensure_found(session.get(AppUser, auth_context.app_user_id), entity_name="Staff user")
+    employer = ensure_found(
+        get_employer_by_id(session, employer_id), entity_name="Employer"
+    )
+    reviewer = ensure_found(
+        session.get(AppUser, auth_context.app_user_id), entity_name="Staff user"
+    )
     employer = review_employer(
         session,
         employer=employer,
@@ -120,7 +140,9 @@ def patch_employer_review(
     return UpdateEmployerReviewResponse(employer=serialize_employer(employer))
 
 
-@router.get("/queue/listings", response_model=PaginatedResponse[JobListingListItemPayload])
+@router.get(
+    "/queue/listings", response_model=PaginatedResponse[JobListingListItemPayload]
+)
 def get_pending_listing_queue(
     pagination: PaginationParams = Depends(get_pagination_params),
     sort: SortParams = Depends(get_sort_params),
@@ -135,6 +157,8 @@ def get_all_listings(
     review_status: str | None = Query(default=None),
     lifecycle_status: str | None = Query(default=None),
     employer_id: UUID | None = Query(default=None),
+    city: str | None = Query(default=None),
+    search: str | None = Query(default=None),
     pagination: PaginationParams = Depends(get_pagination_params),
     sort: SortParams = Depends(get_sort_params),
     _: AuthContext = Depends(require_staff),
@@ -147,6 +171,8 @@ def get_all_listings(
         review_status=review_status,
         lifecycle_status=lifecycle_status,
         employer_id=employer_id,
+        city=city,
+        search=search,
     )
 
 
@@ -157,8 +183,12 @@ def patch_listing_review(
     auth_context: AuthContext = Depends(require_staff),
     session: Session = Depends(get_db_session),
 ) -> UpdateListingReviewResponse:
-    listing = ensure_found(get_listing_by_id(session, listing_id), entity_name="Job listing")
-    reviewer = ensure_found(session.get(AppUser, auth_context.app_user_id), entity_name="Staff user")
+    listing = ensure_found(
+        get_listing_by_id(session, listing_id), entity_name="Job listing"
+    )
+    reviewer = ensure_found(
+        session.get(AppUser, auth_context.app_user_id), entity_name="Staff user"
+    )
     listing = review_listing(
         session,
         listing=listing,
@@ -208,7 +238,9 @@ def get_admin_jobseeker_detail(
     _: AuthContext = Depends(require_staff),
     session: Session = Depends(get_db_session),
 ) -> AdminJobseekerDetailResponse:
-    jobseeker = ensure_found(get_jobseeker_by_id(session, jobseeker_id), entity_name="Jobseeker")
+    jobseeker = ensure_found(
+        get_jobseeker_by_id(session, jobseeker_id), entity_name="Jobseeker"
+    )
     return build_admin_jobseeker_detail(jobseeker)
 
 
@@ -219,7 +251,9 @@ def patch_admin_jobseeker(
     auth_context: AuthContext = Depends(require_staff),
     session: Session = Depends(get_db_session),
 ) -> AdminJobseekerUpdateResponse:
-    jobseeker = ensure_found(get_jobseeker_by_id(session, jobseeker_id), entity_name="Jobseeker")
+    jobseeker = ensure_found(
+        get_jobseeker_by_id(session, jobseeker_id), entity_name="Jobseeker"
+    )
     jobseeker = update_jobseeker_profile(
         session,
         jobseeker=jobseeker,
@@ -227,14 +261,19 @@ def patch_admin_jobseeker(
         actor_id=auth_context.app_user_id,
         action="admin.jobseeker_updated",
     )
-    return AdminJobseekerUpdateResponse(jobseeker=serialize_jobseeker_update_result(jobseeker))
+    return AdminJobseekerUpdateResponse(
+        jobseeker=serialize_jobseeker_update_result(jobseeker)
+    )
 
 
-@router.get("/applications", response_model=PaginatedResponse[AdminApplicationListItemPayload])
+@router.get(
+    "/applications", response_model=PaginatedResponse[AdminApplicationListItemPayload]
+)
 def get_all_applications(
     status: str | None = Query(default=None),
     job_listing_id: UUID | None = Query(default=None),
     jobseeker_id: UUID | None = Query(default=None),
+    employer_id: UUID | None = Query(default=None),
     pagination: PaginationParams = Depends(get_pagination_params),
     sort: SortParams = Depends(get_sort_params),
     _: AuthContext = Depends(require_staff),
@@ -247,17 +286,22 @@ def get_all_applications(
         status=status,
         job_listing_id=job_listing_id,
         jobseeker_id=jobseeker_id,
+        employer_id=employer_id,
     )
 
 
-@router.patch("/applications/{application_id}", response_model=UpdateApplicationStatusResponse)
+@router.patch(
+    "/applications/{application_id}", response_model=UpdateApplicationStatusResponse
+)
 def patch_application_status(
     application_id: UUID,
     payload: UpdateApplicationStatusRequest,
     auth_context: AuthContext = Depends(require_staff),
     session: Session = Depends(get_db_session),
 ) -> UpdateApplicationStatusResponse:
-    application = ensure_found(get_application_by_id(session, application_id), entity_name="Application")
+    application = ensure_found(
+        get_application_by_id(session, application_id), entity_name="Application"
+    )
     application = update_application_status(
         session,
         application=application,
@@ -265,7 +309,9 @@ def patch_application_status(
         status=payload.status,
         close_listing_after_hire=payload.close_listing_after_hire,
     )
-    return UpdateApplicationStatusResponse(application=serialize_application_update_result(application))
+    return UpdateApplicationStatusResponse(
+        application=serialize_application_update_result(application)
+    )
 
 
 @router.get("/config/notifications", response_model=NotificationConfigPayload)
@@ -284,7 +330,11 @@ def patch_admin_notification_config(
     session: Session = Depends(get_db_session),
 ) -> NotificationConfigResponse:
     if not payload.has_updates():
-        raise AppError(status_code=422, code="VALIDATION_ERROR", detail="At least one notification config field must be provided.")
+        raise AppError(
+            status_code=422,
+            code="VALIDATION_ERROR",
+            detail="At least one notification config field must be provided.",
+        )
     config = update_notification_config(
         session,
         actor_id=auth_context.app_user_id,
@@ -319,19 +369,27 @@ def get_admin_audit_log(
     )
 
 
-@router.get("/match/jobseeker/{jobseeker_id}", response_model=JobForJobseekerMatchResponse)
+@router.get(
+    "/match/jobseeker/{jobseeker_id}", response_model=JobForJobseekerMatchResponse
+)
 def get_matches_for_jobseeker(
     jobseeker_id: UUID,
     _: AuthContext = Depends(require_staff),
     session: Session = Depends(get_db_session),
 ) -> JobForJobseekerMatchResponse:
-    return JobForJobseekerMatchResponse(items=get_eligible_jobs_for_jobseeker(session, jobseeker_id))
+    return JobForJobseekerMatchResponse(
+        items=get_eligible_jobs_for_jobseeker(session, jobseeker_id)
+    )
 
 
-@router.get("/match/listing/{listing_id}", response_model=JobseekerForListingMatchResponse)
+@router.get(
+    "/match/listing/{listing_id}", response_model=JobseekerForListingMatchResponse
+)
 def get_matches_for_listing(
     listing_id: UUID,
     _: AuthContext = Depends(require_staff),
     session: Session = Depends(get_db_session),
 ) -> JobseekerForListingMatchResponse:
-    return JobseekerForListingMatchResponse(items=get_eligible_jobseekers_for_job(session, listing_id))
+    return JobseekerForListingMatchResponse(
+        items=get_eligible_jobseekers_for_job(session, listing_id)
+    )

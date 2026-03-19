@@ -22,7 +22,9 @@ class AppUser(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     email: Mapped[str] = mapped_column(String(320), nullable=False)
     auth_provider_role: Mapped[str] = mapped_column(String(50), nullable=False)
     app_role: Mapped[AppRole | None] = mapped_column(enum_type(AppRole), nullable=True)
-    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True, server_default="true")
+    is_active: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=True, server_default="true"
+    )
 
     jobseeker_profile = relationship(
         "Jobseeker",

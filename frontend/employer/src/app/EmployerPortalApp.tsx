@@ -20,13 +20,64 @@ function EmployerRoutes() {
   return (
     <Routes>
       <Route path="/" element={<EmployerLandingPage />} />
-      <Route path="/auth" element={authenticatedEmployer ? <Navigate replace to="/dashboard" /> : <EmployerAuthPage />} />
-      <Route path="/dashboard" element={<RequireRole role="employer"><EmployerDashboardPage /></RequireRole>} />
-      <Route path="/profile" element={<RequireRole role="employer"><EmployerProfilePage /></RequireRole>} />
-      <Route path="/listings" element={<RequireRole role="employer"><EmployerListingsPage /></RequireRole>} />
-      <Route path="/listings/new" element={<RequireRole role="employer"><EmployerNewListingPage /></RequireRole>} />
-      <Route path="/listings/:listingId" element={<RequireRole role="employer"><EmployerListingDetailPage /></RequireRole>} />
-      <Route path="/listings/:listingId/applicants" element={<RequireRole role="employer"><EmployerApplicantsPage /></RequireRole>} />
+      <Route
+        path="/auth"
+        element={
+          authenticatedEmployer ? (
+            <Navigate replace to="/dashboard" />
+          ) : (
+            <EmployerAuthPage />
+          )
+        }
+      />
+      <Route
+        path="/dashboard"
+        element={
+          <RequireRole role="employer">
+            <EmployerDashboardPage />
+          </RequireRole>
+        }
+      />
+      <Route
+        path="/profile"
+        element={
+          <RequireRole role="employer">
+            <EmployerProfilePage />
+          </RequireRole>
+        }
+      />
+      <Route
+        path="/listings"
+        element={
+          <RequireRole role="employer">
+            <EmployerListingsPage />
+          </RequireRole>
+        }
+      />
+      <Route
+        path="/listings/new"
+        element={
+          <RequireRole role="employer">
+            <EmployerNewListingPage />
+          </RequireRole>
+        }
+      />
+      <Route
+        path="/listings/:listingId"
+        element={
+          <RequireRole role="employer">
+            <EmployerListingDetailPage />
+          </RequireRole>
+        }
+      />
+      <Route
+        path="/listings/:listingId/applicants"
+        element={
+          <RequireRole role="employer">
+            <EmployerApplicantsPage />
+          </RequireRole>
+        }
+      />
       <Route path="/workspace" element={<Navigate replace to="/dashboard" />} />
       <Route path="*" element={<Navigate replace to="/" />} />
     </Routes>

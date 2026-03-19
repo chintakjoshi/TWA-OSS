@@ -104,4 +104,3 @@ This document defines the baseline engineering and design rules for TWA. These a
 ## Decision Rule
 
 When in doubt, choose the path that improves reliability, readability, security, accessibility, and operational clarity or simply ask questions.
-

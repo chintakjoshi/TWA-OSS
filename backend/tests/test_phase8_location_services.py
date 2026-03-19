@@ -19,7 +19,12 @@ from app.models import AppUser, AuditLog, JobListing
 from app.models.enums import AppRole
 from app.services.auth import AuthProviderIdentity, get_auth_provider_identity
 from app.services.geocoding import GeocodeResult, geocode_address
-from app.services.transit import TransitComputationResult, compute_transit_accessibility, load_gtfs_stops, zip_to_job_distance_miles
+from app.services.transit import (
+    TransitComputationResult,
+    compute_transit_accessibility,
+    load_gtfs_stops,
+    zip_to_job_distance_miles,
+)
 
 
 @pytest.fixture()
@@ -34,8 +39,9 @@ def gtfs_feed_path() -> Generator[Path, None, None]:
         yield feed_path
 
 
-
-def test_load_gtfs_stops_and_compute_transit_accessibility(monkeypatch: pytest.MonkeyPatch, gtfs_feed_path: Path) -> None:
+def test_load_gtfs_stops_and_compute_transit_accessibility(
+    monkeypatch: pytest.MonkeyPatch, gtfs_feed_path: Path
+) -> None:
     monkeypatch.setenv("TWA_GTFS_FEED_PATH", str(gtfs_feed_path))
     monkeypatch.setenv("TWA_TRANSIT_STOP_RADIUS_MILES", "0.6")
     get_settings.cache_clear()
@@ -52,12 +58,10 @@ def test_load_gtfs_stops_and_compute_transit_accessibility(monkeypatch: pytest.M
     get_settings.cache_clear()
 
 
-
 def test_zip_to_job_distance_returns_distance() -> None:
     distance = zip_to_job_distance_miles("63103", job_lat=38.6270, job_lon=-90.1994)
     assert distance is not None
     assert distance >= 0
-
 
 
 def test_geocode_address_parses_nominatim_response() -> None:
@@ -65,12 +69,18 @@ def test_geocode_address_parses_nominatim_response() -> None:
         lambda request: httpx.Response(
             200,
             json=[
-                {"lat": "38.6270", "lon": "-90.1994", "display_name": "St. Louis, Missouri, USA"}
+                {
+                    "lat": "38.6270",
+                    "lon": "-90.1994",
+                    "display_name": "St. Louis, Missouri, USA",
+                }
             ],
         )
     )
     with httpx.Client(transport=transport) as client:
-        result = geocode_address(address="123 Main St", city="St. Louis", zip_code="63103", client=client)
+        result = geocode_address(
+            address="123 Main St", city="St. Louis", zip_code="63103", client=client
+        )
 
     assert result is not None
     assert result.latitude == 38.6270
@@ -128,7 +138,6 @@ def phase8_env(monkeypatch: pytest.MonkeyPatch, session_factory):
     get_settings.cache_clear()
 
 
-
 def seed_staff(session_factory) -> AppUser:
     with session_factory() as session:
         staff = AppUser(
@@ -144,12 +153,15 @@ def seed_staff(session_factory) -> AppUser:
         return staff
 
 
-
 def approve_employer(client: TestClient, state: dict, session_factory) -> None:
     staff = seed_staff(session_factory)
-    state["identity"] = AuthProviderIdentity(auth_user_id=staff.auth_user_id, email=staff.email, auth_provider_role="admin")
+    state["identity"] = AuthProviderIdentity(
+        auth_user_id=staff.auth_user_id, email=staff.email, auth_provider_role="admin"
+    )
     employer_id = client.get("/api/v1/admin/queue/employers").json()["items"][0]["id"]
-    response = client.patch(f"/api/v1/admin/employers/{employer_id}", json={"review_status": "approved"})
+    response = client.patch(
+        f"/api/v1/admin/employers/{employer_id}", json={"review_status": "approved"}
+    )
     assert response.status_code == 200
     state["identity"] = AuthProviderIdentity(
         auth_user_id=uuid.UUID("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"),
@@ -158,18 +170,25 @@ def approve_employer(client: TestClient, state: dict, session_factory) -> None:
     )
 
 
-
 def test_listing_creation_computes_location_fields(phase8_env) -> None:
     client, state, session_factory, monkeypatch = phase8_env
-    monkeypatch.setattr("app.services.employer.geocode_address", lambda **_: GeocodeResult(38.6270, -90.1994, "St. Louis"))
+    monkeypatch.setattr(
+        "app.services.employer.geocode_address",
+        lambda **_: GeocodeResult(38.6270, -90.1994, "St. Louis"),
+    )
     monkeypatch.setattr(
         "app.services.employer.compute_transit_accessibility",
-        lambda **_: TransitComputationResult(transit_accessible=True, nearest_stop_distance_miles=0.2, warning=None),
+        lambda **_: TransitComputationResult(
+            transit_accessible=True, nearest_stop_distance_miles=0.2, warning=None
+        ),
     )
 
     bootstrap = client.post(
         "/api/v1/auth/bootstrap",
-        json={"role": "employer", "employer_profile": {"org_name": "Northside Logistics"}},
+        json={
+            "role": "employer",
+            "employer_profile": {"org_name": "Northside Logistics"},
+        },
     )
     assert bootstrap.status_code == 200
     approve_employer(client, state, session_factory)
@@ -195,14 +214,16 @@ def test_listing_creation_computes_location_fields(phase8_env) -> None:
     assert stored.transit_accessible is True
 
 
-
 def test_listing_creation_survives_geocoding_failure(phase8_env) -> None:
     client, state, session_factory, monkeypatch = phase8_env
     monkeypatch.setattr("app.services.employer.geocode_address", lambda **_: None)
 
     bootstrap = client.post(
         "/api/v1/auth/bootstrap",
-        json={"role": "employer", "employer_profile": {"org_name": "Northside Logistics"}},
+        json={
+            "role": "employer",
+            "employer_profile": {"org_name": "Northside Logistics"},
+        },
     )
     assert bootstrap.status_code == 200
     approve_employer(client, state, session_factory)
@@ -227,5 +248,3 @@ def test_listing_creation_survives_geocoding_failure(phase8_env) -> None:
         audits = session.execute(select(AuditLog)).scalars().all()
     assert stored.job_lat is None
     assert any(audit.action == "listing.location_warning" for audit in audits)
-
-

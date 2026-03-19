@@ -14,10 +14,10 @@ from sqlalchemy.orm import Session, sessionmaker
 from app.core.config import get_settings
 from app.db.session import get_db_session
 from app.main import create_app
-from app.models import AppUser, Application, AuditLog, Employer, JobListing, Jobseeker
+from app.models import Application, AppUser, AuditLog, Employer, JobListing, Jobseeker
 from app.models.enums import (
-    AppRole,
     ApplicationStatus,
+    AppRole,
     EmployerReviewStatus,
     JobseekerStatus,
     ListingLifecycleStatus,
@@ -77,7 +77,6 @@ def phase12_env(monkeypatch: pytest.MonkeyPatch, session_factory):
 
     app.dependency_overrides.clear()
     get_settings.cache_clear()
-
 
 
 def seed_phase12_data(session_factory):
@@ -210,7 +209,9 @@ def seed_phase12_data(session_factory):
             job_listing_id=open_listing.id,
             status=ApplicationStatus.HIRED,
         )
-        session.add_all([submitted_application, reviewed_application, hired_application])
+        session.add_all(
+            [submitted_application, reviewed_application, hired_application]
+        )
         session.flush()
 
         audit_entries = [
@@ -252,7 +253,6 @@ def seed_phase12_data(session_factory):
         }
 
 
-
 def test_admin_dashboard_returns_expected_summary(phase12_env) -> None:
     client, _, session_factory = phase12_env
     seed_phase12_data(session_factory)
@@ -267,7 +267,6 @@ def test_admin_dashboard_returns_expected_summary(phase12_env) -> None:
         "open_applications": 2,
         "open_listings": 1,
     }
-
 
 
 def test_admin_audit_log_supports_filters_and_system_events(phase12_env) -> None:
@@ -285,19 +284,30 @@ def test_admin_audit_log_supports_filters_and_system_events(phase12_env) -> None
     ]
     assert unfiltered_payload["items"][0]["actor_id"] is None
 
-    by_actor = client.get("/api/v1/admin/audit-log", params={"actor_id": str(seeded["staff_id"])})
+    by_actor = client.get(
+        "/api/v1/admin/audit-log", params={"actor_id": str(seeded["staff_id"])}
+    )
     assert by_actor.status_code == 200
     assert by_actor.json()["meta"]["total_items"] == 2
-    assert {item["action"] for item in by_actor.json()["items"]} == {"employer.approved", "application.hired"}
+    assert {item["action"] for item in by_actor.json()["items"]} == {
+        "employer.approved",
+        "application.hired",
+    }
 
     by_entity = client.get(
         "/api/v1/admin/audit-log",
-        params={"entity_type": "application", "entity_id": str(seeded["hired_application_id"]), "action": "application.hired"},
+        params={
+            "entity_type": "application",
+            "entity_id": str(seeded["hired_application_id"]),
+            "action": "application.hired",
+        },
     )
     assert by_entity.status_code == 200
     assert by_entity.json()["meta"]["total_items"] == 1
     assert by_entity.json()["items"][0]["entity_type"] == "application"
-    assert by_entity.json()["items"][0]["entity_id"] == str(seeded["hired_application_id"])
+    assert by_entity.json()["items"][0]["entity_id"] == str(
+        seeded["hired_application_id"]
+    )
 
     by_date = client.get(
         "/api/v1/admin/audit-log",
@@ -305,4 +315,28 @@ def test_admin_audit_log_supports_filters_and_system_events(phase12_env) -> None
     )
     assert by_date.status_code == 200
     assert by_date.json()["meta"]["total_items"] == 2
-    assert [item["action"] for item in by_date.json()["items"]] == ["gtfs_feed_refreshed", "application.hired"]
+    assert [item["action"] for item in by_date.json()["items"]] == [
+        "gtfs_feed_refreshed",
+        "application.hired",
+    ]
+
+
+def test_admin_listing_filters_support_city_search_and_employer(phase12_env) -> None:
+    client, _, session_factory = phase12_env
+    seeded = seed_phase12_data(session_factory)
+
+    by_employer = client.get(
+        "/api/v1/admin/listings",
+        params={"employer_id": str(seeded["approved_employer_id"])},
+    )
+    assert by_employer.status_code == 200
+    assert by_employer.json()["meta"]["total_items"] == 3
+
+    by_city = client.get("/api/v1/admin/listings", params={"city": "St. Louis"})
+    assert by_city.status_code == 200
+    assert by_city.json()["meta"]["total_items"] == 3
+
+    by_search = client.get("/api/v1/admin/listings", params={"search": "Open"})
+    assert by_search.status_code == 200
+    assert by_search.json()["meta"]["total_items"] == 1
+    assert by_search.json()["items"][0]["title"] == "Open Listing"

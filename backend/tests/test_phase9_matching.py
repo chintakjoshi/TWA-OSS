@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine, select
+from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
 from app.core.config import get_settings
@@ -24,7 +24,10 @@ from app.models.enums import (
     TransitType,
 )
 from app.services.auth import AuthProviderIdentity, get_auth_provider_identity
-from app.services.matching import get_eligible_jobs_for_jobseeker, get_eligible_jobseekers_for_job
+from app.services.matching import (
+    get_eligible_jobs_for_jobseeker,
+    get_eligible_jobseekers_for_job,
+)
 
 
 @pytest.fixture()
@@ -76,7 +79,6 @@ def phase9_env(monkeypatch: pytest.MonkeyPatch, session_factory):
     get_settings.cache_clear()
 
 
-
 def seed_staff(session: Session, identity: AuthProviderIdentity) -> AppUser:
     staff = AppUser(
         auth_user_id=identity.auth_user_id,
@@ -88,7 +90,6 @@ def seed_staff(session: Session, identity: AuthProviderIdentity) -> AppUser:
     session.add(staff)
     session.flush()
     return staff
-
 
 
 def seed_employer_and_listing_set(session: Session) -> tuple[Jobseeker, JobListing]:
@@ -209,14 +210,25 @@ def seed_employer_and_listing_set(session: Session) -> tuple[Jobseeker, JobListi
     return jobseeker, listings[3]
 
 
-
-def seed_jobseekers_for_listing(session: Session, listing: JobListing) -> list[Jobseeker]:
+def seed_jobseekers_for_listing(
+    session: Session, listing: JobListing
+) -> list[Jobseeker]:
     jobseekers: list[Jobseeker] = []
     configs = [
         ("Eligible Jobseeker", TransitType.BOTH, False, JobseekerStatus.ACTIVE),
         ("Charge Mismatch Jobseeker", TransitType.BOTH, True, JobseekerStatus.ACTIVE),
-        ("Transit Mismatch Jobseeker", TransitType.PUBLIC_TRANSIT, False, JobseekerStatus.ACTIVE),
-        ("Both Mismatch Jobseeker", TransitType.PUBLIC_TRANSIT, True, JobseekerStatus.ACTIVE),
+        (
+            "Transit Mismatch Jobseeker",
+            TransitType.PUBLIC_TRANSIT,
+            False,
+            JobseekerStatus.ACTIVE,
+        ),
+        (
+            "Both Mismatch Jobseeker",
+            TransitType.PUBLIC_TRANSIT,
+            True,
+            JobseekerStatus.ACTIVE,
+        ),
         ("Incomplete Jobseeker", None, False, JobseekerStatus.ACTIVE),
         ("Hired Jobseeker", TransitType.BOTH, False, JobseekerStatus.HIRED),
     ]
@@ -247,8 +259,9 @@ def seed_jobseekers_for_listing(session: Session, listing: JobListing) -> list[J
     return jobseekers
 
 
-
-def test_get_eligible_jobs_for_jobseeker_returns_expected_reason_sets(session_factory) -> None:
+def test_get_eligible_jobs_for_jobseeker_returns_expected_reason_sets(
+    session_factory,
+) -> None:
     with session_factory() as session:
         jobseeker, _ = seed_employer_and_listing_set(session)
         session.commit()
@@ -268,11 +281,15 @@ def test_get_eligible_jobs_for_jobseeker_returns_expected_reason_sets(session_fa
     assert by_title["Eligible Listing"].ineligibility_reasons == []
 
     assert by_title["Charge Mismatch Listing"].is_eligible is False
-    assert by_title["Charge Mismatch Listing"].ineligibility_reasons == ["charge_theft_disqualified"]
+    assert by_title["Charge Mismatch Listing"].ineligibility_reasons == [
+        "charge_theft_disqualified"
+    ]
     assert by_title["Charge Mismatch Listing"].ineligibility_tag is None
 
     assert by_title["Transit Mismatch Listing"].is_eligible is False
-    assert by_title["Transit Mismatch Listing"].ineligibility_reasons == ["transit_unreachable"]
+    assert by_title["Transit Mismatch Listing"].ineligibility_reasons == [
+        "transit_unreachable"
+    ]
     assert by_title["Transit Mismatch Listing"].ineligibility_tag is not None
 
     assert by_title["Both Mismatch Listing"].is_eligible is False
@@ -282,11 +299,14 @@ def test_get_eligible_jobs_for_jobseeker_returns_expected_reason_sets(session_fa
     }
 
     assert by_title["Missing Transit Data Listing"].is_eligible is False
-    assert by_title["Missing Transit Data Listing"].ineligibility_reasons == ["transit_data_unavailable"]
+    assert by_title["Missing Transit Data Listing"].ineligibility_reasons == [
+        "transit_data_unavailable"
+    ]
 
 
-
-def test_get_eligible_jobseekers_for_job_returns_expected_reason_sets(session_factory) -> None:
+def test_get_eligible_jobseekers_for_job_returns_expected_reason_sets(
+    session_factory,
+) -> None:
     with session_factory() as session:
         _, listing = seed_employer_and_listing_set(session)
         seed_jobseekers_for_listing(session, listing)
@@ -306,14 +326,19 @@ def test_get_eligible_jobseekers_for_job_returns_expected_reason_sets(session_fa
     }
     assert by_name["Eligible Jobseeker"].is_eligible is True
     assert by_name["Eligible Jobseeker"].ineligibility_reasons == []
-    assert by_name["Charge Mismatch Jobseeker"].ineligibility_reasons == ["charge_theft_disqualified"]
-    assert by_name["Transit Mismatch Jobseeker"].ineligibility_reasons == ["transit_unreachable"]
+    assert by_name["Charge Mismatch Jobseeker"].ineligibility_reasons == [
+        "charge_theft_disqualified"
+    ]
+    assert by_name["Transit Mismatch Jobseeker"].ineligibility_reasons == [
+        "transit_unreachable"
+    ]
     assert set(by_name["Both Mismatch Jobseeker"].ineligibility_reasons) == {
         "charge_theft_disqualified",
         "transit_unreachable",
     }
-    assert by_name["Incomplete Jobseeker"].ineligibility_reasons == ["profile_incomplete"]
-
+    assert by_name["Incomplete Jobseeker"].ineligibility_reasons == [
+        "profile_incomplete"
+    ]
 
 
 def test_admin_matching_endpoints_return_expected_payloads(phase9_env) -> None:
@@ -340,9 +365,13 @@ def test_admin_matching_endpoints_return_expected_payloads(phase9_env) -> None:
 
     listing_match = client.get(f"/api/v1/admin/match/listing/{listing_id}")
     assert listing_match.status_code == 200
-    seeker_items = {item["jobseeker"]["full_name"]: item for item in listing_match.json()["items"]}
+    seeker_items = {
+        item["jobseeker"]["full_name"]: item for item in listing_match.json()["items"]
+    }
     assert seeker_items["Eligible Jobseeker"]["is_eligible"] is True
-    assert seeker_items["Transit Mismatch Jobseeker"]["ineligibility_reasons"] == ["transit_unreachable"]
-    assert seeker_items["Incomplete Jobseeker"]["ineligibility_reasons"] == ["profile_incomplete"]
-
-
+    assert seeker_items["Transit Mismatch Jobseeker"]["ineligibility_reasons"] == [
+        "transit_unreachable"
+    ]
+    assert seeker_items["Incomplete Jobseeker"]["ineligibility_reasons"] == [
+        "profile_incomplete"
+    ]

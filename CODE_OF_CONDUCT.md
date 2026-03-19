@@ -5,6 +5,7 @@ A primary goal of Transformative Workforce Academy is to be inclusive to the lar
 This code of conduct outlines our expectations for all those who participate in our community, as well as the consequences for unacceptable behavior.
 
 ## Open [Source/Culture/Tech] Citizenship
+
 A supplemental goal of this code of conduct is to increase open [source/culture/tech] citizenship by encouraging participants to recognize and strengthen the relationships between our actions and their effects on our community.
 
 Communities mirror the societies in which they exist and positive action is essential to counteract the many forms of inequality and abuses of power that exist in society.
@@ -13,26 +14,26 @@ Communities mirror the societies in which they exist and positive action is esse
 
 The following behaviors are expected and requested of all community members:
 
-* Participate in an authentic and active way. In doing so, you contribute to the health and longevity of this community.
-* Exercise consideration and respect in your speech and actions.
-* Attempt collaboration before conflict.
-* Refrain from demeaning, discriminatory, or harassing behavior and speech.
-* Be mindful of your surroundings and of your fellow participants. Alert community leaders if you notice a dangerous situation, someone in distress, or * * violations of this Code of Conduct, even if they seem inconsequential.
+- Participate in an authentic and active way. In doing so, you contribute to the health and longevity of this community.
+- Exercise consideration and respect in your speech and actions.
+- Attempt collaboration before conflict.
+- Refrain from demeaning, discriminatory, or harassing behavior and speech.
+- Be mindful of your surroundings and of your fellow participants. Alert community leaders if you notice a dangerous situation, someone in distress, or \* \* violations of this Code of Conduct, even if they seem inconsequential.
 
 ## Unacceptable Behavior
 
 The following behaviors are considered harassment and are unacceptable within our community:
 
-* Violence, threats of violence, or violent language directed against another person.
-* Sexist, racist, homophobic, transphobic, ableist, or otherwise discriminatory jokes and language.
-* Posting or displaying sexually explicit or violent material.
-* Posting or threatening to post other people’s personally identifying information ("doxing").
-* Personal insults, particularly those related to gender, sexual orientation, race, religion, or disability.
-* Inappropriate photography or recording.
-* Inappropriate physical contact. You should have someone’s consent before touching them.
-* Unwelcome sexual attention. This includes sexualized comments or jokes; inappropriate touching, groping, and unwelcome sexual advances.
-* Deliberate intimidation, stalking, or following (online or in person).
-* Advocating for, or encouraging, any of the above behavior.
+- Violence, threats of violence, or violent language directed against another person.
+- Sexist, racist, homophobic, transphobic, ableist, or otherwise discriminatory jokes and language.
+- Posting or displaying sexually explicit or violent material.
+- Posting or threatening to post other people’s personally identifying information ("doxing").
+- Personal insults, particularly those related to gender, sexual orientation, race, religion, or disability.
+- Inappropriate photography or recording.
+- Inappropriate physical contact. You should have someone’s consent before touching them.
+- Unwelcome sexual attention. This includes sexualized comments or jokes; inappropriate touching, groping, and unwelcome sexual advances.
+- Deliberate intimidation, stalking, or following (online or in person).
+- Advocating for, or encouraging, any of the above behavior.
 
 ## Consequences of Unacceptable Behavior
 

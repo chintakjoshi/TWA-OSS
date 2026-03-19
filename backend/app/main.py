@@ -38,11 +38,18 @@ def create_app() -> FastAPI:
             PathAwareJWTAuthMiddleware,
             auth_base_url=settings.auth_base_url,
             expected_audience=settings.twa_auth_audience,
-            public_exact_paths={"/health", settings.api_v1_prefix, f"{settings.api_v1_prefix}/health", "/openapi.json"},
+            public_exact_paths={
+                "/health",
+                settings.api_v1_prefix,
+                f"{settings.api_v1_prefix}/health",
+                "/openapi.json",
+            },
             public_path_prefixes=("/docs", "/redoc"),
         )
 
-    app.add_middleware(RequestLoggingMiddleware, request_id_header=settings.request_id_header)
+    app.add_middleware(
+        RequestLoggingMiddleware, request_id_header=settings.request_id_header
+    )
     register_exception_handlers(app)
     app.include_router(api_router)
     return app

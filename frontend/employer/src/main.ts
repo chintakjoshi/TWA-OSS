@@ -11,6 +11,6 @@ ReactDOM.createRoot(document.getElementById('app')!).render(
   React.createElement(
     React.StrictMode,
     null,
-    React.createElement(BrowserRouter, null, React.createElement(App)),
-  ),
+    React.createElement(BrowserRouter, null, React.createElement(App))
+  )
 )
