@@ -95,9 +95,12 @@ cd backend
 uv run alembic upgrade head
 uv run alembic revision -m "describe-change"
 uv run alembic revision --autogenerate -m "describe-change"
+uv run python -m app.db.seed
 ```
 
-A bootstrap migration is already included so the migration pipeline is wired and testable before the real schema lands in Phase 3.
+The bootstrap migration and the first real schema migration are both included, so the migration pipeline is ready for local database setup now.
+
+Set `TWA_SEED_STAFF_AUTH_USER_ID` and `TWA_SEED_STAFF_EMAIL` in `.env` if you want the seed command to create or refresh a local staff app user in addition to the default notification config row.
 
 ## API Docs
 
