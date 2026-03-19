@@ -38,6 +38,7 @@ The repo supports two local workflows:
 
 - `AUTHSDK_PATH` defaults to `../authSDK`, which matches the current local desktop layout.
 - `twa-backend` runs `alembic upgrade head` on container startup so migrations stay applied.
-- The current backend migration chain starts with a bootstrap revision and is ready for real schema revisions in Phase 3.
+- The current backend migration chain starts with a bootstrap revision and the first real schema revision.
 - FastAPI Swagger UI is available at `/docs`, and ReDoc is available at `/redoc`.
-- When you use the full Docker workflow, rebuild with docker compose up --build after source changes so containers pick up new code.
+- When you use the full Docker workflow, rebuild with `docker compose up --build` after source changes so containers pick up new code.
+- Run `uv run python -m app.db.seed` after migrations if you want the default notification config and an optional staff bootstrap user.
