@@ -1,14 +1,19 @@
+from __future__ import annotations
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import get_settings
 from app.core.exceptions import register_exception_handlers
+from app.core.logging import RequestLoggingMiddleware, configure_logging
 from app.core.middleware import PathAwareJWTAuthMiddleware
 from app.routers import router as api_router
 
 
 def create_app() -> FastAPI:
     settings = get_settings()
+    configure_logging(settings.log_level)
+
     app = FastAPI(
         title=settings.app_name,
         version=settings.app_version,
@@ -37,6 +42,7 @@ def create_app() -> FastAPI:
             public_path_prefixes=("/docs", "/redoc"),
         )
 
+    app.add_middleware(RequestLoggingMiddleware, request_id_header=settings.request_id_header)
     register_exception_handlers(app)
     app.include_router(api_router)
     return app

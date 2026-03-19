@@ -14,6 +14,8 @@ class Settings(BaseSettings):
     )
     debug: bool = Field(default=True, validation_alias="TWA_DEBUG")
     auth_enabled: bool = Field(default=True, validation_alias="TWA_AUTH_ENABLED")
+    log_level: str = Field(default="INFO", validation_alias="TWA_LOG_LEVEL")
+    request_id_header: str = Field(default="X-Request-ID", validation_alias="TWA_REQUEST_ID_HEADER")
     database_url: str = Field(
         default="postgresql+psycopg://twa:twa@localhost:5432/twa",
         validation_alias="DATABASE_URL",

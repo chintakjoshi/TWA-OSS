@@ -5,10 +5,13 @@ from typing import Literal
 from uuid import UUID
 
 from fastapi import Depends, Request
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.core.exceptions import AppError
 from app.db.session import get_db_session
+from app.models import Employer
+from app.models.enums import EmployerReviewStatus
 from app.services.auth import AuthProviderIdentity, get_auth_provider_identity, resolve_auth_context
 
 AppRole = Literal["jobseeker", "employer", "staff"]
@@ -52,3 +55,38 @@ def require_role(*allowed_roles: AppRole):
         return auth_context
 
     return dependency
+
+
+def require_jobseeker(auth_context: AuthContext = Depends(require_role("jobseeker"))) -> AuthContext:
+    return auth_context
+
+
+
+def require_employer(auth_context: AuthContext = Depends(require_role("employer"))) -> AuthContext:
+    return auth_context
+
+
+
+def require_staff(auth_context: AuthContext = Depends(require_role("staff"))) -> AuthContext:
+    return auth_context
+
+
+
+def require_approved_employer(
+    auth_context: AuthContext = Depends(require_employer),
+    session: Session = Depends(get_db_session),
+) -> AuthContext:
+    employer = session.execute(select(Employer).where(Employer.app_user_id == auth_context.app_user_id)).scalar_one_or_none()
+    if employer is None:
+        raise AppError(
+            status_code=403,
+            code="EMPLOYER_PROFILE_REQUIRED",
+            detail="This employer account does not have a local employer profile.",
+        )
+    if employer.review_status != EmployerReviewStatus.APPROVED:
+        raise AppError(
+            status_code=403,
+            code="EMPLOYER_REVIEW_PENDING",
+            detail="This employer account is not approved for employer features yet.",
+        )
+    return auth_context
