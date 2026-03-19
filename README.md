@@ -1,11 +1,73 @@
-# Transformative Workforce Academy [![TWA CI](https://github.com/chintakjoshi/TWA-OSS/actions/workflows/test.yml/badge.svg?branch=main)](https://github.com/chintakjoshi/TWA-OSS/actions/workflows/test.yml)
+# Transformative Workforce Academy
 
-## Project Overview
+TWA is a web application for Saint Louis University's Transformative Workforce Academy. It connects justice-involved jobseekers with fair-chance employers and gives TWA staff tools to manage approvals, matching, applications, placements, notifications, and audit history.
 
-This project is to help justice-involved jobseekers and second-chance employees. This web application is for hiring justice-involved talent and promotes self-sufficiency for individuals, success for companies, growth for our economy, and public safety for our region.
+## Architecture
 
-## [Code Of Conduct](CODE_OF_CONDUCT.md)
+- `frontend/jobseeker`: jobseeker-facing React app
+- `frontend/employer`: employer-facing React app
+- `frontend/admin`: staff admin React app
+- `backend`: FastAPI service for all TWA business logic
+- `authSDK`: external authentication service used by this app
 
-## [Contributing to TWA](CONTRIBUTING.md)
+The TWA backend uses `auth-service-sdk` middleware to trust `authSDK` bearer tokens. TWA-specific roles such as `jobseeker`, `employer`, and `staff` are stored locally in the TWA database.
 
-## [License](LICENSE)
+## Local Setup
+
+1. Copy the environment template:
+
+```powershell
+Copy-Item .env.example .env
+```
+
+2. Start PostgreSQL locally if needed:
+
+```powershell
+docker compose up -d
+```
+
+3. Install backend dependencies:
+
+```powershell
+cd backend
+uv sync
+```
+
+4. Install frontend dependencies:
+
+```powershell
+cd ..\frontend\jobseeker; npm install
+cd ..\employer; npm install
+cd ..\admin; npm install
+```
+
+5. Run the backend:
+
+```powershell
+cd ..\..\backend
+uv run uvicorn app.main:app --reload --port 9000
+```
+
+6. Run the frontends:
+
+```powershell
+cd ..\frontend\jobseeker; npm run dev
+cd ..\employer; npm run dev
+cd ..\admin; npm run dev
+```
+
+Default local URLs:
+
+- Backend: `http://localhost:9000`
+- Jobseeker frontend: `http://localhost:5173`
+- Employer frontend: `http://localhost:5174`
+- Admin frontend: `http://localhost:5175`
+
+## Key Docs
+
+- [project.md](project.md)
+- [implementation-guide.md](implementation-guide.md)
+- [api-contract.md](api-contract.md)
+- [CONTRIBUTING.md](CONTRIBUTING.md)
+- [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)
+- [LICENSE](LICENSE)

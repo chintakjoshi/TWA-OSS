@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.venv/
+
+# Node
+node_modules/
+dist/
+
+# Environment and local config
+.env
+.env.*
+!.env.example
+
+# OS / editor
+.DS_Store
+Thumbs.db
+
+# Project data
+backend/data/metro_stl_gtfs.zip
