@@ -105,11 +105,13 @@ TWA-OSS/
    - MailHog
 
 8. Prepare local `authSDK` usage.
-   - Default local path can point to `C:\Users\chint\Desktop\authSDK-1.0.2\authSDK-1.0.2`
+   - Default local path can point to `\Desktop\authSDK-1.0.2`
    - Record `AUTH_BASE_URL` and `TWA_AUTH_AUDIENCE=twa-api`
    - Make the Docker setup work with a sibling checkout of `authSDK`
 
 9. Add Alembic scaffolding early so migrations are part of the developer workflow from the start.
+
+10. Add GitHub Actions CI for backend tests and frontend builds.
 
 ### Deliverables
 
@@ -121,6 +123,7 @@ TWA-OSS/
 - Adminer and MailHog available locally
 - Auth-service integration target decided for local development
 - Alembic migration pipeline initialized
+- GitHub CI validates backend and frontend changes
 
 ---
 
@@ -941,4 +944,6 @@ Once implementation starts, the most useful follow-up docs would be:
 3. frontend route map for each app
 4. QA test checklist
 5. deployment runbook
+
+
 

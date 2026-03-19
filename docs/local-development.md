@@ -36,10 +36,11 @@ The repo supports two local workflows:
 
 ## Notes
 
-- `AUTHSDK_PATH` defaults to `../authSDK-1.0.2/authSDK-1.0.2`, which matches the current local desktop layout.
+- `AUTHSDK_PATH` defaults to `../authSDK-1.0.2`, which matches the current local desktop layout and is only required for the Dockerized auth service.
 - `twa-backend` runs `alembic upgrade head` on container startup so migrations stay applied.
 - The current backend migration chain starts with a bootstrap revision and the first real schema revision.
 - FastAPI Swagger UI is available at `/docs`, and ReDoc is available at `/redoc`.
 - When you use the full Docker workflow, rebuild with `docker compose up --build` after source changes so containers pick up new code.
 - Run `uv run python -m app.db.seed` after migrations if you want the default notification config and an optional staff bootstrap user.
-- `backend/pyproject.toml` resolves `auth-service-sdk` from the sibling `authSDK-1.0.2/sdk` checkout via `tool.uv.sources`, so local backend installs use the fixed SDK packaging directly.
+- `backend/pyproject.toml` pins `auth-service-sdk` to the official `authSDK` GitHub source for `v1.0.2`, so backend installs and CI do not rely on a sibling SDK checkout.
+
