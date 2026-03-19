@@ -7,16 +7,16 @@ from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine, select
+from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
 from app.core.config import get_settings
 from app.db.session import get_db_session
 from app.main import create_app
-from app.models import AppUser, Application, Employer, JobListing, Jobseeker
+from app.models import Application, AppUser, Employer, JobListing
 from app.models.enums import (
-    AppRole,
     ApplicationStatus,
+    AppRole,
     EmployerReviewStatus,
     ListingLifecycleStatus,
     ListingReviewStatus,
@@ -76,7 +76,6 @@ def phase10_env(monkeypatch: pytest.MonkeyPatch, session_factory):
     get_settings.cache_clear()
 
 
-
 def bootstrap_completed_jobseeker(client: TestClient) -> None:
     bootstrap = client.post("/api/v1/auth/bootstrap", json={"role": "jobseeker"})
     assert bootstrap.status_code == 200
@@ -95,7 +94,6 @@ def bootstrap_completed_jobseeker(client: TestClient) -> None:
     assert patch.status_code == 200
 
 
-
 def seed_staff(session_factory, *, auth_user_id: uuid.UUID | None = None) -> AppUser:
     auth_user_id = auth_user_id or uuid.uuid4()
     with session_factory() as session:
@@ -110,7 +108,6 @@ def seed_staff(session_factory, *, auth_user_id: uuid.UUID | None = None) -> App
         session.commit()
         session.refresh(staff)
         return staff
-
 
 
 def seed_employer_and_listings(session_factory) -> dict[str, uuid.UUID]:
@@ -209,7 +206,6 @@ def seed_employer_and_listings(session_factory) -> dict[str, uuid.UUID]:
         }
 
 
-
 def test_jobseeker_can_browse_jobs_and_apply(phase10_env) -> None:
     client, state, session_factory = phase10_env
     bootstrap_completed_jobseeker(client)
@@ -232,17 +228,24 @@ def test_jobseeker_can_browse_jobs_and_apply(phase10_env) -> None:
     closed_detail = client.get(f"/api/v1/jobs/{listing_ids['closed']}")
     assert closed_detail.status_code == 404
 
-    create = client.post("/api/v1/applications", json={"job_listing_id": str(listing_ids["eligible"])})
+    create = client.post(
+        "/api/v1/applications", json={"job_listing_id": str(listing_ids["eligible"])}
+    )
     assert create.status_code == 200
     application_id = create.json()["application"]["id"]
     assert create.json()["application"]["status"] == "submitted"
 
-    duplicate = client.post("/api/v1/applications", json={"job_listing_id": str(listing_ids["eligible"])})
+    duplicate = client.post(
+        "/api/v1/applications", json={"job_listing_id": str(listing_ids["eligible"])}
+    )
     assert duplicate.status_code == 409
-    assert duplicate.json()["error"]["code"] == "DUPLICATE_APPLICATION"
+    assert duplicate.json()["error"]["code"] == "CONFLICT"
 
-    ineligible = client.post("/api/v1/applications", json={"job_listing_id": str(listing_ids["disqualified"])})
-    assert ineligible.status_code == 403
+    ineligible = client.post(
+        "/api/v1/applications",
+        json={"job_listing_id": str(listing_ids["disqualified"])},
+    )
+    assert ineligible.status_code == 422
     assert ineligible.json()["error"]["code"] == "LISTING_NOT_ELIGIBLE"
 
     mine = client.get("/api/v1/applications/me")
@@ -252,8 +255,9 @@ def test_jobseeker_can_browse_jobs_and_apply(phase10_env) -> None:
     assert mine.json()["items"][0]["job"]["title"] == "Warehouse Associate"
 
 
-
-def test_incomplete_jobseeker_is_blocked_from_jobs_and_applications(phase10_env) -> None:
+def test_incomplete_jobseeker_is_blocked_from_jobs_and_applications(
+    phase10_env,
+) -> None:
     client, _, session_factory = phase10_env
     bootstrap = client.post("/api/v1/auth/bootstrap", json={"role": "jobseeker"})
     assert bootstrap.status_code == 200
@@ -263,10 +267,47 @@ def test_incomplete_jobseeker_is_blocked_from_jobs_and_applications(phase10_env)
     assert jobs.status_code == 403
     assert jobs.json()["error"]["code"] == "PROFILE_INCOMPLETE"
 
-    create = client.post("/api/v1/applications", json={"job_listing_id": str(listing_ids["eligible"])})
+    create = client.post(
+        "/api/v1/applications", json={"job_listing_id": str(listing_ids["eligible"])}
+    )
     assert create.status_code == 403
     assert create.json()["error"]["code"] == "PROFILE_INCOMPLETE"
 
+
+def test_job_list_supports_documented_filters(phase10_env) -> None:
+    client, _, session_factory = phase10_env
+    bootstrap_completed_jobseeker(client)
+    seed_employer_and_listings(session_factory)
+
+    by_search = client.get("/api/v1/jobs", params={"search": "Packaging"})
+    assert by_search.status_code == 200
+    assert by_search.json()["meta"]["total_items"] == 1
+    assert by_search.json()["items"][0]["job"]["title"] == "Packaging Associate"
+
+    by_city = client.get("/api/v1/jobs", params={"city": "St. Louis"})
+    assert by_city.status_code == 200
+    assert by_city.json()["meta"]["total_items"] == 3
+
+    by_transit = client.get("/api/v1/jobs", params={"transit_required": "any"})
+    assert by_transit.status_code == 200
+    assert by_transit.json()["meta"]["total_items"] == 3
+
+    eligible_only = client.get(
+        "/api/v1/jobs", params={"is_eligible": True, "sort": "title"}
+    )
+    assert eligible_only.status_code == 200
+    assert eligible_only.json()["meta"]["total_items"] == 2
+    assert [item["job"]["title"] for item in eligible_only.json()["items"]] == [
+        "Packaging Associate",
+        "Warehouse Associate",
+    ]
+
+    ineligible_only = client.get(
+        "/api/v1/jobs", params={"is_eligible": False, "sort": "title"}
+    )
+    assert ineligible_only.status_code == 200
+    assert ineligible_only.json()["meta"]["total_items"] == 1
+    assert ineligible_only.json()["items"][0]["job"]["title"] == "Cash Office Clerk"
 
 
 def test_admin_can_review_hire_and_close_listing_from_application(phase10_env) -> None:
@@ -274,11 +315,15 @@ def test_admin_can_review_hire_and_close_listing_from_application(phase10_env) -
     bootstrap_completed_jobseeker(client)
     listing_ids = seed_employer_and_listings(session_factory)
 
-    create = client.post("/api/v1/applications", json={"job_listing_id": str(listing_ids["eligible"])})
+    create = client.post(
+        "/api/v1/applications", json={"job_listing_id": str(listing_ids["eligible"])}
+    )
     assert create.status_code == 200
     application_id = create.json()["application"]["id"]
 
-    staff = seed_staff(session_factory, auth_user_id=uuid.UUID("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"))
+    staff = seed_staff(
+        session_factory, auth_user_id=uuid.UUID("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb")
+    )
     state["identity"] = AuthProviderIdentity(
         auth_user_id=staff.auth_user_id,
         email=staff.email,
@@ -322,17 +367,53 @@ def test_admin_can_review_hire_and_close_listing_from_application(phase10_env) -
         assert stored_listing.lifecycle_status == ListingLifecycleStatus.CLOSED
 
 
+def test_admin_application_list_supports_employer_filter(phase10_env) -> None:
+    client, state, session_factory = phase10_env
+    bootstrap_completed_jobseeker(client)
+    listing_ids = seed_employer_and_listings(session_factory)
+    create = client.post(
+        "/api/v1/applications", json={"job_listing_id": str(listing_ids["eligible"])}
+    )
+    assert create.status_code == 200
+
+    with session_factory() as session:
+        listing = session.get(JobListing, listing_ids["eligible"])
+        assert listing is not None
+        employer = session.get(Employer, listing.employer_id)
+        assert employer is not None
+        employer_id = employer.id
+
+    staff = seed_staff(
+        session_factory, auth_user_id=uuid.UUID("cccccccc-cccc-cccc-cccc-cccccccccccc")
+    )
+    state["identity"] = AuthProviderIdentity(
+        auth_user_id=staff.auth_user_id,
+        email=staff.email,
+        auth_provider_role="admin",
+    )
+
+    filtered = client.get(
+        "/api/v1/admin/applications", params={"employer_id": str(employer_id)}
+    )
+    assert filtered.status_code == 200
+    assert filtered.json()["meta"]["total_items"] == 1
+    assert filtered.json()["items"][0]["job"]["title"] == "Warehouse Associate"
+
 
 def test_hired_application_does_not_block_additional_applications(phase10_env) -> None:
     client, state, session_factory = phase10_env
     bootstrap_completed_jobseeker(client)
     listing_ids = seed_employer_and_listings(session_factory)
 
-    first_application = client.post("/api/v1/applications", json={"job_listing_id": str(listing_ids["eligible"])})
+    first_application = client.post(
+        "/api/v1/applications", json={"job_listing_id": str(listing_ids["eligible"])}
+    )
     assert first_application.status_code == 200
     application_id = first_application.json()["application"]["id"]
 
-    staff = seed_staff(session_factory, auth_user_id=uuid.UUID("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"))
+    staff = seed_staff(
+        session_factory, auth_user_id=uuid.UUID("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb")
+    )
     state["identity"] = AuthProviderIdentity(
         auth_user_id=staff.auth_user_id,
         email=staff.email,
@@ -356,7 +437,9 @@ def test_hired_application_does_not_block_additional_applications(phase10_env) -
     assert second_application.status_code == 200
     assert second_application.json()["application"]["status"] == "submitted"
 
-    mine = client.get("/api/v1/applications/me", params={"sort": "applied_at", "order": "desc"})
+    mine = client.get(
+        "/api/v1/applications/me", params={"sort": "applied_at", "order": "desc"}
+    )
     assert mine.status_code == 200
     assert mine.json()["meta"]["total_items"] == 2
     assert {item["job"]["title"] for item in mine.json()["items"]} == {

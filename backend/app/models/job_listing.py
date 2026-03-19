@@ -7,11 +7,22 @@ from sqlalchemy import DateTime, Float, ForeignKey, Index, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
-from app.models.enums import ListingLifecycleStatus, ListingReviewStatus, TransitRequirement, enum_type
-from app.models.mixins import DisqualifyingChargeFlagsMixin, TimestampMixin, UUIDPrimaryKeyMixin
+from app.models.enums import (
+    ListingLifecycleStatus,
+    ListingReviewStatus,
+    TransitRequirement,
+    enum_type,
+)
+from app.models.mixins import (
+    DisqualifyingChargeFlagsMixin,
+    TimestampMixin,
+    UUIDPrimaryKeyMixin,
+)
 
 
-class JobListing(UUIDPrimaryKeyMixin, TimestampMixin, DisqualifyingChargeFlagsMixin, Base):
+class JobListing(
+    UUIDPrimaryKeyMixin, TimestampMixin, DisqualifyingChargeFlagsMixin, Base
+):
     __tablename__ = "job_listings"
     __table_args__ = (
         Index("ix_job_listings_review_status", "review_status"),
@@ -21,7 +32,9 @@ class JobListing(UUIDPrimaryKeyMixin, TimestampMixin, DisqualifyingChargeFlagsMi
         Index("ix_job_listings_zip", "zip"),
     )
 
-    employer_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("employers.id"), nullable=False)
+    employer_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("employers.id"), nullable=False
+    )
     title: Mapped[str] = mapped_column(String(255), nullable=False)
     description: Mapped[str | None] = mapped_column(Text)
     location_address: Mapped[str | None] = mapped_column(String(255))
@@ -49,9 +62,13 @@ class JobListing(UUIDPrimaryKeyMixin, TimestampMixin, DisqualifyingChargeFlagsMi
         server_default=ListingLifecycleStatus.OPEN.value,
     )
     review_note: Mapped[str | None] = mapped_column(Text)
-    reviewed_by: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("app_users.id"), nullable=True)
+    reviewed_by: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("app_users.id"), nullable=True
+    )
     reviewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
     employer = relationship("Employer", back_populates="job_listings")
-    reviewer = relationship("AppUser", back_populates="reviewed_listings", foreign_keys=[reviewed_by])
+    reviewer = relationship(
+        "AppUser", back_populates="reviewed_listings", foreign_keys=[reviewed_by]
+    )
     applications = relationship("Application", back_populates="job_listing")

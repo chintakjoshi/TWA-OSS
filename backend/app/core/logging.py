@@ -65,7 +65,9 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
         return response
 
 
-def log_exception(*, request: Request, exc: Exception, logger_name: str = "twa.errors") -> None:
+def log_exception(
+    *, request: Request, exc: Exception, logger_name: str = "twa.errors"
+) -> None:
     logger = logging.getLogger(logger_name)
     logger.exception(
         _log_payload(

@@ -47,25 +47,56 @@ export function JobseekerJobsPage() {
         <CardBody className="stack-md">
           <div className="stack-sm">
             <p className="eyebrow">Job Board</p>
-            <h2 className="card-title">Active listings that your current profile can evaluate.</h2>
-            <p className="card-copy">The UI shows every active listing but disables apply when the current eligibility state is not a fit.</p>
+            <h2 className="card-title">
+              Active listings that your current profile can evaluate.
+            </h2>
+            <p className="card-copy">
+              The UI shows every active listing but disables apply when the
+              current eligibility state is not a fit.
+            </p>
           </div>
         </CardBody>
       </Card>
 
       {isLoading ? <LoadingState title="Loading open jobs..." /> : null}
-      {!isLoading && error ? <ErrorState title="Jobs unavailable" message={error} /> : null}
-      {!isLoading && !error && items.length === 0 ? <EmptyState title="No open jobs yet" message="TWA does not have any approved open listings to show right now." /> : null}
-      {!isLoading && !error && items.length > 0 ? <div className="jobs-grid">{items.map((item) => <JobCard item={item} key={item.job.id} />)}</div> : null}
+      {!isLoading && error ? (
+        <ErrorState title="Jobs unavailable" message={error} />
+      ) : null}
+      {!isLoading && !error && items.length === 0 ? (
+        <EmptyState
+          title="No open jobs yet"
+          message="TWA does not have any approved open listings to show right now."
+        />
+      ) : null}
+      {!isLoading && !error && items.length > 0 ? (
+        <div className="jobs-grid">
+          {items.map((item) => (
+            <JobCard item={item} key={item.job.id} />
+          ))}
+        </div>
+      ) : null}
 
       {!isLoading && !error && totalPages > 1 ? (
         <Card strong>
           <CardBody>
             <div className="cluster pagination-row">
-              <p className="card-copy">Page {page} of {totalPages}</p>
+              <p className="card-copy">
+                Page {page} of {totalPages}
+              </p>
               <div className="inline-actions">
-                <Button disabled={page <= 1} tone="secondary" onClick={() => setPage((current) => current - 1)}>Previous</Button>
-                <Button disabled={page >= totalPages} onClick={() => setPage((current) => current + 1)}>Next</Button>
+                <Button
+                  disabled={page <= 1}
+                  tone="secondary"
+                  onClick={() => setPage((current) => current - 1)}
+                >
+                  Previous
+                </Button>
+                <Button
+                  disabled={page >= totalPages}
+                  onClick={() => setPage((current) => current + 1)}
+                >
+                  Next
+                </Button>
               </div>
             </div>
           </CardBody>

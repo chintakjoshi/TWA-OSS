@@ -25,7 +25,9 @@ def register_exception_handlers(app: FastAPI) -> None:
         return JSONResponse(status_code=exc.status_code, content={"error": error})
 
     @app.exception_handler(RequestValidationError)
-    async def handle_validation_error(request: Request, exc: RequestValidationError) -> JSONResponse:
+    async def handle_validation_error(
+        request: Request, exc: RequestValidationError
+    ) -> JSONResponse:
         error = {
             "code": "VALIDATION_ERROR",
             "message": "Request validation failed.",
@@ -37,7 +39,9 @@ def register_exception_handlers(app: FastAPI) -> None:
         return JSONResponse(status_code=422, content={"error": error})
 
     @app.exception_handler(StarletteHTTPException)
-    async def handle_http_exception(request: Request, exc: StarletteHTTPException) -> JSONResponse:
+    async def handle_http_exception(
+        request: Request, exc: StarletteHTTPException
+    ) -> JSONResponse:
         detail = exc.detail if isinstance(exc.detail, str) else "Request failed."
         error = {"code": "HTTP_ERROR", "message": detail}
         request_id = getattr(request.state, "request_id", None)
@@ -46,7 +50,9 @@ def register_exception_handlers(app: FastAPI) -> None:
         return JSONResponse(status_code=exc.status_code, content={"error": error})
 
     @app.exception_handler(Exception)
-    async def handle_unexpected_exception(request: Request, exc: Exception) -> JSONResponse:
+    async def handle_unexpected_exception(
+        request: Request, exc: Exception
+    ) -> JSONResponse:
         log_exception(request=request, exc=exc)
         error = {
             "code": "INTERNAL_SERVER_ERROR",

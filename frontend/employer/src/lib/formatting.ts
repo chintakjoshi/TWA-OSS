@@ -10,7 +10,9 @@ const chargeLabels: Array<{ key: keyof ChargeFlags; label: string }> = [
 ]
 
 export function formatChargeFlags(flags: ChargeFlags): string[] {
-  return chargeLabels.filter((item) => flags[item.key]).map((item) => item.label)
+  return chargeLabels
+    .filter((item) => flags[item.key])
+    .map((item) => item.label)
 }
 
 export function formatDate(value: string | null | undefined): string {

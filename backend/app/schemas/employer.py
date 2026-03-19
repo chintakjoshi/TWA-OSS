@@ -105,7 +105,9 @@ class CreateJobListingRequest(BaseModel):
     city: str | None = Field(default=None, max_length=128)
     zip: str | None = Field(default=None, max_length=16)
     transit_required: Literal["own_car", "any"] = "any"
-    disqualifying_charges: ChargeFlagsPayload = Field(default_factory=ChargeFlagsPayload)
+    disqualifying_charges: ChargeFlagsPayload = Field(
+        default_factory=ChargeFlagsPayload
+    )
 
 
 class UpdateEmployerReviewRequest(BaseModel):

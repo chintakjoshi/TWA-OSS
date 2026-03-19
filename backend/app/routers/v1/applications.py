@@ -11,8 +11,18 @@ from app.schemas.applications import (
     CreateApplicationRequest,
     MyApplicationListItemPayload,
 )
-from app.services.applications import create_application, list_my_applications, serialize_application
-from app.services.common import PaginationParams, SortParams, ensure_found, get_pagination_params, get_sort_params
+from app.services.applications import (
+    create_application,
+    list_my_applications,
+    serialize_application,
+)
+from app.services.common import (
+    PaginationParams,
+    SortParams,
+    ensure_found,
+    get_pagination_params,
+    get_sort_params,
+)
 from app.services.jobseeker import get_jobseeker_by_app_user_id
 
 router = APIRouter(prefix="/api/v1/applications", tags=["applications"])
@@ -24,7 +34,10 @@ def post_application(
     auth_context: AuthContext = Depends(require_completed_jobseeker),
     session: Session = Depends(get_db_session),
 ) -> ApplicationResponse:
-    jobseeker = ensure_found(get_jobseeker_by_app_user_id(session, auth_context.app_user_id), entity_name="Jobseeker")
+    jobseeker = ensure_found(
+        get_jobseeker_by_app_user_id(session, auth_context.app_user_id),
+        entity_name="Jobseeker",
+    )
     application = create_application(
         session,
         jobseeker=jobseeker,
@@ -42,5 +55,10 @@ def get_my_applications(
     auth_context: AuthContext = Depends(require_jobseeker),
     session: Session = Depends(get_db_session),
 ) -> PaginatedResponse[MyApplicationListItemPayload]:
-    jobseeker = ensure_found(get_jobseeker_by_app_user_id(session, auth_context.app_user_id), entity_name="Jobseeker")
-    return list_my_applications(session, jobseeker=jobseeker, pagination=pagination, sort=sort, status=status)
+    jobseeker = ensure_found(
+        get_jobseeker_by_app_user_id(session, auth_context.app_user_id),
+        entity_name="Jobseeker",
+    )
+    return list_my_applications(
+        session, jobseeker=jobseeker, pagination=pagination, sort=sort, status=status
+    )

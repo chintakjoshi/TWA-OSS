@@ -3,13 +3,18 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from uuid import UUID
 
-from sqlalchemy import func, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session, joinedload
 
 from app.audit import write_audit
 from app.core.exceptions import AppError
-from app.models import AppUser, Application, Employer, JobListing, Jobseeker
-from app.models.enums import EmployerReviewStatus, ListingLifecycleStatus, ListingReviewStatus, TransitRequirement
+from app.models import Application, AppUser, Employer, JobListing, Jobseeker
+from app.models.enums import (
+    EmployerReviewStatus,
+    ListingLifecycleStatus,
+    ListingReviewStatus,
+    TransitRequirement,
+)
 from app.schemas.employer import ChargeFlagsPayload
 from app.services.common import (
     PaginationParams,
@@ -22,8 +27,11 @@ from app.services.common import (
 )
 from app.services.geocoding import geocode_address
 from app.services.jobseeker import is_jobseeker_profile_complete, serialize_charge_flags
-from app.services.notifications import get_notification_config
-from app.services.notifications import notify_employer_review_decision, notify_listing_review_decision
+from app.services.notifications import (
+    get_notification_config,
+    notify_employer_review_decision,
+    notify_listing_review_decision,
+)
 from app.services.transit import compute_transit_accessibility
 
 EMPLOYER_ALLOWED_FILTERS = {
@@ -38,16 +46,61 @@ LISTING_ALLOWED_FILTERS = {
     "review_status": JobListing.review_status,
     "lifecycle_status": JobListing.lifecycle_status,
     "employer_id": JobListing.employer_id,
+    "city": JobListing.city,
 }
 LISTING_ALLOWED_SORTS = {
     "created_at": JobListing.created_at,
     "updated_at": JobListing.updated_at,
     "title": JobListing.title,
 }
+ALLOWED_EMPLOYER_REVIEW_TRANSITIONS = {
+    EmployerReviewStatus.PENDING: {
+        EmployerReviewStatus.PENDING,
+        EmployerReviewStatus.APPROVED,
+        EmployerReviewStatus.REJECTED,
+    },
+    EmployerReviewStatus.APPROVED: {
+        EmployerReviewStatus.APPROVED,
+        EmployerReviewStatus.REJECTED,
+    },
+    EmployerReviewStatus.REJECTED: {
+        EmployerReviewStatus.REJECTED,
+        EmployerReviewStatus.APPROVED,
+    },
+}
+ALLOWED_LISTING_REVIEW_TRANSITIONS = {
+    ListingReviewStatus.PENDING: {
+        ListingReviewStatus.PENDING,
+        ListingReviewStatus.APPROVED,
+        ListingReviewStatus.REJECTED,
+    },
+    ListingReviewStatus.APPROVED: {
+        ListingReviewStatus.APPROVED,
+        ListingReviewStatus.REJECTED,
+    },
+    ListingReviewStatus.REJECTED: {
+        ListingReviewStatus.REJECTED,
+        ListingReviewStatus.APPROVED,
+    },
+}
+ALLOWED_LISTING_LIFECYCLE_TRANSITIONS = {
+    ListingLifecycleStatus.OPEN: {
+        ListingLifecycleStatus.OPEN,
+        ListingLifecycleStatus.CLOSED,
+    },
+    ListingLifecycleStatus.CLOSED: {ListingLifecycleStatus.CLOSED},
+}
 
 
-
-def _charge_flags_payload(*, sex_offense: bool, violent: bool, armed: bool, children: bool, drug: bool, theft: bool) -> ChargeFlagsPayload:
+def _charge_flags_payload(
+    *,
+    sex_offense: bool,
+    violent: bool,
+    armed: bool,
+    children: bool,
+    drug: bool,
+    theft: bool,
+) -> ChargeFlagsPayload:
     return ChargeFlagsPayload(
         sex_offense=sex_offense,
         violent=violent,
@@ -56,7 +109,6 @@ def _charge_flags_payload(*, sex_offense: bool, violent: bool, armed: bool, chil
         drug=drug,
         theft=theft,
     )
-
 
 
 def serialize_employer(employer: Employer):
@@ -79,7 +131,6 @@ def serialize_employer(employer: Employer):
         created_at=employer.created_at,
         updated_at=employer.updated_at,
     )
-
 
 
 def serialize_listing(listing: JobListing, *, include_employer: bool = False):
@@ -119,10 +170,11 @@ def serialize_listing(listing: JobListing, *, include_employer: bool = False):
     return payload_type(**kwargs)
 
 
-
-
 def serialize_employer_applicant(application: Application):
-    from app.schemas.employer import EmployerApplicantJobseekerPayload, EmployerListingApplicantPayload
+    from app.schemas.employer import (
+        EmployerApplicantJobseekerPayload,
+        EmployerListingApplicantPayload,
+    )
 
     jobseeker = application.jobseeker
     return EmployerListingApplicantPayload(
@@ -137,12 +189,50 @@ def serialize_employer_applicant(application: Application):
             address=jobseeker.address,
             city=jobseeker.city,
             zip=jobseeker.zip,
-            transit_type=jobseeker.transit_type.value if jobseeker.transit_type else None,
+            transit_type=(
+                jobseeker.transit_type.value if jobseeker.transit_type else None
+            ),
             charges=serialize_charge_flags(jobseeker),
             profile_complete=is_jobseeker_profile_complete(jobseeker),
             status=jobseeker.status.value,
         ),
     )
+
+
+def _ensure_employer_review_transition(
+    *, current_status: EmployerReviewStatus, next_status: EmployerReviewStatus
+) -> None:
+    if next_status not in ALLOWED_EMPLOYER_REVIEW_TRANSITIONS[current_status]:
+        raise AppError(
+            status_code=422,
+            code="STATE_TRANSITION_NOT_ALLOWED",
+            detail=f"Employer review status cannot move from {current_status.value} to {next_status.value}.",
+        )
+
+
+def _ensure_listing_review_transition(
+    *, current_status: ListingReviewStatus, next_status: ListingReviewStatus
+) -> None:
+    if next_status not in ALLOWED_LISTING_REVIEW_TRANSITIONS[current_status]:
+        raise AppError(
+            status_code=422,
+            code="STATE_TRANSITION_NOT_ALLOWED",
+            detail=f"Listing review status cannot move from {current_status.value} to {next_status.value}.",
+        )
+
+
+def _ensure_listing_lifecycle_transition(
+    *,
+    current_status: ListingLifecycleStatus,
+    next_status: ListingLifecycleStatus,
+) -> None:
+    if next_status not in ALLOWED_LISTING_LIFECYCLE_TRANSITIONS[current_status]:
+        raise AppError(
+            status_code=422,
+            code="STATE_TRANSITION_NOT_ALLOWED",
+            detail=f"Listing lifecycle status cannot move from {current_status.value} to {next_status.value}.",
+        )
+
 
 def _enrich_listing_location_data(listing: JobListing) -> str | None:
     if not listing.location_address or not listing.city or not listing.zip:
@@ -164,13 +254,16 @@ def _enrich_listing_location_data(listing: JobListing) -> str | None:
 
     listing.job_lat = geocoded.latitude
     listing.job_lon = geocoded.longitude
-    transit_result = compute_transit_accessibility(job_lat=listing.job_lat, job_lon=listing.job_lon)
+    transit_result = compute_transit_accessibility(
+        job_lat=listing.job_lat, job_lon=listing.job_lon
+    )
     listing.transit_accessible = transit_result.transit_accessible
     return transit_result.warning
 
 
-
-def _write_location_warning_audit(session: Session, *, actor_id: UUID, listing: JobListing, warning: str | None) -> None:
+def _write_location_warning_audit(
+    session: Session, *, actor_id: UUID, listing: JobListing, warning: str | None
+) -> None:
     if warning is None:
         return
     write_audit(
@@ -183,17 +276,22 @@ def _write_location_warning_audit(session: Session, *, actor_id: UUID, listing: 
     )
 
 
-
 def get_employer_by_app_user_id(session: Session, app_user_id: UUID) -> Employer | None:
-    statement = select(Employer).options(joinedload(Employer.app_user)).where(Employer.app_user_id == app_user_id)
+    statement = (
+        select(Employer)
+        .options(joinedload(Employer.app_user))
+        .where(Employer.app_user_id == app_user_id)
+    )
     return session.execute(statement).unique().scalar_one_or_none()
-
 
 
 def get_employer_by_id(session: Session, employer_id: UUID) -> Employer | None:
-    statement = select(Employer).options(joinedload(Employer.app_user)).where(Employer.id == employer_id)
+    statement = (
+        select(Employer)
+        .options(joinedload(Employer.app_user))
+        .where(Employer.id == employer_id)
+    )
     return session.execute(statement).unique().scalar_one_or_none()
-
 
 
 def get_listing_by_id(session: Session, listing_id: UUID) -> JobListing | None:
@@ -205,7 +303,6 @@ def get_listing_by_id(session: Session, listing_id: UUID) -> JobListing | None:
     return session.execute(statement).unique().scalar_one_or_none()
 
 
-
 def update_employer_profile(session: Session, employer: Employer, payload) -> Employer:
     for field in ("org_name", "contact_name", "phone", "address", "city", "zip"):
         value = getattr(payload, field)
@@ -214,7 +311,6 @@ def update_employer_profile(session: Session, employer: Employer, payload) -> Em
     session.commit()
     session.refresh(employer)
     return employer
-
 
 
 def create_listing(session: Session, employer: Employer, payload) -> JobListing:
@@ -238,7 +334,9 @@ def create_listing(session: Session, employer: Employer, payload) -> JobListing:
     warning = _enrich_listing_location_data(listing)
     session.add(listing)
     session.flush()
-    _write_location_warning_audit(session, actor_id=employer.app_user_id, listing=listing, warning=warning)
+    _write_location_warning_audit(
+        session, actor_id=employer.app_user_id, listing=listing, warning=warning
+    )
     write_audit(
         session,
         actor_id=employer.app_user_id,
@@ -249,8 +347,9 @@ def create_listing(session: Session, employer: Employer, payload) -> JobListing:
     )
     session.commit()
     session.refresh(listing)
-    return ensure_found(get_listing_by_id(session, listing.id), entity_name="Job listing")
-
+    return ensure_found(
+        get_listing_by_id(session, listing.id), entity_name="Job listing"
+    )
 
 
 def list_employer_listings(
@@ -268,8 +367,12 @@ def list_employer_listings(
         filters={"review_status": review_status, "lifecycle_status": lifecycle_status},
         allowed_filters=LISTING_ALLOWED_FILTERS,
     )
-    total_items = session.execute(select(func.count()).select_from(base_statement.subquery())).scalar_one()
-    statement = apply_sorting(base_statement, sort=sort, allowed_sorts=LISTING_ALLOWED_SORTS)
+    total_items = session.execute(
+        select(func.count()).select_from(base_statement.subquery())
+    ).scalar_one()
+    statement = apply_sorting(
+        base_statement, sort=sort, allowed_sorts=LISTING_ALLOWED_SORTS
+    )
     statement = apply_pagination(statement, pagination)
     items = session.execute(statement).scalars().all()
     return build_paginated_response(
@@ -277,7 +380,6 @@ def list_employer_listings(
         total_items=total_items,
         pagination=pagination,
     )
-
 
 
 def list_employers(
@@ -292,9 +394,15 @@ def list_employers(
     filters = {"review_status": review_status}
     if pending_only:
         filters["review_status"] = EmployerReviewStatus.PENDING.value
-    base_statement = apply_filters(base_statement, filters=filters, allowed_filters=EMPLOYER_ALLOWED_FILTERS)
-    total_items = session.execute(select(func.count()).select_from(base_statement.subquery())).scalar_one()
-    statement = apply_sorting(base_statement, sort=sort, allowed_sorts=EMPLOYER_ALLOWED_SORTS)
+    base_statement = apply_filters(
+        base_statement, filters=filters, allowed_filters=EMPLOYER_ALLOWED_FILTERS
+    )
+    total_items = session.execute(
+        select(func.count()).select_from(base_statement.subquery())
+    ).scalar_one()
+    statement = apply_sorting(
+        base_statement, sort=sort, allowed_sorts=EMPLOYER_ALLOWED_SORTS
+    )
     statement = apply_pagination(statement, pagination)
     items = session.execute(statement).unique().scalars().all()
     return build_paginated_response(
@@ -302,7 +410,6 @@ def list_employers(
         total_items=total_items,
         pagination=pagination,
     )
-
 
 
 def list_listings(
@@ -313,19 +420,40 @@ def list_listings(
     review_status: str | None = None,
     lifecycle_status: str | None = None,
     employer_id: UUID | None = None,
+    city: str | None = None,
+    search: str | None = None,
     pending_only: bool = False,
 ):
-    base_statement = select(JobListing).options(joinedload(JobListing.employer).joinedload(Employer.app_user))
+    base_statement = select(JobListing).options(
+        joinedload(JobListing.employer).joinedload(Employer.app_user)
+    )
+    if search:
+        term = f"%{search.strip()}%"
+        base_statement = base_statement.where(
+            or_(
+                JobListing.title.ilike(term),
+                JobListing.description.ilike(term),
+                JobListing.city.ilike(term),
+                Employer.org_name.ilike(term),
+            )
+        ).join(JobListing.employer)
     filters = {
         "review_status": review_status,
         "lifecycle_status": lifecycle_status,
         "employer_id": employer_id,
+        "city": city,
     }
     if pending_only:
         filters["review_status"] = ListingReviewStatus.PENDING.value
-    base_statement = apply_filters(base_statement, filters=filters, allowed_filters=LISTING_ALLOWED_FILTERS)
-    total_items = session.execute(select(func.count()).select_from(base_statement.subquery())).scalar_one()
-    statement = apply_sorting(base_statement, sort=sort, allowed_sorts=LISTING_ALLOWED_SORTS)
+    base_statement = apply_filters(
+        base_statement, filters=filters, allowed_filters=LISTING_ALLOWED_FILTERS
+    )
+    total_items = session.execute(
+        select(func.count()).select_from(base_statement.subquery())
+    ).scalar_one()
+    statement = apply_sorting(
+        base_statement, sort=sort, allowed_sorts=LISTING_ALLOWED_SORTS
+    )
     statement = apply_pagination(statement, pagination)
     items = session.execute(statement).unique().scalars().all()
     return build_paginated_response(
@@ -335,11 +463,21 @@ def list_listings(
     )
 
 
-
-def review_employer(session: Session, *, employer: Employer, reviewer: AppUser, review_status: str, review_note: str | None) -> Employer:
+def review_employer(
+    session: Session,
+    *,
+    employer: Employer,
+    reviewer: AppUser,
+    review_status: str,
+    review_note: str | None,
+) -> Employer:
     old_value = serialize_employer(employer).model_dump(mode="json")
     previous_review_status = employer.review_status
-    employer.review_status = EmployerReviewStatus(review_status)
+    next_review_status = EmployerReviewStatus(review_status)
+    _ensure_employer_review_transition(
+        current_status=employer.review_status, next_status=next_review_status
+    )
+    employer.review_status = next_review_status
     employer.review_note = review_note
     employer.reviewed_by = reviewer.id
     employer.reviewed_at = datetime.now(timezone.utc)
@@ -355,10 +493,12 @@ def review_employer(session: Session, *, employer: Employer, reviewer: AppUser, 
     )
     session.commit()
     session.refresh(employer)
-    if employer.review_status != previous_review_status and employer.review_status.value in {"approved", "rejected"}:
+    if (
+        employer.review_status != previous_review_status
+        and employer.review_status.value in {"approved", "rejected"}
+    ):
         notify_employer_review_decision(session, employer=employer)
     return employer
-
 
 
 def review_listing(
@@ -371,14 +511,26 @@ def review_listing(
     review_note: str | None,
 ) -> JobListing:
     if review_status is None and lifecycle_status is None and review_note is None:
-        raise AppError(status_code=422, code="VALIDATION_ERROR", detail="At least one listing review field must be provided.")
+        raise AppError(
+            status_code=422,
+            code="VALIDATION_ERROR",
+            detail="At least one listing review field must be provided.",
+        )
 
     old_value = serialize_listing(listing).model_dump(mode="json")
     previous_review_status = listing.review_status
     if review_status is not None:
-        listing.review_status = ListingReviewStatus(review_status)
+        next_review_status = ListingReviewStatus(review_status)
+        _ensure_listing_review_transition(
+            current_status=listing.review_status, next_status=next_review_status
+        )
+        listing.review_status = next_review_status
     if lifecycle_status is not None:
-        listing.lifecycle_status = ListingLifecycleStatus(lifecycle_status)
+        next_lifecycle_status = ListingLifecycleStatus(lifecycle_status)
+        _ensure_listing_lifecycle_transition(
+            current_status=listing.lifecycle_status, next_status=next_lifecycle_status
+        )
+        listing.lifecycle_status = next_lifecycle_status
     if review_note is not None:
         listing.review_note = review_note
     listing.reviewed_by = reviewer.id
@@ -389,7 +541,9 @@ def review_listing(
         warning = _enrich_listing_location_data(listing)
 
     session.flush()
-    _write_location_warning_audit(session, actor_id=reviewer.id, listing=listing, warning=warning)
+    _write_location_warning_audit(
+        session, actor_id=reviewer.id, listing=listing, warning=warning
+    )
 
     if lifecycle_status == ListingLifecycleStatus.CLOSED.value:
         action = "listing.closed"
@@ -409,8 +563,13 @@ def review_listing(
     )
     session.commit()
     session.refresh(listing)
-    listing = ensure_found(get_listing_by_id(session, listing.id), entity_name="Job listing")
-    if listing.review_status != previous_review_status and listing.review_status.value in {"approved", "rejected"}:
+    listing = ensure_found(
+        get_listing_by_id(session, listing.id), entity_name="Job listing"
+    )
+    if (
+        listing.review_status != previous_review_status
+        and listing.review_status.value in {"approved", "rejected"}
+    ):
         notify_listing_review_decision(session, listing=listing)
     return listing
 
@@ -437,8 +596,12 @@ def list_employer_listing_applicants(
         )
         .where(Application.job_listing_id == listing.id)
     )
-    total_items = session.execute(select(func.count()).select_from(base_statement.subquery())).scalar_one()
-    statement = apply_pagination(base_statement.order_by(Application.applied_at.desc()), pagination)
+    total_items = session.execute(
+        select(func.count()).select_from(base_statement.subquery())
+    ).scalar_one()
+    statement = apply_pagination(
+        base_statement.order_by(Application.applied_at.desc()), pagination
+    )
     items = session.execute(statement).unique().scalars().all()
     return build_paginated_response(
         items=[serialize_employer_applicant(item) for item in items],

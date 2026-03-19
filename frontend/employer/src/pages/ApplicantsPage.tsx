@@ -8,7 +8,13 @@ import { getEmployerListing } from '../api/employerApi'
 import { ApplicantsPanel } from '../components/ApplicantsPanel'
 import { EmployerHeader } from '../components/EmployerHeader'
 import { ErrorState, LoadingState } from '../components/PageState'
-import { formatDate, formatDateTime, formatStatusLabel, formatTransitAccessibility, formatTransitRequirement } from '../lib/formatting'
+import {
+  formatDate,
+  formatDateTime,
+  formatStatusLabel,
+  formatTransitAccessibility,
+  formatTransitRequirement,
+} from '../lib/formatting'
 import type { JobListing } from '../types/employer'
 
 export function EmployerApplicantsPage() {
@@ -53,13 +59,22 @@ export function EmployerApplicantsPage() {
     return (
       <div className="page-frame stack-md employer-shell-page">
         <EmployerHeader />
-        <ErrorState title="Applicants unavailable" message={error ?? 'The applicants screen could not be loaded.'} />
+        <ErrorState
+          title="Applicants unavailable"
+          message={error ?? 'The applicants screen could not be loaded.'}
+        />
       </div>
     )
   }
 
-  const reviewTone = listing.review_status === 'approved' ? 'success' : listing.review_status === 'rejected' ? 'danger' : 'warning'
-  const lifecycleTone = listing.lifecycle_status === 'open' ? 'success' : 'neutral'
+  const reviewTone =
+    listing.review_status === 'approved'
+      ? 'success'
+      : listing.review_status === 'rejected'
+        ? 'danger'
+        : 'warning'
+  const lifecycleTone =
+    listing.lifecycle_status === 'open' ? 'success' : 'neutral'
 
   return (
     <div className="page-frame stack-md employer-shell-page">
@@ -67,11 +82,21 @@ export function EmployerApplicantsPage() {
 
       <Card strong>
         <CardBody className="stack-md">
-          <div className="cluster" style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
+          <div
+            className="cluster"
+            style={{
+              justifyContent: 'space-between',
+              alignItems: 'flex-start',
+            }}
+          >
             <div className="stack-sm">
               <p className="portal-eyebrow">Applicants Screen</p>
               <h2 className="card-title">{listing.title}</h2>
-              <p className="card-copy">{listing.location_address ?? 'Address not provided'}{listing.city ? `, ${listing.city}` : ''}{listing.zip ? ` ${listing.zip}` : ''}</p>
+              <p className="card-copy">
+                {listing.location_address ?? 'Address not provided'}
+                {listing.city ? `, ${listing.city}` : ''}
+                {listing.zip ? ` ${listing.zip}` : ''}
+              </p>
             </div>
             <div className="cluster">
               <Badge tone={reviewTone}>{listing.review_status}</Badge>
@@ -82,19 +107,34 @@ export function EmployerApplicantsPage() {
           <div className="detail-grid">
             <div className="stack-sm">
               <h3 className="detail-heading">Transit</h3>
-              <p className="card-copy">{formatTransitRequirement(listing.transit_required)}</p>
-              <p className="card-copy">{formatTransitAccessibility(listing.transit_accessible)}</p>
+              <p className="card-copy">
+                {formatTransitRequirement(listing.transit_required)}
+              </p>
+              <p className="card-copy">
+                {formatTransitAccessibility(listing.transit_accessible)}
+              </p>
             </div>
             <div className="stack-sm">
               <h3 className="detail-heading">Tracking</h3>
-              <p className="card-copy">Submitted: {formatDate(listing.created_at)}</p>
-              <p className="card-copy">Last updated: {formatDateTime(listing.updated_at)}</p>
+              <p className="card-copy">
+                Submitted: {formatDate(listing.created_at)}
+              </p>
+              <p className="card-copy">
+                Last updated: {formatDateTime(listing.updated_at)}
+              </p>
             </div>
           </div>
 
           <div className="inline-actions">
-            <Link className="button button-secondary" to={`/listings/${listing.id}`}>Back to listing detail</Link>
-            <Link className="button button-ghost" to="/listings">Back to listings</Link>
+            <Link
+              className="button button-secondary"
+              to={`/listings/${listing.id}`}
+            >
+              Back to listing detail
+            </Link>
+            <Link className="button button-ghost" to="/listings">
+              Back to listings
+            </Link>
           </div>
         </CardBody>
       </Card>

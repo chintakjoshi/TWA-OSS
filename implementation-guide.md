@@ -371,10 +371,11 @@ Ship the first complete business workflow: auth-service signup, TWA employer boo
 9. Build staff listing review queue.
 
 10. Allow staff to:
-   - approve listing
-   - reject listing
-   - later reassess and approve a previously rejected listing
-   - close listing after hires or when no longer needed
+
+- approve listing
+- reject listing
+- later reassess and approve a previously rejected listing
+- close listing after hires or when no longer needed
 
 ### Recommended Listing State Model
 
@@ -944,6 +945,3 @@ Once implementation starts, the most useful follow-up docs would be:
 3. frontend route map for each app
 4. QA test checklist
 5. deployment runbook
-
-
-

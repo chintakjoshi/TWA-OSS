@@ -7,24 +7,41 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.models import Application, AuditLog, Employer, JobListing, Jobseeker
-from app.models.enums import ApplicationStatus, EmployerReviewStatus, JobseekerStatus, ListingLifecycleStatus, ListingReviewStatus
+from app.models.enums import (
+    ApplicationStatus,
+    EmployerReviewStatus,
+    JobseekerStatus,
+    ListingLifecycleStatus,
+    ListingReviewStatus,
+)
 from app.schemas.admin import AdminDashboardPayload, AuditLogPayload
-from app.services.common import PaginationParams, apply_pagination, build_paginated_response
-
+from app.services.common import (
+    PaginationParams,
+    apply_pagination,
+    build_paginated_response,
+)
 
 
 def get_admin_dashboard_summary(session: Session) -> AdminDashboardPayload:
     pending_employers = session.execute(
-        select(func.count()).select_from(Employer).where(Employer.review_status == EmployerReviewStatus.PENDING)
+        select(func.count())
+        .select_from(Employer)
+        .where(Employer.review_status == EmployerReviewStatus.PENDING)
     ).scalar_one()
     pending_listings = session.execute(
-        select(func.count()).select_from(JobListing).where(JobListing.review_status == ListingReviewStatus.PENDING)
+        select(func.count())
+        .select_from(JobListing)
+        .where(JobListing.review_status == ListingReviewStatus.PENDING)
     ).scalar_one()
     active_jobseekers = session.execute(
-        select(func.count()).select_from(Jobseeker).where(Jobseeker.status == JobseekerStatus.ACTIVE)
+        select(func.count())
+        .select_from(Jobseeker)
+        .where(Jobseeker.status == JobseekerStatus.ACTIVE)
     ).scalar_one()
     open_applications = session.execute(
-        select(func.count()).select_from(Application).where(Application.status != ApplicationStatus.HIRED)
+        select(func.count())
+        .select_from(Application)
+        .where(Application.status != ApplicationStatus.HIRED)
     ).scalar_one()
     open_listings = session.execute(
         select(func.count())
@@ -43,7 +60,6 @@ def get_admin_dashboard_summary(session: Session) -> AdminDashboardPayload:
     )
 
 
-
 def serialize_audit_log(entry: AuditLog) -> AuditLogPayload:
     return AuditLogPayload(
         id=entry.id,
@@ -55,7 +71,6 @@ def serialize_audit_log(entry: AuditLog) -> AuditLogPayload:
         new_value=entry.new_value,
         timestamp=entry.timestamp,
     )
-
 
 
 def list_audit_logs(
@@ -84,7 +99,9 @@ def list_audit_logs(
     if date_to is not None:
         base_statement = base_statement.where(AuditLog.timestamp <= date_to)
 
-    total_items = session.execute(select(func.count()).select_from(base_statement.subquery())).scalar_one()
+    total_items = session.execute(
+        select(func.count()).select_from(base_statement.subquery())
+    ).scalar_one()
     statement = base_statement.order_by(AuditLog.timestamp.desc())
     statement = apply_pagination(statement, pagination)
     items = session.execute(statement).scalars().all()

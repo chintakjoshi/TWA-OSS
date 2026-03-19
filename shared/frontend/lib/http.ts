@@ -1,6 +1,9 @@
 export interface ErrorPayload {
   detail?: string
   code?: string
+  message?: string
+  details?: unknown
+  error?: ErrorPayload
   [key: string]: unknown
 }
 
@@ -18,24 +21,43 @@ export class HttpError extends Error {
   }
 }
 
+function getErrorPayload(
+  payload: ErrorPayload | undefined
+): ErrorPayload | undefined {
+  if (!payload || typeof payload !== 'object') return undefined
+  if (payload.error && typeof payload.error === 'object') return payload.error
+  return payload
+}
+
 export function joinUrl(baseUrl: string, path: string): string {
   const normalizedBase = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl
   const normalizedPath = path.startsWith('/') ? path : `/${path}`
   return `${normalizedBase}${normalizedPath}`
 }
 
-export async function requestJson<T>(input: string, init: RequestInit = {}): Promise<T> {
+export async function requestJson<T>(
+  input: string,
+  init: RequestInit = {}
+): Promise<T> {
   const headers = new Headers(init.headers)
-  if (init.body && !headers.has('Content-Type')) headers.set('Content-Type', 'application/json')
+  if (init.body && !headers.has('Content-Type'))
+    headers.set('Content-Type', 'application/json')
   if (!headers.has('Accept')) headers.set('Accept', 'application/json')
 
   const response = await fetch(input, { ...init, headers })
-  const isJson = response.headers.get('content-type')?.includes('application/json') ?? false
+  const isJson =
+    response.headers.get('content-type')?.includes('application/json') ?? false
   const payload = isJson ? ((await response.json()) as ErrorPayload) : undefined
 
   if (!response.ok) {
-    const detail = typeof payload?.detail === 'string' ? payload.detail : `Request failed with status ${response.status}`
-    throw new HttpError(response.status, detail, payload)
+    const errorPayload = getErrorPayload(payload)
+    const detail =
+      typeof errorPayload?.message === 'string'
+        ? errorPayload.message
+        : typeof errorPayload?.detail === 'string'
+          ? errorPayload.detail
+          : `Request failed with status ${response.status}`
+    throw new HttpError(response.status, detail, errorPayload)
   }
 
   return (payload ?? (undefined as T)) as T

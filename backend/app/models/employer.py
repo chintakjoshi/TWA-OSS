@@ -19,7 +19,9 @@ class Employer(UUIDPrimaryKeyMixin, TimestampMixin, AddressMixin, Base):
         Index("ix_employers_org_name", "org_name"),
     )
 
-    app_user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("app_users.id"), nullable=False)
+    app_user_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("app_users.id"), nullable=False
+    )
     org_name: Mapped[str] = mapped_column(String(255), nullable=False)
     contact_name: Mapped[str | None] = mapped_column(String(255))
     phone: Mapped[str | None] = mapped_column(String(32))
@@ -30,9 +32,15 @@ class Employer(UUIDPrimaryKeyMixin, TimestampMixin, AddressMixin, Base):
         server_default=EmployerReviewStatus.PENDING.value,
     )
     review_note: Mapped[str | None] = mapped_column(Text)
-    reviewed_by: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("app_users.id"), nullable=True)
+    reviewed_by: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("app_users.id"), nullable=True
+    )
     reviewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
-    app_user = relationship("AppUser", back_populates="employer_profile", foreign_keys=[app_user_id])
-    reviewer = relationship("AppUser", back_populates="reviewed_employers", foreign_keys=[reviewed_by])
+    app_user = relationship(
+        "AppUser", back_populates="employer_profile", foreign_keys=[app_user_id]
+    )
+    reviewer = relationship(
+        "AppUser", back_populates="reviewed_employers", foreign_keys=[reviewed_by]
+    )
     job_listings = relationship("JobListing", back_populates="employer")

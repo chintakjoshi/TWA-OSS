@@ -1,11 +1,20 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
-from app.db.session import get_db_session
-from app.schemas.auth import AppUserPayload, AuthBootstrapRequest, AuthBootstrapResponse, AuthMeResponse
-from app.services.auth import AuthProviderIdentity, bootstrap_user, build_auth_me, get_auth_provider_identity
-
 from app.core.config import get_settings
+from app.db.session import get_db_session
+from app.schemas.auth import (
+    AppUserPayload,
+    AuthBootstrapRequest,
+    AuthBootstrapResponse,
+    AuthMeResponse,
+)
+from app.services.auth import (
+    AuthProviderIdentity,
+    bootstrap_user,
+    build_auth_me,
+    get_auth_provider_identity,
+)
 
 settings = get_settings()
 router = APIRouter(prefix=f"{settings.api_v1_prefix}/auth", tags=["auth"])
@@ -36,7 +45,11 @@ def get_auth_me(
 ) -> AuthMeResponse:
     result = build_auth_me(session=session, identity=identity)
     return AuthMeResponse(
-        app_user=AppUserPayload.model_validate(result.app_user, from_attributes=True) if result.app_user else None,
+        app_user=(
+            AppUserPayload.model_validate(result.app_user, from_attributes=True)
+            if result.app_user
+            else None
+        ),
         profile_complete=result.profile_complete,
         employer_review_status=result.employer_review_status,
         next_step=result.next_step,

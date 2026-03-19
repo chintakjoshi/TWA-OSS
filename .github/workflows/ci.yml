@@ -37,11 +37,41 @@ jobs:
       - name: Install backend dependencies
         run: uv sync --group dev
 
+      - name: Run Ruff
+        run: uv run ruff check .
+
+      - name: Run Black check
+        run: uv run black --check .
+
       - name: Run backend tests
         run: uv run pytest
 
       - name: Verify app import
         run: uv run python -c "from app.main import app; print(app.title)"
+
+  frontend-quality:
+    name: Frontend Quality
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install root frontend dependencies
+        run: npm ci
+
+      - name: Run frontend lint
+        run: npm run lint:frontend
+
+      - name: Run frontend format check
+        run: npm run format:check
 
   frontend:
     name: Frontend (${{ matrix.app.name }})

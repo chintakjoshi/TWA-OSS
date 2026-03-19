@@ -35,23 +35,63 @@ export interface AuthBootstrapRequest {
   employer_profile?: EmployerBootstrapProfile
 }
 
-export interface SignupRequest { email: string; password: string }
-export interface SignupResponse { user_id: string; email: string; email_verified: boolean }
-export interface LoginRequest { email: string; password: string; audience?: string }
-export interface TokenPairResponse { access_token: string; refresh_token: string; token_type: 'bearer' }
-export interface LoginOTPChallengeResponse { otp_required: true; challenge_token: string; masked_email: string }
-export interface ForgotPasswordRequest { email: string }
-export interface ForgotPasswordResponse { sent: true }
-export interface ResetPasswordRequest { token: string; new_password: string }
-export interface ResetPasswordResponse { reset: true }
-export interface OTPMessageSentResponse { sent: true }
-export interface VerifyLoginOTPRequest { challenge_token: string; code: string }
-export interface StoredSession { accessToken: string; refreshToken: string }
+export interface SignupRequest {
+  email: string
+  password: string
+}
+export interface SignupResponse {
+  user_id: string
+  email: string
+  email_verified: boolean
+}
+export interface LoginRequest {
+  email: string
+  password: string
+  audience?: string
+}
+export interface TokenPairResponse {
+  access_token: string
+  refresh_token: string
+  token_type: 'bearer'
+}
+export interface LoginOTPChallengeResponse {
+  otp_required: true
+  challenge_token: string
+  masked_email: string
+}
+export interface ForgotPasswordRequest {
+  email: string
+}
+export interface ForgotPasswordResponse {
+  sent: true
+}
+export interface ResetPasswordRequest {
+  token: string
+  new_password: string
+}
+export interface ResetPasswordResponse {
+  reset: true
+}
+export interface OTPMessageSentResponse {
+  sent: true
+}
+export interface VerifyLoginOTPRequest {
+  challenge_token: string
+  code: string
+}
+export interface StoredSession {
+  accessToken: string
+  refreshToken: string
+}
 
-export function isOtpChallengeResponse(payload: LoginOTPChallengeResponse | TokenPairResponse): payload is LoginOTPChallengeResponse {
+export function isOtpChallengeResponse(
+  payload: LoginOTPChallengeResponse | TokenPairResponse
+): payload is LoginOTPChallengeResponse {
   return 'otp_required' in payload
 }
 
-export function isTokenPairResponse(payload: LoginOTPChallengeResponse | TokenPairResponse): payload is TokenPairResponse {
+export function isTokenPairResponse(
+  payload: LoginOTPChallengeResponse | TokenPairResponse
+): payload is TokenPairResponse {
   return 'access_token' in payload && 'refresh_token' in payload
 }

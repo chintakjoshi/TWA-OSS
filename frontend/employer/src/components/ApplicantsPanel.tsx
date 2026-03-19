@@ -2,10 +2,21 @@ import { useEffect, useState } from 'react'
 
 import { useAuth } from '@shared/auth/AuthProvider'
 import { HttpError } from '@shared/lib/http'
-import { Alert, Badge, Button, Card, CardBody, DataTable } from '@shared/ui/primitives'
+import {
+  Alert,
+  Badge,
+  Button,
+  Card,
+  CardBody,
+  DataTable,
+} from '@shared/ui/primitives'
 
 import { listEmployerApplicants } from '../api/employerApi'
-import { formatChargeFlags, formatDateTime, formatStatusLabel } from '../lib/formatting'
+import {
+  formatChargeFlags,
+  formatDateTime,
+  formatStatusLabel,
+} from '../lib/formatting'
 import type { EmployerApplicant } from '../types/employer'
 import { EmptyState, LoadingState } from './PageState'
 
@@ -30,7 +41,8 @@ export function ApplicantsPanel({
   const [totalPages, setTotalPages] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
   const [message, setMessage] = useState<string | null>(null)
-  const [applicantVisibilityDisabled, setApplicantVisibilityDisabled] = useState(false)
+  const [applicantVisibilityDisabled, setApplicantVisibilityDisabled] =
+    useState(false)
 
   useEffect(() => {
     let active = true
@@ -46,7 +58,11 @@ export function ApplicantsPanel({
       })
       .catch((nextError) => {
         if (!active) return
-        if (nextError instanceof HttpError && nextError.status === 403 && nextError.code === 'APPLICANT_VISIBILITY_DISABLED') {
+        if (
+          nextError instanceof HttpError &&
+          nextError.status === 403 &&
+          nextError.code === 'APPLICANT_VISIBILITY_DISABLED'
+        ) {
           setApplicants([])
           setTotalPages(0)
           setApplicantVisibilityDisabled(true)
@@ -56,7 +72,11 @@ export function ApplicantsPanel({
 
         setApplicants([])
         setTotalPages(0)
-        setMessage(nextError instanceof Error ? nextError.message : 'Unable to load applicants right now.')
+        setMessage(
+          nextError instanceof Error
+            ? nextError.message
+            : 'Unable to load applicants right now.'
+        )
       })
       .finally(() => {
         if (active) setIsLoading(false)
@@ -77,25 +97,58 @@ export function ApplicantsPanel({
         </div>
 
         {isLoading ? <LoadingState title="Loading applicants..." /> : null}
-        {!isLoading && applicantVisibilityDisabled ? <Alert tone="warning"><p>{message ?? 'Applicant visibility is currently disabled for employers.'}</p></Alert> : null}
-        {!isLoading && !applicantVisibilityDisabled && message ? <Alert tone="danger"><p>{message}</p></Alert> : null}
+        {!isLoading && applicantVisibilityDisabled ? (
+          <Alert tone="warning">
+            <p>
+              {message ??
+                'Applicant visibility is currently disabled for employers.'}
+            </p>
+          </Alert>
+        ) : null}
+        {!isLoading && !applicantVisibilityDisabled && message ? (
+          <Alert tone="danger">
+            <p>{message}</p>
+          </Alert>
+        ) : null}
 
-        {!isLoading && !applicantVisibilityDisabled && applicants.length === 0 && !message ? (
-          <EmptyState title="No applicants yet" message="Once jobseekers apply to this listing, they will appear here with their shared profile details." />
+        {!isLoading &&
+        !applicantVisibilityDisabled &&
+        applicants.length === 0 &&
+        !message ? (
+          <EmptyState
+            title="No applicants yet"
+            message="Once jobseekers apply to this listing, they will appear here with their shared profile details."
+          />
         ) : null}
 
         {!isLoading && !applicantVisibilityDisabled && applicants.length > 0 ? (
           <Card>
             <CardBody className="stack-md">
               <DataTable
-                columns={['Applicant', 'Phone', 'City', 'Transit', 'Charges', 'Status', 'Applied']}
+                columns={[
+                  'Applicant',
+                  'Phone',
+                  'City',
+                  'Transit',
+                  'Charges',
+                  'Status',
+                  'Applied',
+                ]}
                 rows={applicants.map((applicant) => [
                   applicant.jobseeker.full_name ?? 'Name not provided',
                   applicant.jobseeker.phone ?? 'No phone',
                   applicant.jobseeker.city ?? 'Unknown',
-                  applicant.jobseeker.transit_type ? formatStatusLabel(applicant.jobseeker.transit_type) : 'Not set',
-                  formatChargeFlags(applicant.jobseeker.charges).join(', ') || 'None',
-                  <Badge key={`${applicant.application_id}-status`} tone={applicantStatusTone(applicant.status)}>{applicant.status}</Badge>,
+                  applicant.jobseeker.transit_type
+                    ? formatStatusLabel(applicant.jobseeker.transit_type)
+                    : 'Not set',
+                  formatChargeFlags(applicant.jobseeker.charges).join(', ') ||
+                    'None',
+                  <Badge
+                    key={`${applicant.application_id}-status`}
+                    tone={applicantStatusTone(applicant.status)}
+                  >
+                    {applicant.status}
+                  </Badge>,
                   formatDateTime(applicant.applied_at),
                 ])}
               />
@@ -103,12 +156,28 @@ export function ApplicantsPanel({
           </Card>
         ) : null}
 
-        {!isLoading && !applicantVisibilityDisabled && applicants.length > 0 && totalPages > 1 ? (
+        {!isLoading &&
+        !applicantVisibilityDisabled &&
+        applicants.length > 0 &&
+        totalPages > 1 ? (
           <div className="cluster pagination-row">
-            <p className="card-copy">Applicant page {page} of {totalPages}</p>
+            <p className="card-copy">
+              Applicant page {page} of {totalPages}
+            </p>
             <div className="inline-actions">
-              <Button disabled={page <= 1} tone="secondary" onClick={() => setPage((current) => current - 1)}>Previous</Button>
-              <Button disabled={page >= totalPages} onClick={() => setPage((current) => current + 1)}>Next</Button>
+              <Button
+                disabled={page <= 1}
+                tone="secondary"
+                onClick={() => setPage((current) => current - 1)}
+              >
+                Previous
+              </Button>
+              <Button
+                disabled={page >= totalPages}
+                onClick={() => setPage((current) => current + 1)}
+              >
+                Next
+              </Button>
             </div>
           </div>
         ) : null}

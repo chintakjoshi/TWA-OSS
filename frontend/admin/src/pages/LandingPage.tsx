@@ -17,10 +17,17 @@ export function AdminLandingPage() {
         <CardBody className="stack-md">
           <p className="portal-eyebrow">Staff Admin</p>
           <h1>Operate the full TWA workflow from a dedicated staff console.</h1>
-          <p className="portal-copy">Phase 13D turns the admin app into the real operational surface for approvals, matching, hiring, notifications, and audit history.</p>
+          <p className="portal-copy">
+            Phase 13D turns the admin app into the real operational surface for
+            approvals, matching, hiring, notifications, and audit history.
+          </p>
           <div className="portal-actions">
-            <Link className="button button-primary" to="/auth">Open staff sign in</Link>
-            <a className="button button-secondary" href={publicAppUrl}>Open welcome page</a>
+            <Link className="button button-primary" to="/auth">
+              Open staff sign in
+            </Link>
+            <a className="button button-secondary" href={publicAppUrl}>
+              Open welcome page
+            </a>
           </div>
         </CardBody>
       </Card>
@@ -29,9 +36,16 @@ export function AdminLandingPage() {
         <CardBody className="portal-panel-body">
           <div>
             <p className="portal-label">Staff responsibilities</p>
-            <ul className="portal-list">{adminFocus.map((item) => <li key={item}>{item}</li>)}</ul>
+            <ul className="portal-list">
+              {adminFocus.map((item) => (
+                <li key={item}>{item}</li>
+              ))}
+            </ul>
           </div>
-          <div className="portal-meter"><span>Operations</span><strong>Review, match, govern</strong></div>
+          <div className="portal-meter">
+            <span>Operations</span>
+            <strong>Review, match, govern</strong>
+          </div>
         </CardBody>
       </Card>
     </main>

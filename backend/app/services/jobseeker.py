@@ -7,7 +7,7 @@ from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session, joinedload
 
 from app.audit import write_audit
-from app.models import AppUser, Application, Jobseeker
+from app.models import Application, AppUser, Jobseeker
 from app.models.enums import JobseekerStatus, TransitType
 from app.schemas.employer import ChargeFlagsPayload
 from app.schemas.jobseeker import (
@@ -48,11 +48,16 @@ JOBSEEKER_ALLOWED_SORTS = {
 def is_jobseeker_profile_complete(jobseeker: Jobseeker | None) -> bool:
     if jobseeker is None:
         return False
-    required_fields = [jobseeker.full_name, jobseeker.phone, jobseeker.address, jobseeker.city, jobseeker.zip]
+    required_fields = [
+        jobseeker.full_name,
+        jobseeker.phone,
+        jobseeker.address,
+        jobseeker.city,
+        jobseeker.zip,
+    ]
     if any(value is None or not str(value).strip() for value in required_fields):
         return False
     return jobseeker.transit_type is not None
-
 
 
 def serialize_charge_flags(jobseeker: Jobseeker) -> ChargeFlagsPayload:
@@ -64,7 +69,6 @@ def serialize_charge_flags(jobseeker: Jobseeker) -> ChargeFlagsPayload:
         drug=jobseeker.charge_drug,
         theft=jobseeker.charge_theft,
     )
-
 
 
 def serialize_jobseeker(jobseeker: Jobseeker) -> JobseekerProfilePayload:
@@ -86,14 +90,14 @@ def serialize_jobseeker(jobseeker: Jobseeker) -> JobseekerProfilePayload:
     )
 
 
-
-def serialize_jobseeker_update_result(jobseeker: Jobseeker) -> JobseekerProfileUpdateResultPayload:
+def serialize_jobseeker_update_result(
+    jobseeker: Jobseeker,
+) -> JobseekerProfileUpdateResultPayload:
     return JobseekerProfileUpdateResultPayload(
         id=jobseeker.id,
         profile_complete=is_jobseeker_profile_complete(jobseeker),
         updated_at=jobseeker.updated_at,
     )
-
 
 
 def serialize_jobseeker_list_item(jobseeker: Jobseeker) -> JobseekerListItemPayload:
@@ -107,8 +111,9 @@ def serialize_jobseeker_list_item(jobseeker: Jobseeker) -> JobseekerListItemPayl
     )
 
 
-
-def serialize_application_summary(application: Application) -> JobseekerApplicationSummaryPayload:
+def serialize_application_summary(
+    application: Application,
+) -> JobseekerApplicationSummaryPayload:
     return JobseekerApplicationSummaryPayload(
         id=application.id,
         status=application.status.value,
@@ -116,24 +121,37 @@ def serialize_application_summary(application: Application) -> JobseekerApplicat
     )
 
 
-
-def get_jobseeker_by_app_user_id(session: Session, app_user_id: UUID) -> Jobseeker | None:
-    statement = select(Jobseeker).options(joinedload(Jobseeker.app_user)).where(Jobseeker.app_user_id == app_user_id)
+def get_jobseeker_by_app_user_id(
+    session: Session, app_user_id: UUID
+) -> Jobseeker | None:
+    statement = (
+        select(Jobseeker)
+        .options(joinedload(Jobseeker.app_user))
+        .where(Jobseeker.app_user_id == app_user_id)
+    )
     return session.execute(statement).unique().scalar_one_or_none()
-
 
 
 def get_jobseeker_by_id(session: Session, jobseeker_id: UUID) -> Jobseeker | None:
     statement = (
         select(Jobseeker)
-        .options(joinedload(Jobseeker.app_user), joinedload(Jobseeker.applications).joinedload(Application.job_listing))
+        .options(
+            joinedload(Jobseeker.app_user),
+            joinedload(Jobseeker.applications).joinedload(Application.job_listing),
+        )
         .where(Jobseeker.id == jobseeker_id)
     )
     return session.execute(statement).unique().scalar_one_or_none()
 
 
-
-def update_jobseeker_profile(session: Session, *, jobseeker: Jobseeker, payload: Any, actor_id: UUID | None, action: str) -> Jobseeker:
+def update_jobseeker_profile(
+    session: Session,
+    *,
+    jobseeker: Jobseeker,
+    payload: Any,
+    actor_id: UUID | None,
+    action: str,
+) -> Jobseeker:
     old_value = serialize_jobseeker(jobseeker).model_dump(mode="json")
 
     for field in ("full_name", "phone", "address", "city", "zip"):
@@ -170,8 +188,9 @@ def update_jobseeker_profile(session: Session, *, jobseeker: Jobseeker, payload:
     )
     session.commit()
     session.refresh(jobseeker)
-    return ensure_found(get_jobseeker_by_id(session, jobseeker.id), entity_name="Jobseeker")
-
+    return ensure_found(
+        get_jobseeker_by_id(session, jobseeker.id), entity_name="Jobseeker"
+    )
 
 
 def list_jobseekers(
@@ -215,8 +234,12 @@ def list_jobseekers(
         },
         allowed_filters=JOBSEEKER_ALLOWED_FILTERS,
     )
-    total_items = session.execute(select(func.count()).select_from(base_statement.subquery())).scalar_one()
-    statement = apply_sorting(base_statement, sort=sort, allowed_sorts=JOBSEEKER_ALLOWED_SORTS)
+    total_items = session.execute(
+        select(func.count()).select_from(base_statement.subquery())
+    ).scalar_one()
+    statement = apply_sorting(
+        base_statement, sort=sort, allowed_sorts=JOBSEEKER_ALLOWED_SORTS
+    )
     statement = apply_pagination(statement, pagination)
     items = session.execute(statement).unique().scalars().all()
     return build_paginated_response(
@@ -226,7 +249,11 @@ def list_jobseekers(
     )
 
 
-
 def build_admin_jobseeker_detail(jobseeker: Jobseeker) -> AdminJobseekerDetailResponse:
-    applications = [serialize_application_summary(application) for application in jobseeker.applications]
-    return AdminJobseekerDetailResponse(jobseeker=serialize_jobseeker(jobseeker), applications=applications)
+    applications = [
+        serialize_application_summary(application)
+        for application in jobseeker.applications
+    ]
+    return AdminJobseekerDetailResponse(
+        jobseeker=serialize_jobseeker(jobseeker), applications=applications
+    )

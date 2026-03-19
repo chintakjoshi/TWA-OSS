@@ -71,7 +71,6 @@ def client(monkeypatch: pytest.MonkeyPatch) -> Generator[TestClient, None, None]
     get_settings.cache_clear()
 
 
-
 def test_write_audit_creates_log_entry(session: Session) -> None:
     app_user = AppUser(
         auth_user_id=uuid.uuid4(),
@@ -94,12 +93,13 @@ def test_write_audit_creates_log_entry(session: Session) -> None:
     )
     session.commit()
 
-    stored = session.execute(select(AuditLog).where(AuditLog.id == audit_entry.id)).scalar_one()
+    stored = session.execute(
+        select(AuditLog).where(AuditLog.id == audit_entry.id)
+    ).scalar_one()
     assert stored.actor_id == app_user.id
     assert stored.action == "employer.approved"
     assert stored.old_value == {"review_status": "pending"}
     assert stored.new_value == {"review_status": "approved"}
-
 
 
 def test_build_audit_snapshot_serializes_sqlalchemy_models(session: Session) -> None:
@@ -121,8 +121,9 @@ def test_build_audit_snapshot_serializes_sqlalchemy_models(session: Session) -> 
     assert snapshot["id"] == str(app_user.id)
 
 
-
-def test_common_query_helpers_apply_filters_sorting_and_pagination(session: Session) -> None:
+def test_common_query_helpers_apply_filters_sorting_and_pagination(
+    session: Session,
+) -> None:
     for email in ["c@example.com", "a@example.com", "b@example.com"]:
         session.add(
             AppUser(
@@ -162,14 +163,21 @@ def test_common_query_helpers_apply_filters_sorting_and_pagination(session: Sess
     assert response.meta.total_pages == 3
 
 
-
 def test_common_query_helpers_raise_for_invalid_usage() -> None:
     with pytest.raises(AppError) as invalid_sort:
-        apply_sorting(select(AppUser), sort=SortParams(sort_by="missing", direction="asc"), allowed_sorts={"email": AppUser.email})
+        apply_sorting(
+            select(AppUser),
+            sort=SortParams(sort_by="missing", direction="asc"),
+            allowed_sorts={"email": AppUser.email},
+        )
     assert invalid_sort.value.code == "INVALID_SORT"
 
     with pytest.raises(AppError) as invalid_filter:
-        apply_filters(select(AppUser), filters={"missing": "x"}, allowed_filters={"email": AppUser.email})
+        apply_filters(
+            select(AppUser),
+            filters={"missing": "x"},
+            allowed_filters={"email": AppUser.email},
+        )
     assert invalid_filter.value.code == "INVALID_FILTER"
 
     with pytest.raises(AppError) as not_found:
@@ -181,8 +189,9 @@ def test_common_query_helpers_raise_for_invalid_usage() -> None:
     assert forbidden.value.code == "FORBIDDEN"
 
 
-
-def test_request_logging_adds_request_id_header_and_logs(client: TestClient, caplog: pytest.LogCaptureFixture) -> None:
+def test_request_logging_adds_request_id_header_and_logs(
+    client: TestClient, caplog: pytest.LogCaptureFixture
+) -> None:
     caplog.set_level(logging.INFO, logger="twa.http")
 
     response = client.get("/health", headers={"X-Request-ID": "req-123"})
@@ -191,7 +200,6 @@ def test_request_logging_adds_request_id_header_and_logs(client: TestClient, cap
     assert response.headers["X-Request-ID"] == "req-123"
     assert '"event": "http_request"' in caplog.text
     assert '"request_id": "req-123"' in caplog.text
-
 
 
 def test_unhandled_exceptions_use_standard_error_shape(client: TestClient) -> None:

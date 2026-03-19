@@ -10,7 +10,9 @@ const chargeLabels: Array<{ key: keyof ChargeFlags; label: string }> = [
 ]
 
 export function formatChargeFlags(flags: ChargeFlags): string[] {
-  return chargeLabels.filter((item) => flags[item.key]).map((item) => item.label)
+  return chargeLabels
+    .filter((item) => flags[item.key])
+    .map((item) => item.label)
 }
 
 export function formatDate(value: string | null | undefined) {
@@ -34,7 +36,7 @@ export function reviewTone(value: 'pending' | 'approved' | 'rejected') {
 }
 
 export function lifecycleTone(value: 'open' | 'closed') {
-  return value === 'open' ? 'success' as const : 'neutral' as const
+  return value === 'open' ? ('success' as const) : ('neutral' as const)
 }
 
 export function applicationTone(value: 'submitted' | 'reviewed' | 'hired') {

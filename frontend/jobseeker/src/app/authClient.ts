@@ -11,5 +11,7 @@ export const jobseekerAuthClient = createAuthClient({
   storageKey: 'twa-jobseeker-session',
 })
 
-export const employerAppUrl = import.meta.env.VITE_EMPLOYER_APP_URL ?? 'http://localhost:5174'
-export const adminAppUrl = import.meta.env.VITE_ADMIN_APP_URL ?? 'http://localhost:5175'
+export const employerAppUrl =
+  import.meta.env.VITE_EMPLOYER_APP_URL ?? 'http://localhost:5174'
+export const adminAppUrl =
+  import.meta.env.VITE_ADMIN_APP_URL ?? 'http://localhost:5175'

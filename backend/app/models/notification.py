@@ -20,9 +20,13 @@ class Notification(UUIDPrimaryKeyMixin, Base):
         Index("ix_notifications_created_at", "created_at"),
     )
 
-    app_user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("app_users.id"), nullable=False)
+    app_user_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("app_users.id"), nullable=False
+    )
     type: Mapped[str] = mapped_column(String(100), nullable=False)
-    channel: Mapped[NotificationChannel] = mapped_column(enum_type(NotificationChannel), nullable=False)
+    channel: Mapped[NotificationChannel] = mapped_column(
+        enum_type(NotificationChannel), nullable=False
+    )
     title: Mapped[str] = mapped_column(String(255), nullable=False)
     body: Mapped[str] = mapped_column(Text, nullable=False)
     read_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))

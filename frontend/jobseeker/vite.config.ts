@@ -9,10 +9,17 @@ export default defineConfig(({ mode }) => {
 
   return {
     plugins: [react()],
-    resolve: { alias: { '@shared': path.resolve(__dirname, '../../shared/frontend') } },
+    resolve: {
+      alias: { '@shared': path.resolve(__dirname, '../../shared/frontend') },
+    },
     server: {
       port: 5173,
-      fs: { allow: [searchForWorkspaceRoot(process.cwd()), path.resolve(__dirname, '../../shared')] },
+      fs: {
+        allow: [
+          searchForWorkspaceRoot(process.cwd()),
+          path.resolve(__dirname, '../../shared'),
+        ],
+      },
       proxy: {
         '/auth': {
           target: authProxyTarget,

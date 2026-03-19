@@ -1,13 +1,34 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { useAuth } from '@shared/auth/AuthProvider'
-import { Alert, Badge, Button, Card, CardBody, DataTable, Field } from '@shared/ui/primitives'
+import {
+  Alert,
+  Badge,
+  Button,
+  Card,
+  CardBody,
+  DataTable,
+  Field,
+} from '@shared/ui/primitives'
 
-import { getJobseekerDetail, listJobseekers, updateJobseeker } from '../api/adminApi'
+import {
+  getJobseekerDetail,
+  listJobseekers,
+  updateJobseeker,
+} from '../api/adminApi'
 import { AdminHeader } from '../components/AdminHeader'
 import { EmptyState, ErrorState, LoadingState } from '../components/PageState'
-import { formatChargeFlags, formatDateTime, formatStatusLabel } from '../lib/formatting'
-import type { ChargeFlags, JobseekerDetail, JobseekerListItem, JobseekerUpdateInput } from '../types/admin'
+import {
+  formatChargeFlags,
+  formatDateTime,
+  formatStatusLabel,
+} from '../lib/formatting'
+import type {
+  ChargeFlags,
+  JobseekerDetail,
+  JobseekerListItem,
+  JobseekerUpdateInput,
+} from '../types/admin'
 
 const defaultCharges: ChargeFlags = {
   sex_offense: false,
@@ -50,32 +71,45 @@ export function AdminJobseekersPage() {
   const [totalPages, setTotalPages] = useState(0)
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [detail, setDetail] = useState<JobseekerDetail | null>(null)
-  const [applications, setApplications] = useState<Array<{ id: string; status: string; job_listing_id: string }>>([])
-  const [values, setValues] = useState<JobseekerUpdateInput>(() => toValues(null))
+  const [applications, setApplications] = useState<
+    Array<{ id: string; status: string; job_listing_id: string }>
+  >([])
+  const [values, setValues] = useState<JobseekerUpdateInput>(() =>
+    toValues(null)
+  )
   const [isLoading, setIsLoading] = useState(true)
   const [isDetailLoading, setIsDetailLoading] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
 
-  async function loadList() {
+  const loadList = useCallback(async () => {
     setIsLoading(true)
     setError(null)
     try {
-      const response = await listJobseekers(auth.requestTwa, { page, search, status: statusFilter, transitType: transitFilter })
+      const response = await listJobseekers(auth.requestTwa, {
+        page,
+        search,
+        status: statusFilter,
+        transitType: transitFilter,
+      })
       setItems(response.items)
       setTotalPages(response.meta.total_pages)
       if (!selectedId && response.items[0]) setSelectedId(response.items[0].id)
     } catch (nextError) {
-      setError(nextError instanceof Error ? nextError.message : 'Unable to load jobseekers.')
+      setError(
+        nextError instanceof Error
+          ? nextError.message
+          : 'Unable to load jobseekers.'
+      )
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [auth.requestTwa, page, search, statusFilter, transitFilter, selectedId])
 
   useEffect(() => {
     void loadList()
-  }, [auth, page, search, statusFilter, transitFilter])
+  }, [loadList])
 
   useEffect(() => {
     if (!selectedId) return
@@ -103,14 +137,26 @@ export function AdminJobseekersPage() {
   }, [auth, selectedId])
 
   const rows = useMemo(
-    () => items.map((item) => [
-      item.full_name ?? 'Name missing',
-      item.city ?? 'Unknown',
-      item.transit_type ? formatStatusLabel(item.transit_type) : 'Not set',
-      <Badge key={`${item.id}-status`} tone={item.status === 'hired' ? 'success' : 'info'}>{item.status}</Badge>,
-      <Button key={`${item.id}-open`} tone="secondary" onClick={() => setSelectedId(item.id)}>Open profile</Button>,
-    ]),
-    [items],
+    () =>
+      items.map((item) => [
+        item.full_name ?? 'Name missing',
+        item.city ?? 'Unknown',
+        item.transit_type ? formatStatusLabel(item.transit_type) : 'Not set',
+        <Badge
+          key={`${item.id}-status`}
+          tone={item.status === 'hired' ? 'success' : 'info'}
+        >
+          {item.status}
+        </Badge>,
+        <Button
+          key={`${item.id}-open`}
+          tone="secondary"
+          onClick={() => setSelectedId(item.id)}
+        >
+          Open profile
+        </Button>,
+      ]),
+    [items]
   )
 
   async function handleSave() {
@@ -127,7 +173,11 @@ export function AdminJobseekersPage() {
       setSuccess('Jobseeker profile updated.')
       await loadList()
     } catch (nextError) {
-      setError(nextError instanceof Error ? nextError.message : 'Unable to update the jobseeker profile.')
+      setError(
+        nextError instanceof Error
+          ? nextError.message
+          : 'Unable to update the jobseeker profile.'
+      )
     } finally {
       setIsSaving(false)
     }
@@ -140,20 +190,47 @@ export function AdminJobseekersPage() {
         <CardBody className="stack-md">
           <div className="stack-sm">
             <p className="portal-eyebrow">Jobseekers</p>
-            <h2 className="card-title">Edit profiles and placement status without leaving the admin console.</h2>
-            <p className="card-copy">This page combines the searchable list with a staff-editable profile panel.</p>
+            <h2 className="card-title">
+              Edit profiles and placement status without leaving the admin
+              console.
+            </h2>
+            <p className="card-copy">
+              This page combines the searchable list with a staff-editable
+              profile panel.
+            </p>
           </div>
           <div className="filter-grid">
-            <Field label="Search"><input value={search} onChange={(event) => { setPage(1); setSearch(event.target.value) }} placeholder="Name or city" /></Field>
+            <Field label="Search">
+              <input
+                value={search}
+                onChange={(event) => {
+                  setPage(1)
+                  setSearch(event.target.value)
+                }}
+                placeholder="Name or city"
+              />
+            </Field>
             <Field label="Status">
-              <select value={statusFilter} onChange={(event) => { setPage(1); setStatusFilter(event.target.value) }}>
+              <select
+                value={statusFilter}
+                onChange={(event) => {
+                  setPage(1)
+                  setStatusFilter(event.target.value)
+                }}
+              >
                 <option value="">All statuses</option>
                 <option value="active">Active</option>
                 <option value="hired">Hired</option>
               </select>
             </Field>
             <Field label="Transit">
-              <select value={transitFilter} onChange={(event) => { setPage(1); setTransitFilter(event.target.value) }}>
+              <select
+                value={transitFilter}
+                onChange={(event) => {
+                  setPage(1)
+                  setTransitFilter(event.target.value)
+                }}
+              >
                 <option value="">All transit types</option>
                 <option value="own_car">Own car</option>
                 <option value="public_transit">Public transit</option>
@@ -161,26 +238,59 @@ export function AdminJobseekersPage() {
               </select>
             </Field>
           </div>
-          {success ? <Alert tone="success"><p>{success}</p></Alert> : null}
-          {error ? <Alert tone="danger"><p>{error}</p></Alert> : null}
+          {success ? (
+            <Alert tone="success">
+              <p>{success}</p>
+            </Alert>
+          ) : null}
+          {error ? (
+            <Alert tone="danger">
+              <p>{error}</p>
+            </Alert>
+          ) : null}
         </CardBody>
       </Card>
 
       {isLoading ? <LoadingState title="Loading jobseekers..." /> : null}
-      {!isLoading && error && items.length === 0 ? <ErrorState title="Jobseekers unavailable" message={error} /> : null}
+      {!isLoading && error && items.length === 0 ? (
+        <ErrorState title="Jobseekers unavailable" message={error} />
+      ) : null}
       {!isLoading ? (
         <div className="admin-two-column-grid wide-sidebar-grid">
           <Card strong>
             <CardBody className="stack-md">
               <div className="stack-sm">
                 <p className="eyebrow">Search results</p>
-                <h2 className="card-title">Select a profile to inspect or edit.</h2>
+                <h2 className="card-title">
+                  Select a profile to inspect or edit.
+                </h2>
               </div>
-              {items.length === 0 ? <EmptyState title="No jobseekers found" message="Try broadening the current filters." /> : <DataTable columns={['Name', 'City', 'Transit', 'Status', 'Action']} rows={rows} />}
+              {items.length === 0 ? (
+                <EmptyState
+                  title="No jobseekers found"
+                  message="Try broadening the current filters."
+                />
+              ) : (
+                <DataTable
+                  columns={['Name', 'City', 'Transit', 'Status', 'Action']}
+                  rows={rows}
+                />
+              )}
               {totalPages > 1 ? (
                 <div className="inline-actions">
-                  <Button disabled={page <= 1} tone="secondary" onClick={() => setPage((current) => current - 1)}>Previous</Button>
-                  <Button disabled={page >= totalPages} onClick={() => setPage((current) => current + 1)}>Next</Button>
+                  <Button
+                    disabled={page <= 1}
+                    tone="secondary"
+                    onClick={() => setPage((current) => current - 1)}
+                  >
+                    Previous
+                  </Button>
+                  <Button
+                    disabled={page >= totalPages}
+                    onClick={() => setPage((current) => current + 1)}
+                  >
+                    Next
+                  </Button>
                 </div>
               ) : null}
             </CardBody>
@@ -188,27 +298,96 @@ export function AdminJobseekersPage() {
 
           <Card strong>
             <CardBody className="stack-md">
-              {isDetailLoading ? <LoadingState title="Loading selected jobseeker..." /> : null}
-              {!isDetailLoading && !detail ? <EmptyState title="No jobseeker selected" message="Pick a row from the list to open its full profile." /> : null}
+              {isDetailLoading ? (
+                <LoadingState title="Loading selected jobseeker..." />
+              ) : null}
+              {!isDetailLoading && !detail ? (
+                <EmptyState
+                  title="No jobseeker selected"
+                  message="Pick a row from the list to open its full profile."
+                />
+              ) : null}
               {!isDetailLoading && detail ? (
                 <>
-                  <div className="cluster" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div
+                    className="cluster"
+                    style={{
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                    }}
+                  >
                     <div className="stack-sm">
                       <p className="eyebrow">Profile editor</p>
-                      <h2 className="card-title">{detail.full_name ?? 'Unnamed jobseeker'}</h2>
-                      <p className="card-copy">Profile complete: {detail.profile_complete ? 'Yes' : 'No'}</p>
+                      <h2 className="card-title">
+                        {detail.full_name ?? 'Unnamed jobseeker'}
+                      </h2>
+                      <p className="card-copy">
+                        Profile complete:{' '}
+                        {detail.profile_complete ? 'Yes' : 'No'}
+                      </p>
                     </div>
-                    <Badge tone={detail.status === 'hired' ? 'success' : 'info'}>{detail.status}</Badge>
+                    <Badge
+                      tone={detail.status === 'hired' ? 'success' : 'info'}
+                    >
+                      {detail.status}
+                    </Badge>
                   </div>
 
                   <div className="detail-grid">
-                    <Field label="Full name"><input value={values.full_name} onChange={(event) => setValues({ ...values, full_name: event.target.value })} /></Field>
-                    <Field label="Phone"><input value={values.phone} onChange={(event) => setValues({ ...values, phone: event.target.value })} /></Field>
-                    <Field label="Address"><input value={values.address} onChange={(event) => setValues({ ...values, address: event.target.value })} /></Field>
-                    <Field label="City"><input value={values.city} onChange={(event) => setValues({ ...values, city: event.target.value })} /></Field>
-                    <Field label="ZIP"><input value={values.zip} onChange={(event) => setValues({ ...values, zip: event.target.value })} /></Field>
+                    <Field label="Full name">
+                      <input
+                        value={values.full_name}
+                        onChange={(event) =>
+                          setValues({
+                            ...values,
+                            full_name: event.target.value,
+                          })
+                        }
+                      />
+                    </Field>
+                    <Field label="Phone">
+                      <input
+                        value={values.phone}
+                        onChange={(event) =>
+                          setValues({ ...values, phone: event.target.value })
+                        }
+                      />
+                    </Field>
+                    <Field label="Address">
+                      <input
+                        value={values.address}
+                        onChange={(event) =>
+                          setValues({ ...values, address: event.target.value })
+                        }
+                      />
+                    </Field>
+                    <Field label="City">
+                      <input
+                        value={values.city}
+                        onChange={(event) =>
+                          setValues({ ...values, city: event.target.value })
+                        }
+                      />
+                    </Field>
+                    <Field label="ZIP">
+                      <input
+                        value={values.zip}
+                        onChange={(event) =>
+                          setValues({ ...values, zip: event.target.value })
+                        }
+                      />
+                    </Field>
                     <Field label="Transit type">
-                      <select value={values.transit_type} onChange={(event) => setValues({ ...values, transit_type: event.target.value as JobseekerUpdateInput['transit_type'] })}>
+                      <select
+                        value={values.transit_type}
+                        onChange={(event) =>
+                          setValues({
+                            ...values,
+                            transit_type: event.target
+                              .value as JobseekerUpdateInput['transit_type'],
+                          })
+                        }
+                      >
                         <option value="">Not set</option>
                         <option value="own_car">Own car</option>
                         <option value="public_transit">Public transit</option>
@@ -216,7 +395,16 @@ export function AdminJobseekersPage() {
                       </select>
                     </Field>
                     <Field label="Placement status">
-                      <select value={values.status} onChange={(event) => setValues({ ...values, status: event.target.value as JobseekerUpdateInput['status'] })}>
+                      <select
+                        value={values.status}
+                        onChange={(event) =>
+                          setValues({
+                            ...values,
+                            status: event.target
+                              .value as JobseekerUpdateInput['status'],
+                          })
+                        }
+                      >
                         <option value="active">Active</option>
                         <option value="hired">Hired</option>
                       </select>
@@ -231,13 +419,15 @@ export function AdminJobseekersPage() {
                           <input
                             checked={values.charges[option.key]}
                             type="checkbox"
-                            onChange={(event) => setValues({
-                              ...values,
-                              charges: {
-                                ...values.charges,
-                                [option.key]: event.target.checked,
-                              },
-                            })}
+                            onChange={(event) =>
+                              setValues({
+                                ...values,
+                                charges: {
+                                  ...values.charges,
+                                  [option.key]: event.target.checked,
+                                },
+                              })
+                            }
                           />
                           <span>{option.label}</span>
                         </label>
@@ -246,19 +436,36 @@ export function AdminJobseekersPage() {
                   </div>
 
                   <div className="stack-sm profile-meta-panel">
-                    <p className="card-copy">Current charges: {formatChargeFlags(detail.charges).join(', ') || 'None'}</p>
-                    <p className="card-copy">Last updated: {formatDateTime(detail.updated_at)}</p>
+                    <p className="card-copy">
+                      Current charges:{' '}
+                      {formatChargeFlags(detail.charges).join(', ') || 'None'}
+                    </p>
+                    <p className="card-copy">
+                      Last updated: {formatDateTime(detail.updated_at)}
+                    </p>
                   </div>
 
                   <div className="inline-actions">
-                    <Button disabled={isSaving} onClick={() => void handleSave()}>{isSaving ? 'Saving...' : 'Save jobseeker profile'}</Button>
+                    <Button
+                      disabled={isSaving}
+                      onClick={() => void handleSave()}
+                    >
+                      {isSaving ? 'Saving...' : 'Save jobseeker profile'}
+                    </Button>
                   </div>
 
                   <div className="stack-sm">
                     <p className="eyebrow">Applications</p>
-                    {applications.length === 0 ? <p className="card-copy">No applications recorded yet.</p> : (
+                    {applications.length === 0 ? (
+                      <p className="card-copy">No applications recorded yet.</p>
+                    ) : (
                       <ul className="summary-list">
-                        {applications.map((application) => <li key={application.id}>Application {application.id} - {application.status} - listing {application.job_listing_id}</li>)}
+                        {applications.map((application) => (
+                          <li key={application.id}>
+                            Application {application.id} - {application.status}{' '}
+                            - listing {application.job_listing_id}
+                          </li>
+                        ))}
                       </ul>
                     )}
                   </div>

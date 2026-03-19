@@ -14,7 +14,12 @@ from app.core.config import get_settings
 from app.db.session import get_db_session
 from app.main import create_app
 from app.models import AppUser, AuditLog, Employer, JobListing
-from app.models.enums import AppRole, EmployerReviewStatus, ListingLifecycleStatus, ListingReviewStatus
+from app.models.enums import (
+    AppRole,
+    EmployerReviewStatus,
+    ListingLifecycleStatus,
+    ListingReviewStatus,
+)
 from app.services.auth import AuthProviderIdentity, get_auth_provider_identity
 
 
@@ -69,11 +74,12 @@ def phase6_env(monkeypatch: pytest.MonkeyPatch, session_factory):
     get_settings.cache_clear()
 
 
-
 def seed_staff(session_factory, *, auth_user_id: uuid.UUID | None = None) -> AppUser:
     auth_user_id = auth_user_id or uuid.uuid4()
     with session_factory() as session:
-        staff = session.execute(select(AppUser).where(AppUser.auth_user_id == auth_user_id)).scalar_one_or_none()
+        staff = session.execute(
+            select(AppUser).where(AppUser.auth_user_id == auth_user_id)
+        ).scalar_one_or_none()
         if staff is None:
             staff = AppUser(
                 auth_user_id=auth_user_id,
@@ -86,7 +92,6 @@ def seed_staff(session_factory, *, auth_user_id: uuid.UUID | None = None) -> App
             session.commit()
             session.refresh(staff)
         return staff
-
 
 
 def test_employer_review_and_listing_workflow(phase6_env) -> None:
@@ -137,7 +142,10 @@ def test_employer_review_and_listing_workflow(phase6_env) -> None:
 
     approve_employer = client.patch(
         f"/api/v1/admin/employers/{employer_id}",
-        json={"review_status": "approved", "review_note": "Approved after manual review."},
+        json={
+            "review_status": "approved",
+            "review_note": "Approved after manual review.",
+        },
     )
     assert approve_employer.status_code == 200
     assert approve_employer.json()["employer"]["review_status"] == "approved"
@@ -197,13 +205,16 @@ def test_employer_review_and_listing_workflow(phase6_env) -> None:
     with session_factory() as session:
         employer = session.execute(select(Employer)).scalar_one()
         listing = session.execute(select(JobListing)).scalar_one()
-        audits = session.execute(select(AuditLog).order_by(AuditLog.timestamp)).scalars().all()
+        audits = (
+            session.execute(select(AuditLog).order_by(AuditLog.timestamp))
+            .scalars()
+            .all()
+        )
 
     assert employer.review_status == EmployerReviewStatus.APPROVED
     assert listing.review_status == ListingReviewStatus.APPROVED
     assert listing.lifecycle_status == ListingLifecycleStatus.CLOSED
     assert len(audits) >= 3
-
 
 
 def test_staff_can_reassess_rejected_employer_and_listing(phase6_env) -> None:
@@ -218,7 +229,9 @@ def test_staff_can_reassess_rejected_employer_and_listing(phase6_env) -> None:
     )
     assert bootstrap.status_code == 200
 
-    staff = seed_staff(session_factory, auth_user_id=uuid.UUID("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"))
+    staff = seed_staff(
+        session_factory, auth_user_id=uuid.UUID("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb")
+    )
     state["identity"] = AuthProviderIdentity(
         auth_user_id=staff.auth_user_id,
         email=staff.email,
@@ -260,7 +273,10 @@ def test_staff_can_reassess_rejected_employer_and_listing(phase6_env) -> None:
     )
     rejected_listing = client.patch(
         f"/api/v1/admin/listings/{listing_id}",
-        json={"review_status": "rejected", "review_note": "Needs transit clarification."},
+        json={
+            "review_status": "rejected",
+            "review_note": "Needs transit clarification.",
+        },
     )
     assert rejected_listing.status_code == 200
     assert rejected_listing.json()["listing"]["review_status"] == "rejected"
@@ -273,8 +289,111 @@ def test_staff_can_reassess_rejected_employer_and_listing(phase6_env) -> None:
     assert approved_listing.json()["listing"]["review_status"] == "approved"
 
 
+def test_staff_cannot_move_employer_from_approved_back_to_pending(phase6_env) -> None:
+    client, state, session_factory = phase6_env
 
-def test_employer_can_view_listing_applicants_when_sharing_is_enabled(phase6_env) -> None:
+    bootstrap = client.post(
+        "/api/v1/auth/bootstrap",
+        json={
+            "role": "employer",
+            "employer_profile": {"org_name": "Northside Logistics"},
+        },
+    )
+    assert bootstrap.status_code == 200
+
+    staff = seed_staff(
+        session_factory, auth_user_id=uuid.UUID("dddddddd-dddd-dddd-dddd-dddddddddddd")
+    )
+    state["identity"] = AuthProviderIdentity(
+        auth_user_id=staff.auth_user_id,
+        email=staff.email,
+        auth_provider_role="admin",
+    )
+
+    employer_id = client.get("/api/v1/admin/queue/employers").json()["items"][0]["id"]
+
+    approved = client.patch(
+        f"/api/v1/admin/employers/{employer_id}",
+        json={"review_status": "approved", "review_note": "Approved."},
+    )
+    assert approved.status_code == 200
+
+    invalid = client.patch(
+        f"/api/v1/admin/employers/{employer_id}",
+        json={"review_status": "pending", "review_note": "Invalid rollback."},
+    )
+    assert invalid.status_code == 422
+    assert invalid.json()["error"]["code"] == "STATE_TRANSITION_NOT_ALLOWED"
+
+
+def test_staff_cannot_reopen_closed_listing(phase6_env) -> None:
+    client, state, session_factory = phase6_env
+
+    bootstrap = client.post(
+        "/api/v1/auth/bootstrap",
+        json={
+            "role": "employer",
+            "employer_profile": {"org_name": "Northside Logistics"},
+        },
+    )
+    assert bootstrap.status_code == 200
+
+    staff = seed_staff(
+        session_factory, auth_user_id=uuid.UUID("eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee")
+    )
+    state["identity"] = AuthProviderIdentity(
+        auth_user_id=staff.auth_user_id,
+        email=staff.email,
+        auth_provider_role="admin",
+    )
+
+    employer_id = client.get("/api/v1/admin/queue/employers").json()["items"][0]["id"]
+    approved_employer = client.patch(
+        f"/api/v1/admin/employers/{employer_id}",
+        json={"review_status": "approved", "review_note": "Approved."},
+    )
+    assert approved_employer.status_code == 200
+
+    state["identity"] = AuthProviderIdentity(
+        auth_user_id=uuid.UUID("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"),
+        email="employer@example.com",
+        auth_provider_role="user",
+    )
+    listing = client.post(
+        "/api/v1/employer/listings",
+        json={"title": "Warehouse Associate", "transit_required": "any"},
+    )
+    assert listing.status_code == 200
+    listing_id = listing.json()["listing"]["id"]
+
+    state["identity"] = AuthProviderIdentity(
+        auth_user_id=staff.auth_user_id,
+        email=staff.email,
+        auth_provider_role="admin",
+    )
+    approved_listing = client.patch(
+        f"/api/v1/admin/listings/{listing_id}",
+        json={"review_status": "approved", "review_note": "Approved."},
+    )
+    assert approved_listing.status_code == 200
+
+    closed_listing = client.patch(
+        f"/api/v1/admin/listings/{listing_id}",
+        json={"lifecycle_status": "closed", "review_note": "Closed after hire."},
+    )
+    assert closed_listing.status_code == 200
+
+    invalid_reopen = client.patch(
+        f"/api/v1/admin/listings/{listing_id}",
+        json={"lifecycle_status": "open", "review_note": "Invalid reopen."},
+    )
+    assert invalid_reopen.status_code == 422
+    assert invalid_reopen.json()["error"]["code"] == "STATE_TRANSITION_NOT_ALLOWED"
+
+
+def test_employer_can_view_listing_applicants_when_sharing_is_enabled(
+    phase6_env,
+) -> None:
     client, state, session_factory = phase6_env
 
     bootstrap = client.post(
@@ -290,7 +409,9 @@ def test_employer_can_view_listing_applicants_when_sharing_is_enabled(phase6_env
     )
     assert bootstrap.status_code == 200
 
-    staff = seed_staff(session_factory, auth_user_id=uuid.UUID("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"))
+    staff = seed_staff(
+        session_factory, auth_user_id=uuid.UUID("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb")
+    )
     state["identity"] = AuthProviderIdentity(
         auth_user_id=staff.auth_user_id,
         email=staff.email,
@@ -339,7 +460,9 @@ def test_employer_can_view_listing_applicants_when_sharing_is_enabled(phase6_env
         email="jobseeker@example.com",
         auth_provider_role="user",
     )
-    bootstrap_jobseeker = client.post("/api/v1/auth/bootstrap", json={"role": "jobseeker"})
+    bootstrap_jobseeker = client.post(
+        "/api/v1/auth/bootstrap", json={"role": "jobseeker"}
+    )
     assert bootstrap_jobseeker.status_code == 200
     profile = client.patch(
         "/api/v1/jobseekers/me",

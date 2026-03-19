@@ -6,13 +6,19 @@ from uuid import UUID
 from sqlalchemy import select
 from sqlalchemy.orm import Session, joinedload
 
-from app.models import AppUser, Employer, JobListing, Jobseeker
-from app.models.enums import JobseekerStatus, ListingLifecycleStatus, ListingReviewStatus, TransitRequirement, TransitType
+from app.models import Employer, JobListing, Jobseeker
+from app.models.enums import (
+    JobseekerStatus,
+    ListingLifecycleStatus,
+    ListingReviewStatus,
+    TransitRequirement,
+    TransitType,
+)
 from app.schemas.matching import (
     JobForJobseekerMatchItem,
     JobseekerForListingMatchItem,
-    MatchJobSummaryPayload,
     MatchJobseekerSummaryPayload,
+    MatchJobSummaryPayload,
 )
 from app.services.common import ensure_found
 from app.services.jobseeker import get_jobseeker_by_id, is_jobseeker_profile_complete
@@ -35,14 +41,14 @@ class EligibilityResult:
     ineligibility_tag: str | None = None
 
 
-
 def charges_overlap(jobseeker: Jobseeker, listing: JobListing) -> list[str]:
     reasons: list[str] = []
     for jobseeker_attr, listing_attr, reason in CHARGE_REASON_RULES:
-        if bool(getattr(jobseeker, jobseeker_attr)) and bool(getattr(listing, listing_attr)):
+        if bool(getattr(jobseeker, jobseeker_attr)) and bool(
+            getattr(listing, listing_attr)
+        ):
             reasons.append(reason)
     return reasons
-
 
 
 def check_transit_compat(jobseeker: Jobseeker, listing: JobListing) -> list[str]:
@@ -57,20 +63,27 @@ def check_transit_compat(jobseeker: Jobseeker, listing: JobListing) -> list[str]
     return reasons
 
 
-
-def build_jobseeker_ineligibility_tag(jobseeker: Jobseeker, listing: JobListing, reasons: list[str]) -> str | None:
+def build_jobseeker_ineligibility_tag(
+    jobseeker: Jobseeker, listing: JobListing, reasons: list[str]
+) -> str | None:
     if not reasons:
         return None
-    if not any(reason in {"transit_unreachable", "transit_data_unavailable"} for reason in reasons):
+    if not any(
+        reason in {"transit_unreachable", "transit_data_unavailable"}
+        for reason in reasons
+    ):
         return None
-    distance_miles = zip_to_job_distance_miles(jobseeker.zip, job_lat=listing.job_lat, job_lon=listing.job_lon)
+    distance_miles = zip_to_job_distance_miles(
+        jobseeker.zip, job_lat=listing.job_lat, job_lon=listing.job_lon
+    )
     if distance_miles is None:
         return None
     return f"{distance_miles:.1f} miles from your zip code"
 
 
-
-def evaluate_jobseeker_listing_match(jobseeker: Jobseeker, listing: JobListing) -> EligibilityResult:
+def evaluate_jobseeker_listing_match(
+    jobseeker: Jobseeker, listing: JobListing
+) -> EligibilityResult:
     reasons: list[str] = []
     if not is_jobseeker_profile_complete(jobseeker):
         reasons.append("profile_incomplete")
@@ -80,13 +93,18 @@ def evaluate_jobseeker_listing_match(jobseeker: Jobseeker, listing: JobListing) 
     return EligibilityResult(
         is_eligible=len(unique_reasons) == 0,
         ineligibility_reasons=unique_reasons,
-        ineligibility_tag=build_jobseeker_ineligibility_tag(jobseeker, listing, unique_reasons),
+        ineligibility_tag=build_jobseeker_ineligibility_tag(
+            jobseeker, listing, unique_reasons
+        ),
     )
 
 
-
-def get_eligible_jobs_for_jobseeker(session: Session, jobseeker_id: UUID) -> list[JobForJobseekerMatchItem]:
-    jobseeker = ensure_found(get_jobseeker_by_id(session, jobseeker_id), entity_name="Jobseeker")
+def get_eligible_jobs_for_jobseeker(
+    session: Session, jobseeker_id: UUID
+) -> list[JobForJobseekerMatchItem]:
+    jobseeker = ensure_found(
+        get_jobseeker_by_id(session, jobseeker_id), entity_name="Jobseeker"
+    )
     statement = (
         select(JobListing)
         .options(joinedload(JobListing.employer).joinedload(Employer.app_user))
@@ -99,8 +117,12 @@ def get_eligible_jobs_for_jobseeker(session: Session, jobseeker_id: UUID) -> lis
     listings = session.execute(statement).unique().scalars().all()
     return [
         JobForJobseekerMatchItem(
-            job=MatchJobSummaryPayload(id=listing.id, title=listing.title, city=listing.city),
-            is_eligible=(result := evaluate_jobseeker_listing_match(jobseeker, listing)).is_eligible,
+            job=MatchJobSummaryPayload(
+                id=listing.id, title=listing.title, city=listing.city
+            ),
+            is_eligible=(
+                result := evaluate_jobseeker_listing_match(jobseeker, listing)
+            ).is_eligible,
             ineligibility_reasons=result.ineligibility_reasons,
             ineligibility_tag=result.ineligibility_tag,
         )
@@ -108,14 +130,18 @@ def get_eligible_jobs_for_jobseeker(session: Session, jobseeker_id: UUID) -> lis
     ]
 
 
-
-def get_eligible_jobseekers_for_job(session: Session, job_listing_id: UUID) -> list[JobseekerForListingMatchItem]:
+def get_eligible_jobseekers_for_job(
+    session: Session, job_listing_id: UUID
+) -> list[JobseekerForListingMatchItem]:
     listing_statement = (
         select(JobListing)
         .options(joinedload(JobListing.employer).joinedload(Employer.app_user))
         .where(JobListing.id == job_listing_id)
     )
-    listing = ensure_found(session.execute(listing_statement).unique().scalar_one_or_none(), entity_name="Job listing")
+    listing = ensure_found(
+        session.execute(listing_statement).unique().scalar_one_or_none(),
+        entity_name="Job listing",
+    )
     jobseeker_statement = (
         select(Jobseeker)
         .options(joinedload(Jobseeker.app_user))
@@ -125,8 +151,12 @@ def get_eligible_jobseekers_for_job(session: Session, job_listing_id: UUID) -> l
     jobseekers = session.execute(jobseeker_statement).unique().scalars().all()
     return [
         JobseekerForListingMatchItem(
-            jobseeker=MatchJobseekerSummaryPayload(id=jobseeker.id, full_name=jobseeker.full_name, city=jobseeker.city),
-            is_eligible=(result := evaluate_jobseeker_listing_match(jobseeker, listing)).is_eligible,
+            jobseeker=MatchJobseekerSummaryPayload(
+                id=jobseeker.id, full_name=jobseeker.full_name, city=jobseeker.city
+            ),
+            is_eligible=(
+                result := evaluate_jobseeker_listing_match(jobseeker, listing)
+            ).is_eligible,
             ineligibility_reasons=result.ineligibility_reasons,
         )
         for jobseeker in jobseekers

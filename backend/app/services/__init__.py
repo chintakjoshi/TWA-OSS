@@ -1,4 +1,8 @@
-from app.services.admin import get_admin_dashboard_summary, list_audit_logs, serialize_audit_log
+from app.services.admin import (
+    get_admin_dashboard_summary,
+    list_audit_logs,
+    serialize_audit_log,
+)
 from app.services.applications import (
     build_job_detail_for_jobseeker,
     create_application,
@@ -16,7 +20,13 @@ from app.services.applications import (
     serialize_my_application,
     update_application_status,
 )
-from app.services.auth import AuthProviderIdentity, build_auth_me, bootstrap_user, get_auth_provider_identity, resolve_auth_context
+from app.services.auth import (
+    AuthProviderIdentity,
+    bootstrap_user,
+    build_auth_me,
+    get_auth_provider_identity,
+    resolve_auth_context,
+)
 from app.services.common import (
     PaginationParams,
     SortParams,
@@ -173,4 +183,3 @@ __all__ = [
     "update_notification_config",
     "zip_to_job_distance_miles",
 ]
-

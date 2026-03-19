@@ -2,8 +2,16 @@
   --accent: #6b5c39;
   --accent-strong: #2f2742;
   --bg-base:
-    radial-gradient(circle at 15% 14%, rgba(242, 176, 84, 0.22), transparent 24%),
-    radial-gradient(circle at 82% 18%, rgba(36, 113, 125, 0.18), transparent 24%),
+    radial-gradient(
+      circle at 15% 14%,
+      rgba(242, 176, 84, 0.22),
+      transparent 24%
+    ),
+    radial-gradient(
+      circle at 82% 18%,
+      rgba(36, 113, 125, 0.18),
+      transparent 24%
+    ),
     linear-gradient(180deg, #f6f2ed 0%, #eceff6 100%);
 }
 

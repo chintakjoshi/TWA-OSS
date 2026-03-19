@@ -3,13 +3,24 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "scripts": {
+    "lint:frontend": "eslint \"frontend/**/*.{ts,tsx}\" \"shared/frontend/**/*.{ts,tsx}\"",
+    "format": "prettier --write \"frontend/**/*.{ts,tsx,css,html}\" \"shared/frontend/**/*.{ts,tsx,css}\" \"*.{json,md}\"",
+    "format:check": "prettier --check \"frontend/**/*.{ts,tsx,css,html}\" \"shared/frontend/**/*.{ts,tsx,css}\" \"*.{json,md}\""
+  },
   "dependencies": {
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "react-router-dom": "^7.9.1"
   },
   "devDependencies": {
+    "@eslint/js": "^9.39.4",
     "@types/react": "^19.1.10",
-    "@types/react-dom": "^19.1.7"
+    "@types/react-dom": "^19.1.7",
+    "eslint": "^9.39.4",
+    "eslint-plugin-react-hooks": "^7.0.1",
+    "globals": "^17.4.0",
+    "prettier": "^3.8.1",
+    "typescript-eslint": "^8.57.1"
   }
 }

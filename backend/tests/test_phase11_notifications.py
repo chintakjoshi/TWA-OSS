@@ -13,10 +13,19 @@ from sqlalchemy.orm import Session, sessionmaker
 from app.core.config import get_settings
 from app.db.session import get_db_session
 from app.main import create_app
-from app.models import AppUser, Application, AuditLog, Employer, JobListing, Jobseeker, Notification, NotificationConfig
+from app.models import (
+    Application,
+    AppUser,
+    AuditLog,
+    Employer,
+    JobListing,
+    Jobseeker,
+    Notification,
+    NotificationConfig,
+)
 from app.models.enums import (
-    AppRole,
     ApplicationStatus,
+    AppRole,
     EmployerReviewStatus,
     JobseekerStatus,
     ListingLifecycleStatus,
@@ -68,7 +77,9 @@ def phase11_env(monkeypatch: pytest.MonkeyPatch, session_factory):
     def fake_send_email_message(*, recipient: str, subject: str, body: str) -> None:
         sent_emails.append({"recipient": recipient, "subject": subject, "body": body})
 
-    monkeypatch.setattr(notifications_service, "send_email_message", fake_send_email_message)
+    monkeypatch.setattr(
+        notifications_service, "send_email_message", fake_send_email_message
+    )
 
     def override_db_session() -> Generator[Session, None, None]:
         with session_factory() as session:
@@ -87,8 +98,13 @@ def phase11_env(monkeypatch: pytest.MonkeyPatch, session_factory):
     get_settings.cache_clear()
 
 
-
-def switch_identity(state: dict[str, AuthProviderIdentity], *, auth_user_id: uuid.UUID, email: str, auth_provider_role: str) -> None:
+def switch_identity(
+    state: dict[str, AuthProviderIdentity],
+    *,
+    auth_user_id: uuid.UUID,
+    email: str,
+    auth_provider_role: str,
+) -> None:
     state["identity"] = AuthProviderIdentity(
         auth_user_id=auth_user_id,
         email=email,
@@ -96,8 +112,9 @@ def switch_identity(state: dict[str, AuthProviderIdentity], *, auth_user_id: uui
     )
 
 
-
-def seed_staff(session_factory, *, auth_user_id: uuid.UUID, email: str = "staff@example.com") -> AppUser:
+def seed_staff(
+    session_factory, *, auth_user_id: uuid.UUID, email: str = "staff@example.com"
+) -> AppUser:
     with session_factory() as session:
         user = AppUser(
             auth_user_id=auth_user_id,
@@ -110,7 +127,6 @@ def seed_staff(session_factory, *, auth_user_id: uuid.UUID, email: str = "staff@
         session.commit()
         session.refresh(user)
         return user
-
 
 
 def seed_jobseeker(
@@ -147,7 +163,6 @@ def seed_jobseeker(
         return user, jobseeker
 
 
-
 def seed_employer(
     session_factory,
     *,
@@ -178,7 +193,6 @@ def seed_employer(
         return user, employer
 
 
-
 def seed_listing(
     session_factory,
     *,
@@ -206,7 +220,6 @@ def seed_listing(
         return listing
 
 
-
 def seed_application(
     session_factory,
     *,
@@ -226,11 +239,17 @@ def seed_application(
         return application
 
 
-
 def test_staff_can_get_and_update_notification_config(phase11_env) -> None:
     client, state, session_factory, _ = phase11_env
-    staff = seed_staff(session_factory, auth_user_id=uuid.UUID("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"))
-    switch_identity(state, auth_user_id=staff.auth_user_id, email=staff.email, auth_provider_role="admin")
+    staff = seed_staff(
+        session_factory, auth_user_id=uuid.UUID("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb")
+    )
+    switch_identity(
+        state,
+        auth_user_id=staff.auth_user_id,
+        email=staff.email,
+        auth_provider_role="admin",
+    )
 
     get_response = client.get("/api/v1/admin/config/notifications")
     assert get_response.status_code == 200
@@ -267,12 +286,17 @@ def test_staff_can_get_and_update_notification_config(phase11_env) -> None:
     assert audit_entry.actor_id == staff.id
 
 
-
 def test_application_submission_notifies_staff_by_default(phase11_env) -> None:
     client, state, session_factory, sent_emails = phase11_env
-    staff = seed_staff(session_factory, auth_user_id=uuid.UUID("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"))
-    employer_user, employer = seed_employer(session_factory, auth_user_id=uuid.UUID("cccccccc-cccc-cccc-cccc-cccccccccccc"))
-    _, jobseeker = seed_jobseeker(session_factory, auth_user_id=uuid.UUID("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"))
+    staff = seed_staff(
+        session_factory, auth_user_id=uuid.UUID("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb")
+    )
+    employer_user, employer = seed_employer(
+        session_factory, auth_user_id=uuid.UUID("cccccccc-cccc-cccc-cccc-cccccccccccc")
+    )
+    _, jobseeker = seed_jobseeker(
+        session_factory, auth_user_id=uuid.UUID("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")
+    )
     listing = seed_listing(session_factory, employer_id=employer.id)
     switch_identity(
         state,
@@ -281,7 +305,9 @@ def test_application_submission_notifies_staff_by_default(phase11_env) -> None:
         auth_provider_role="user",
     )
 
-    response = client.post("/api/v1/applications", json={"job_listing_id": str(listing.id)})
+    response = client.post(
+        "/api/v1/applications", json={"job_listing_id": str(listing.id)}
+    )
     assert response.status_code == 200
 
     with session_factory() as session:
@@ -292,42 +318,75 @@ def test_application_submission_notifies_staff_by_default(phase11_env) -> None:
     assert notifications[0].type == "application_submitted"
     assert notifications[0].channel == NotificationChannel.IN_APP
     assert {email["recipient"] for email in sent_emails} == {staff.email}
-    assert employer_user.id not in {notification.app_user_id for notification in notifications}
+    assert employer_user.id not in {
+        notification.app_user_id for notification in notifications
+    }
 
 
-
-def test_application_submission_can_notify_employer_when_toggle_enabled(phase11_env) -> None:
+def test_application_submission_can_notify_employer_when_toggle_enabled(
+    phase11_env,
+) -> None:
     client, state, session_factory, sent_emails = phase11_env
-    staff = seed_staff(session_factory, auth_user_id=uuid.UUID("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"))
-    employer_user, employer = seed_employer(session_factory, auth_user_id=uuid.UUID("cccccccc-cccc-cccc-cccc-cccccccccccc"))
-    seed_jobseeker(session_factory, auth_user_id=uuid.UUID("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"))
-    listing = seed_listing(session_factory, employer_id=employer.id, title="Packaging Associate")
+    staff = seed_staff(
+        session_factory, auth_user_id=uuid.UUID("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb")
+    )
+    employer_user, employer = seed_employer(
+        session_factory, auth_user_id=uuid.UUID("cccccccc-cccc-cccc-cccc-cccccccccccc")
+    )
+    seed_jobseeker(
+        session_factory, auth_user_id=uuid.UUID("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")
+    )
+    listing = seed_listing(
+        session_factory, employer_id=employer.id, title="Packaging Associate"
+    )
 
-    switch_identity(state, auth_user_id=staff.auth_user_id, email=staff.email, auth_provider_role="admin")
+    switch_identity(
+        state,
+        auth_user_id=staff.auth_user_id,
+        email=staff.email,
+        auth_provider_role="admin",
+    )
     config_patch = client.patch(
         "/api/v1/admin/config/notifications",
         json={"notify_employer_on_apply": True},
     )
     assert config_patch.status_code == 200
 
-    switch_identity(state, auth_user_id=uuid.UUID("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"), email="jobseeker@example.com", auth_provider_role="user")
-    response = client.post("/api/v1/applications", json={"job_listing_id": str(listing.id)})
+    switch_identity(
+        state,
+        auth_user_id=uuid.UUID("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"),
+        email="jobseeker@example.com",
+        auth_provider_role="user",
+    )
+    response = client.post(
+        "/api/v1/applications", json={"job_listing_id": str(listing.id)}
+    )
     assert response.status_code == 200
 
     with session_factory() as session:
-        notifications = session.execute(
-            select(Notification).where(Notification.type == "application_submitted")
-        ).scalars().all()
+        notifications = (
+            session.execute(
+                select(Notification).where(Notification.type == "application_submitted")
+            )
+            .scalars()
+            .all()
+        )
 
     recipients = {notification.app_user_id for notification in notifications}
     assert recipients == {staff.id, employer_user.id}
-    assert {email["recipient"] for email in sent_emails} == {staff.email, employer_user.email}
+    assert {email["recipient"] for email in sent_emails} == {
+        staff.email,
+        employer_user.email,
+    }
 
 
-
-def test_employer_review_and_listing_review_notifications_are_readable(phase11_env) -> None:
+def test_employer_review_and_listing_review_notifications_are_readable(
+    phase11_env,
+) -> None:
     client, state, session_factory, sent_emails = phase11_env
-    staff = seed_staff(session_factory, auth_user_id=uuid.UUID("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"))
+    staff = seed_staff(
+        session_factory, auth_user_id=uuid.UUID("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb")
+    )
     employer_user, employer = seed_employer(
         session_factory,
         auth_user_id=uuid.UUID("cccccccc-cccc-cccc-cccc-cccccccccccc"),
@@ -340,7 +399,12 @@ def test_employer_review_and_listing_review_notifications_are_readable(phase11_e
         review_status=ListingReviewStatus.PENDING,
     )
 
-    switch_identity(state, auth_user_id=staff.auth_user_id, email=staff.email, auth_provider_role="admin")
+    switch_identity(
+        state,
+        auth_user_id=staff.auth_user_id,
+        email=staff.email,
+        auth_provider_role="admin",
+    )
     employer_review = client.patch(
         f"/api/v1/admin/employers/{employer.id}",
         json={"review_status": "approved"},
@@ -353,7 +417,12 @@ def test_employer_review_and_listing_review_notifications_are_readable(phase11_e
     )
     assert listing_review.status_code == 200
 
-    switch_identity(state, auth_user_id=employer_user.auth_user_id, email=employer_user.email, auth_provider_role="user")
+    switch_identity(
+        state,
+        auth_user_id=employer_user.auth_user_id,
+        email=employer_user.email,
+        auth_provider_role="user",
+    )
     inbox = client.get("/api/v1/notifications/me", params={"unread_only": "true"})
     assert inbox.status_code == 200
     items = inbox.json()["items"]
@@ -369,16 +438,30 @@ def test_employer_review_and_listing_review_notifications_are_readable(phase11_e
     assert {email["recipient"] for email in sent_emails} == {employer_user.email}
 
 
-
 def test_application_status_updates_notify_jobseeker(phase11_env) -> None:
     client, state, session_factory, sent_emails = phase11_env
-    staff = seed_staff(session_factory, auth_user_id=uuid.UUID("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"))
-    jobseeker_user, jobseeker = seed_jobseeker(session_factory, auth_user_id=uuid.UUID("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"))
-    _, employer = seed_employer(session_factory, auth_user_id=uuid.UUID("cccccccc-cccc-cccc-cccc-cccccccccccc"))
-    listing = seed_listing(session_factory, employer_id=employer.id, title="Data Entry Clerk")
-    application = seed_application(session_factory, jobseeker_id=jobseeker.id, listing_id=listing.id)
+    staff = seed_staff(
+        session_factory, auth_user_id=uuid.UUID("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb")
+    )
+    jobseeker_user, jobseeker = seed_jobseeker(
+        session_factory, auth_user_id=uuid.UUID("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")
+    )
+    _, employer = seed_employer(
+        session_factory, auth_user_id=uuid.UUID("cccccccc-cccc-cccc-cccc-cccccccccccc")
+    )
+    listing = seed_listing(
+        session_factory, employer_id=employer.id, title="Data Entry Clerk"
+    )
+    application = seed_application(
+        session_factory, jobseeker_id=jobseeker.id, listing_id=listing.id
+    )
 
-    switch_identity(state, auth_user_id=staff.auth_user_id, email=staff.email, auth_provider_role="admin")
+    switch_identity(
+        state,
+        auth_user_id=staff.auth_user_id,
+        email=staff.email,
+        auth_provider_role="admin",
+    )
     reviewed = client.patch(
         f"/api/v1/admin/applications/{application.id}",
         json={"status": "reviewed"},
@@ -391,8 +474,16 @@ def test_application_status_updates_notify_jobseeker(phase11_env) -> None:
     )
     assert hired.status_code == 200
 
-    switch_identity(state, auth_user_id=jobseeker_user.auth_user_id, email=jobseeker_user.email, auth_provider_role="user")
+    switch_identity(
+        state,
+        auth_user_id=jobseeker_user.auth_user_id,
+        email=jobseeker_user.email,
+        auth_provider_role="user",
+    )
     inbox = client.get("/api/v1/notifications/me", params={"unread_only": "true"})
     assert inbox.status_code == 200
-    assert {item["type"] for item in inbox.json()["items"]} == {"application_reviewed", "application_hired"}
+    assert {item["type"] for item in inbox.json()["items"]} == {
+        "application_reviewed",
+        "application_hired",
+    }
     assert {email["recipient"] for email in sent_emails} == {jobseeker_user.email}

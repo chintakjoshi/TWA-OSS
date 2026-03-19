@@ -45,13 +45,28 @@ export function JobseekerApplicationsPage() {
       <JobseekerHeader />
       <Card strong>
         <CardBody className="stack-md">
-          <div className="cluster" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
+          <div
+            className="cluster"
+            style={{ justifyContent: 'space-between', alignItems: 'center' }}
+          >
             <div className="stack-sm">
               <p className="eyebrow">My Applications</p>
-              <h2 className="card-title">Track every listing you have applied to.</h2>
-              <p className="card-copy">This view stays available even after you are hired for a specific listing.</p>
+              <h2 className="card-title">
+                Track every listing you have applied to.
+              </h2>
+              <p className="card-copy">
+                This view stays available even after you are hired for a
+                specific listing.
+              </p>
             </div>
-            <select className="status-filter" value={status} onChange={(event) => { setPage(1); setStatus(event.target.value) }}>
+            <select
+              className="status-filter"
+              value={status}
+              onChange={(event) => {
+                setPage(1)
+                setStatus(event.target.value)
+              }}
+            >
               <option value="">All statuses</option>
               <option value="submitted">Submitted</option>
               <option value="reviewed">Reviewed</option>
@@ -62,8 +77,15 @@ export function JobseekerApplicationsPage() {
       </Card>
 
       {isLoading ? <LoadingState title="Loading applications..." /> : null}
-      {!isLoading && error ? <ErrorState title="Applications unavailable" message={error} /> : null}
-      {!isLoading && !error && items.length === 0 ? <EmptyState title="No applications yet" message="Once you apply to a job, it will appear here with its current status." /> : null}
+      {!isLoading && error ? (
+        <ErrorState title="Applications unavailable" message={error} />
+      ) : null}
+      {!isLoading && !error && items.length === 0 ? (
+        <EmptyState
+          title="No applications yet"
+          message="Once you apply to a job, it will appear here with its current status."
+        />
+      ) : null}
       {!isLoading && !error && items.length > 0 ? (
         <Card strong>
           <CardBody className="stack-md">
@@ -72,7 +94,18 @@ export function JobseekerApplicationsPage() {
               rows={items.map((item) => [
                 item.job.title,
                 item.job.city ?? 'Unknown',
-                <Badge key={`${item.id}-status`} tone={item.status === 'hired' ? 'success' : item.status === 'reviewed' ? 'info' : 'warning'}>{item.status}</Badge>,
+                <Badge
+                  key={`${item.id}-status`}
+                  tone={
+                    item.status === 'hired'
+                      ? 'success'
+                      : item.status === 'reviewed'
+                        ? 'info'
+                        : 'warning'
+                  }
+                >
+                  {item.status}
+                </Badge>,
                 new Date(item.applied_at).toLocaleDateString(),
                 item.job.lifecycle_status,
               ])}
@@ -85,10 +118,23 @@ export function JobseekerApplicationsPage() {
         <Card strong>
           <CardBody>
             <div className="cluster pagination-row">
-              <p className="card-copy">Page {page} of {totalPages}</p>
+              <p className="card-copy">
+                Page {page} of {totalPages}
+              </p>
               <div className="inline-actions">
-                <Button disabled={page <= 1} tone="secondary" onClick={() => setPage((current) => current - 1)}>Previous</Button>
-                <Button disabled={page >= totalPages} onClick={() => setPage((current) => current + 1)}>Next</Button>
+                <Button
+                  disabled={page <= 1}
+                  tone="secondary"
+                  onClick={() => setPage((current) => current - 1)}
+                >
+                  Previous
+                </Button>
+                <Button
+                  disabled={page >= totalPages}
+                  onClick={() => setPage((current) => current + 1)}
+                >
+                  Next
+                </Button>
               </div>
             </div>
           </CardBody>

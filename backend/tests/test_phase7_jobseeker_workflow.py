@@ -15,10 +15,10 @@ from app.core.auth import require_completed_jobseeker
 from app.core.config import get_settings
 from app.db.session import get_db_session
 from app.main import create_app
-from app.models import AppUser, Application, Employer, JobListing, Jobseeker
+from app.models import Application, AppUser, Employer, JobListing, Jobseeker
 from app.models.enums import (
-    AppRole,
     ApplicationStatus,
+    AppRole,
     EmployerReviewStatus,
     JobseekerStatus,
     ListingLifecycleStatus,
@@ -70,7 +70,9 @@ def phase7_env(monkeypatch: pytest.MonkeyPatch, session_factory):
         return state["identity"]
 
     @app.get("/_test/completed-jobseeker")
-    def completed_jobseeker_route(_: object = Depends(require_completed_jobseeker)) -> dict[str, bool]:
+    def completed_jobseeker_route(
+        _: object = Depends(require_completed_jobseeker),
+    ) -> dict[str, bool]:
         return {"ok": True}
 
     app.dependency_overrides[get_db_session] = override_db_session
@@ -81,7 +83,6 @@ def phase7_env(monkeypatch: pytest.MonkeyPatch, session_factory):
 
     app.dependency_overrides.clear()
     get_settings.cache_clear()
-
 
 
 def seed_staff(session_factory, *, auth_user_id: uuid.UUID | None = None) -> AppUser:
@@ -100,11 +101,16 @@ def seed_staff(session_factory, *, auth_user_id: uuid.UUID | None = None) -> App
         return staff
 
 
-
-def seed_application_for_jobseeker(session_factory, *, jobseeker_auth_user_id: uuid.UUID) -> Jobseeker:
+def seed_application_for_jobseeker(
+    session_factory, *, jobseeker_auth_user_id: uuid.UUID
+) -> Jobseeker:
     with session_factory() as session:
-        jobseeker_user = session.execute(select(AppUser).where(AppUser.auth_user_id == jobseeker_auth_user_id)).scalar_one()
-        jobseeker = session.execute(select(Jobseeker).where(Jobseeker.app_user_id == jobseeker_user.id)).scalar_one()
+        jobseeker_user = session.execute(
+            select(AppUser).where(AppUser.auth_user_id == jobseeker_auth_user_id)
+        ).scalar_one()
+        jobseeker = session.execute(
+            select(Jobseeker).where(Jobseeker.app_user_id == jobseeker_user.id)
+        ).scalar_one()
 
         employer_user = AppUser(
             auth_user_id=uuid.uuid4(),
@@ -143,7 +149,6 @@ def seed_application_for_jobseeker(session_factory, *, jobseeker_auth_user_id: u
         session.commit()
         session.refresh(jobseeker)
         return jobseeker
-
 
 
 def test_jobseeker_profile_completion_flow(phase7_env) -> None:
@@ -192,7 +197,6 @@ def test_jobseeker_profile_completion_flow(phase7_env) -> None:
     assert payload["charges"]["drug"] is True
 
 
-
 def test_staff_can_list_view_and_update_jobseekers(phase7_env) -> None:
     client, state, session_factory = phase7_env
 
@@ -215,14 +219,18 @@ def test_staff_can_list_view_and_update_jobseekers(phase7_env) -> None:
         jobseeker_auth_user_id=uuid.UUID("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"),
     )
 
-    staff = seed_staff(session_factory, auth_user_id=uuid.UUID("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"))
+    staff = seed_staff(
+        session_factory, auth_user_id=uuid.UUID("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb")
+    )
     state["identity"] = AuthProviderIdentity(
         auth_user_id=staff.auth_user_id,
         email=staff.email,
         auth_provider_role="admin",
     )
 
-    listing = client.get("/api/v1/admin/jobseekers", params={"search": "Jane", "charge_drug": "true"})
+    listing = client.get(
+        "/api/v1/admin/jobseekers", params={"search": "Jane", "charge_drug": "true"}
+    )
     assert listing.status_code == 200
     assert listing.json()["meta"]["total_items"] == 1
     assert listing.json()["items"][0]["full_name"] == "Jane Doe"
@@ -253,5 +261,7 @@ def test_staff_can_list_view_and_update_jobseekers(phase7_env) -> None:
     assert updated_payload["charges"]["violent"] is True
 
     with session_factory() as session:
-        stored = session.execute(select(Jobseeker).where(Jobseeker.id == seeded_jobseeker.id)).scalar_one()
+        stored = session.execute(
+            select(Jobseeker).where(Jobseeker.id == seeded_jobseeker.id)
+        ).scalar_one()
     assert stored.status == JobseekerStatus.HIRED

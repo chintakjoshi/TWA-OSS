@@ -23,7 +23,9 @@ class AuditLog(UUIDPrimaryKeyMixin, Base):
         Index("ix_audit_log_timestamp", "timestamp"),
     )
 
-    actor_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("app_users.id"), nullable=True)
+    actor_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("app_users.id"), nullable=True
+    )
     action: Mapped[str] = mapped_column(String(100), nullable=False)
     entity_type: Mapped[str] = mapped_column(String(100), nullable=False)
     entity_id: Mapped[uuid.UUID | None]

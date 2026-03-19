@@ -1,0 +1,7 @@
+backend/.venv
+backend/.pytest_cache
+backend/.ruff_cache
+frontend/admin/dist
+frontend/employer/dist
+frontend/jobseeker/dist
+node_modules
