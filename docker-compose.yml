@@ -30,6 +30,7 @@ x-auth-service-env: &auth-service-env
   EMAIL__MAILHOG_HOST: mailhog
   EMAIL__MAILHOG_PORT: "1025"
   EMAIL__EMAIL_FROM: ${AUTH_EMAIL_FROM:-auth@localhost}
+  EMAIL__PUBLIC_BASE_URL: ${AUTH_PUBLIC_BASE_URL:-http://localhost:8000}
   EMAIL__EMAIL_VERIFY_TTL_SECONDS: "86400"
   SIGNING_KEYS__ROTATION_OVERLAP_SECONDS: "900"
   SIGNING_KEYS__ENCRYPTION_KEY: ${AUTH_SIGNING_KEYS_ENCRYPTION_KEY:-local-dev-signing-keys-encryption-key}
@@ -249,16 +250,17 @@ services:
 
   frontend-jobseeker:
     build:
-      context: ./frontend/jobseeker
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: ./frontend/jobseeker/Dockerfile
     container_name: twa-jobseeker
     restart: unless-stopped
     depends_on:
       twa-backend:
         condition: service_healthy
     environment:
-      VITE_TWA_API_BASE_URL: http://localhost:9000
-      VITE_AUTH_BASE_URL: http://localhost:8000
+      VITE_TWA_API_URL: ${VITE_TWA_API_URL:-http://localhost:9000}
+      VITE_AUTH_BASE_URL: ${VITE_AUTH_BASE_URL-}
+      VITE_AUTH_PROXY_TARGET: ${DOCKER_VITE_AUTH_PROXY_TARGET:-http://auth-service:8000}
     ports:
       - "5173:5173"
     networks:
@@ -266,16 +268,17 @@ services:
 
   frontend-employer:
     build:
-      context: ./frontend/employer
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: ./frontend/employer/Dockerfile
     container_name: twa-employer
     restart: unless-stopped
     depends_on:
       twa-backend:
         condition: service_healthy
     environment:
-      VITE_TWA_API_BASE_URL: http://localhost:9000
-      VITE_AUTH_BASE_URL: http://localhost:8000
+      VITE_TWA_API_URL: ${VITE_TWA_API_URL:-http://localhost:9000}
+      VITE_AUTH_BASE_URL: ${VITE_AUTH_BASE_URL-}
+      VITE_AUTH_PROXY_TARGET: ${DOCKER_VITE_AUTH_PROXY_TARGET:-http://auth-service:8000}
     ports:
       - "5174:5174"
     networks:
@@ -283,16 +286,17 @@ services:
 
   frontend-admin:
     build:
-      context: ./frontend/admin
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: ./frontend/admin/Dockerfile
     container_name: twa-admin
     restart: unless-stopped
     depends_on:
       twa-backend:
         condition: service_healthy
     environment:
-      VITE_TWA_API_BASE_URL: http://localhost:9000
-      VITE_AUTH_BASE_URL: http://localhost:8000
+      VITE_TWA_API_URL: ${VITE_TWA_API_URL:-http://localhost:9000}
+      VITE_AUTH_BASE_URL: ${VITE_AUTH_BASE_URL-}
+      VITE_AUTH_PROXY_TARGET: ${DOCKER_VITE_AUTH_PROXY_TARGET:-http://auth-service:8000}
     ports:
       - "5175:5175"
     networks:
@@ -304,3 +308,4 @@ volumes:
 
 networks:
   twa-network:
+

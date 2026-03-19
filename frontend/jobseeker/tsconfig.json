@@ -17,7 +17,11 @@
     "noUnusedParameters": true,
     "erasableSyntaxOnly": true,
     "noFallthroughCasesInSwitch": true,
-    "noUncheckedSideEffectImports": true
+    "noUncheckedSideEffectImports": true,
+    "baseUrl": ".",
+    "paths": {
+      "@shared/*": ["../../shared/frontend/*"]
+    }
   },
-  "include": ["src"]
+  "include": ["src", "../../shared/frontend"]
 }

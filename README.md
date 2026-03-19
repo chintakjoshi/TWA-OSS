@@ -7,11 +7,13 @@ TWA is a web application for Saint Louis University's Transformative Workforce A
 - `frontend/jobseeker`: jobseeker-facing React app
 - `frontend/employer`: employer-facing React app
 - `frontend/admin`: staff admin React app
+- `shared/frontend`: shared design tokens, UI primitives, auth client helpers, and route guards used by all three apps
 - `backend`: FastAPI service for all TWA business logic
 - `authSDK`: external authentication service used by this app
 - `docker-compose.yml`: local stack for TWA, `authSDK`, PostgreSQL, Adminer, and MailHog
 
 The TWA backend uses `auth-service-sdk` middleware to trust `authSDK` bearer tokens. TWA-specific roles such as `jobseeker`, `employer`, and `staff` are stored locally in the TWA database.
+The frontend apps talk to `authSDK` through a same-origin `/auth` proxy during local development, which avoids browser CORS issues and matches the production expectation of a reverse-proxied auth surface.
 
 ## Local Development Options
 
@@ -63,7 +65,9 @@ docker compose up -d twa-postgres auth-postgres auth-redis adminer mailhog auth-
 ```powershell
 cd backend
 uv sync --group dev
-cd ..\frontend\jobseeker; npm install
+cd ..
+npm install
+cd frontend\jobseeker; npm install
 cd ..\employer; npm install
 cd ..\admin; npm install
 ```
@@ -76,7 +80,17 @@ uv run alembic upgrade head
 uv run uvicorn app.main:app --reload --port 9000
 ```
 
-4. Run the frontends:
+4. Copy the frontend env templates if you want to override defaults:
+
+```powershell
+Copy-Item frontend\jobseeker\.env.example frontend\jobseeker\.env.local
+Copy-Item frontend\employer\.env.example frontend\employer\.env.local
+Copy-Item frontend\admin\.env.example frontend\admin\.env.local
+```
+
+The default frontend setup leaves `VITE_AUTH_BASE_URL` blank and proxies `/auth` to `VITE_AUTH_PROXY_TARGET`. Keep that pattern unless your deployed auth service already handles browser CORS.
+
+5. Run the frontends:
 
 ```powershell
 cd ..\frontend\jobseeker; npm run dev
@@ -129,6 +143,17 @@ MailHog is included for local notification testing, and the TWA backend now uses
 ## SDK Integration Note
 
 The backend now installs `auth-service-sdk` from the official `authSDK` GitHub repository pinned to the `v1.0.2` source revision in `backend/pyproject.toml`. The local `AUTHSDK_PATH` setting is still used for the Dockerized auth service, but backend dependency installation and GitHub CI no longer depend on a sibling SDK checkout.
+
+## Frontend Foundation
+
+Phase 13A added a shared frontend layer in `shared/frontend/`:
+
+- shared design tokens and primitive components
+- shared authSDK client utilities with token storage, refresh, OTP, logout, and password reset helpers
+- shared TWA auth bootstrap handling via `/api/v1/auth/me` and `/api/v1/auth/bootstrap`
+- shared route guards that enforce the local TWA app role
+
+A small root `package.json` now owns the React dependencies used by shared code outside the individual Vite app folders.
 
 ## Key Docs
 

@@ -272,3 +272,126 @@ def test_staff_can_reassess_rejected_employer_and_listing(phase6_env) -> None:
     assert approved_listing.status_code == 200
     assert approved_listing.json()["listing"]["review_status"] == "approved"
 
+
+
+def test_employer_can_view_listing_applicants_when_sharing_is_enabled(phase6_env) -> None:
+    client, state, session_factory = phase6_env
+
+    bootstrap = client.post(
+        "/api/v1/auth/bootstrap",
+        json={
+            "role": "employer",
+            "employer_profile": {
+                "org_name": "Northside Logistics",
+                "contact_name": "Sam Carter",
+                "phone": "3145550199",
+            },
+        },
+    )
+    assert bootstrap.status_code == 200
+
+    staff = seed_staff(session_factory, auth_user_id=uuid.UUID("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"))
+    state["identity"] = AuthProviderIdentity(
+        auth_user_id=staff.auth_user_id,
+        email=staff.email,
+        auth_provider_role="admin",
+    )
+
+    employer_id = client.get("/api/v1/admin/queue/employers").json()["items"][0]["id"]
+    approved_employer = client.patch(
+        f"/api/v1/admin/employers/{employer_id}",
+        json={"review_status": "approved", "review_note": "Approved."},
+    )
+    assert approved_employer.status_code == 200
+
+    state["identity"] = AuthProviderIdentity(
+        auth_user_id=uuid.UUID("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"),
+        email="employer@example.com",
+        auth_provider_role="user",
+    )
+    listing = client.post(
+        "/api/v1/employer/listings",
+        json={
+            "title": "Warehouse Associate",
+            "description": "Loading and inventory assistance.",
+            "location_address": "2000 North Broadway",
+            "city": "St. Louis",
+            "zip": "63102",
+            "transit_required": "any",
+        },
+    )
+    assert listing.status_code == 200
+    listing_id = listing.json()["listing"]["id"]
+
+    state["identity"] = AuthProviderIdentity(
+        auth_user_id=staff.auth_user_id,
+        email=staff.email,
+        auth_provider_role="admin",
+    )
+    approved_listing = client.patch(
+        f"/api/v1/admin/listings/{listing_id}",
+        json={"review_status": "approved", "review_note": "Approved."},
+    )
+    assert approved_listing.status_code == 200
+
+    state["identity"] = AuthProviderIdentity(
+        auth_user_id=uuid.UUID("cccccccc-cccc-cccc-cccc-cccccccccccc"),
+        email="jobseeker@example.com",
+        auth_provider_role="user",
+    )
+    bootstrap_jobseeker = client.post("/api/v1/auth/bootstrap", json={"role": "jobseeker"})
+    assert bootstrap_jobseeker.status_code == 200
+    profile = client.patch(
+        "/api/v1/jobseekers/me",
+        json={
+            "full_name": "Jane Doe",
+            "phone": "3145550101",
+            "address": "123 Main St",
+            "city": "St. Louis",
+            "zip": "63103",
+            "transit_type": "public_transit",
+            "charges": {"drug": True, "theft": True},
+        },
+    )
+    assert profile.status_code == 200
+
+    application = client.post(
+        "/api/v1/applications",
+        json={"job_listing_id": listing_id},
+    )
+    assert application.status_code == 200
+
+    state["identity"] = AuthProviderIdentity(
+        auth_user_id=uuid.UUID("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"),
+        email="employer@example.com",
+        auth_provider_role="user",
+    )
+    blocked = client.get(f"/api/v1/employer/listings/{listing_id}/applicants")
+    assert blocked.status_code == 403
+    assert blocked.json()["error"]["code"] == "APPLICANT_VISIBILITY_DISABLED"
+
+    state["identity"] = AuthProviderIdentity(
+        auth_user_id=staff.auth_user_id,
+        email=staff.email,
+        auth_provider_role="admin",
+    )
+    config = client.patch(
+        "/api/v1/admin/config/notifications",
+        json={"share_applicants_with_employer": True},
+    )
+    assert config.status_code == 200
+    assert config.json()["config"]["share_applicants_with_employer"] is True
+
+    state["identity"] = AuthProviderIdentity(
+        auth_user_id=uuid.UUID("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"),
+        email="employer@example.com",
+        auth_provider_role="user",
+    )
+    applicants = client.get(f"/api/v1/employer/listings/{listing_id}/applicants")
+    assert applicants.status_code == 200
+    payload = applicants.json()
+    assert payload["meta"]["total_items"] == 1
+    assert payload["items"][0]["status"] == "submitted"
+    assert payload["items"][0]["jobseeker"]["full_name"] == "Jane Doe"
+    assert payload["items"][0]["jobseeker"]["charges"]["drug"] is True
+    assert payload["items"][0]["jobseeker"]["charges"]["theft"] is True
