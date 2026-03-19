@@ -9,6 +9,11 @@ from app.core.auth import AuthContext, require_staff
 from app.core.responses import PaginatedResponse
 from app.db.session import get_db_session
 from app.models import AppUser
+from app.schemas.applications import (
+    AdminApplicationListItemPayload,
+    UpdateApplicationStatusRequest,
+    UpdateApplicationStatusResponse,
+)
 from app.schemas.employer import (
     EmployerProfilePayload,
     JobListingListItemPayload,
@@ -24,6 +29,12 @@ from app.schemas.jobseeker import (
     JobseekerListItemPayload,
 )
 from app.schemas.matching import JobForJobseekerMatchResponse, JobseekerForListingMatchResponse
+from app.services.applications import (
+    get_application_by_id,
+    list_admin_applications,
+    serialize_application_update_result,
+    update_application_status,
+)
 from app.services.common import PaginationParams, SortParams, ensure_found, get_pagination_params, get_sort_params
 from app.services.employer import (
     get_employer_by_id,
@@ -195,6 +206,44 @@ def patch_admin_jobseeker(
         action="admin.jobseeker_updated",
     )
     return AdminJobseekerUpdateResponse(jobseeker=serialize_jobseeker_update_result(jobseeker))
+
+
+@router.get("/applications", response_model=PaginatedResponse[AdminApplicationListItemPayload])
+def get_all_applications(
+    status: str | None = Query(default=None),
+    job_listing_id: UUID | None = Query(default=None),
+    jobseeker_id: UUID | None = Query(default=None),
+    pagination: PaginationParams = Depends(get_pagination_params),
+    sort: SortParams = Depends(get_sort_params),
+    _: AuthContext = Depends(require_staff),
+    session: Session = Depends(get_db_session),
+) -> PaginatedResponse[AdminApplicationListItemPayload]:
+    return list_admin_applications(
+        session,
+        pagination=pagination,
+        sort=sort,
+        status=status,
+        job_listing_id=job_listing_id,
+        jobseeker_id=jobseeker_id,
+    )
+
+
+@router.patch("/applications/{application_id}", response_model=UpdateApplicationStatusResponse)
+def patch_application_status(
+    application_id: UUID,
+    payload: UpdateApplicationStatusRequest,
+    auth_context: AuthContext = Depends(require_staff),
+    session: Session = Depends(get_db_session),
+) -> UpdateApplicationStatusResponse:
+    application = ensure_found(get_application_by_id(session, application_id), entity_name="Application")
+    application = update_application_status(
+        session,
+        application=application,
+        actor_id=auth_context.app_user_id,
+        status=payload.status,
+        close_listing_after_hire=payload.close_listing_after_hire,
+    )
+    return UpdateApplicationStatusResponse(application=serialize_application_update_result(application))
 
 
 @router.get("/match/jobseeker/{jobseeker_id}", response_model=JobForJobseekerMatchResponse)
