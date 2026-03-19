@@ -36,6 +36,15 @@ from app.services.jobseeker import (
     serialize_jobseeker_update_result,
     update_jobseeker_profile,
 )
+from app.services.matching import (
+    EligibilityResult,
+    build_jobseeker_ineligibility_tag,
+    charges_overlap,
+    check_transit_compat,
+    evaluate_jobseeker_listing_match,
+    get_eligible_jobs_for_jobseeker,
+    get_eligible_jobseekers_for_job,
+)
 from app.services.transit import (
     TransitComputationResult,
     compute_transit_accessibility,
@@ -45,6 +54,7 @@ from app.services.transit import (
 
 __all__ = [
     "AuthProviderIdentity",
+    "EligibilityResult",
     "GeocodeResult",
     "PaginationParams",
     "SortParams",
@@ -54,14 +64,20 @@ __all__ = [
     "apply_sorting",
     "build_admin_jobseeker_detail",
     "build_auth_me",
+    "build_jobseeker_ineligibility_tag",
     "build_paginated_response",
     "bootstrap_user",
+    "charges_overlap",
+    "check_transit_compat",
     "compute_transit_accessibility",
     "create_listing",
     "ensure_found",
     "ensure_permission",
+    "evaluate_jobseeker_listing_match",
     "geocode_address",
     "get_auth_provider_identity",
+    "get_eligible_jobs_for_jobseeker",
+    "get_eligible_jobseekers_for_job",
     "get_employer_by_app_user_id",
     "get_employer_by_id",
     "get_jobseeker_by_app_user_id",
