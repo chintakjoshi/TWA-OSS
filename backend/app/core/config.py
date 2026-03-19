@@ -13,6 +13,7 @@ class Settings(BaseSettings):
         validation_alias=AliasChoices("TWA_ENVIRONMENT", "ENVIRONMENT"),
     )
     debug: bool = Field(default=True, validation_alias="TWA_DEBUG")
+    auth_enabled: bool = Field(default=True, validation_alias="TWA_AUTH_ENABLED")
     database_url: str = Field(
         default="postgresql+psycopg://twa:twa@localhost:5432/twa",
         validation_alias="DATABASE_URL",

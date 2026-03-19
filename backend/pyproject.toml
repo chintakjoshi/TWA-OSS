@@ -5,6 +5,7 @@ description = "FastAPI backend for the TWA application"
 requires-python = ">=3.12"
 dependencies = [
   "alembic>=1.16.4",
+  "auth-service-sdk",
   "fastapi>=0.116.0",
   "pydantic-settings>=2.10.0",
   "psycopg[binary]>=3.2.9",
@@ -24,3 +25,6 @@ testpaths = ["tests"]
 
 [tool.uv]
 package = false
+
+[tool.uv.sources]
+auth-service-sdk = { path = "../../authSDK-1.0.2/authSDK-1.0.2/sdk" }
