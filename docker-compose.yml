@@ -227,6 +227,10 @@ services:
       TWA_ENVIRONMENT: development
       TWA_DEBUG: "true"
       TWA_CORS_ORIGINS: http://localhost:5173,http://localhost:5174,http://localhost:5175
+      TWA_NOTIFICATION_EMAIL_ENABLED: "true"
+      TWA_SMTP_HOST: mailhog
+      TWA_SMTP_PORT: "1025"
+      TWA_EMAIL_FROM: notifications@localhost
     command: >
       /bin/sh -c '
       uv run alembic upgrade head &&

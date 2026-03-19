@@ -18,7 +18,7 @@ The repo supports two local workflows:
 - `auth-webhook-worker`: authSDK background worker
 - `auth-webhook-scheduler`: authSDK scheduler
 - `adminer`: local database UI
-- `mailhog`: local SMTP capture and email viewer
+- `mailhog`: local SMTP capture and email viewer for both authSDK and TWA notification emails
 
 ## Default Ports
 
@@ -40,6 +40,7 @@ The repo supports two local workflows:
 - `twa-backend` runs `alembic upgrade head` on container startup so migrations stay applied.
 - The current backend migration chain starts with a bootstrap revision and the first real schema revision.
 - FastAPI Swagger UI is available at `/docs`, and ReDoc is available at `/redoc`.
+- TWA email notifications use `TWA_SMTP_HOST`, `TWA_SMTP_PORT`, `TWA_SMTP_TIMEOUT_SECONDS`, `TWA_EMAIL_FROM`, and `TWA_NOTIFICATION_EMAIL_ENABLED`. The defaults are already set up for local MailHog.
 - When you use the full Docker workflow, rebuild with `docker compose up --build` after source changes so containers pick up new code.
 - Run `uv run python -m app.db.seed` after migrations if you want the default notification config and an optional staff bootstrap user.
 - `backend/pyproject.toml` pins `auth-service-sdk` to the official `authSDK` GitHub source for `v1.0.2`, so backend installs and CI do not rely on a sibling SDK checkout.

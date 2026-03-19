@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
 from app.core.auth import AuthContext, require_staff
+from app.core.exceptions import AppError
 from app.core.responses import PaginatedResponse
 from app.db.session import get_db_session
 from app.models import AppUser
@@ -29,6 +30,11 @@ from app.schemas.jobseeker import (
     JobseekerListItemPayload,
 )
 from app.schemas.matching import JobForJobseekerMatchResponse, JobseekerForListingMatchResponse
+from app.schemas.notifications import (
+    NotificationConfigPayload,
+    NotificationConfigResponse,
+    NotificationConfigUpdateRequest,
+)
 from app.services.applications import (
     get_application_by_id,
     list_admin_applications,
@@ -54,6 +60,11 @@ from app.services.jobseeker import (
     update_jobseeker_profile,
 )
 from app.services.matching import get_eligible_jobs_for_jobseeker, get_eligible_jobseekers_for_job
+from app.services.notifications import (
+    get_notification_config,
+    serialize_notification_config,
+    update_notification_config,
+)
 
 router = APIRouter(prefix="/api/v1/admin", tags=["admin"])
 
@@ -244,6 +255,33 @@ def patch_application_status(
         close_listing_after_hire=payload.close_listing_after_hire,
     )
     return UpdateApplicationStatusResponse(application=serialize_application_update_result(application))
+
+
+@router.get("/config/notifications", response_model=NotificationConfigPayload)
+def get_admin_notification_config(
+    _: AuthContext = Depends(require_staff),
+    session: Session = Depends(get_db_session),
+) -> NotificationConfigPayload:
+    config = get_notification_config(session, persist_if_missing=True)
+    return serialize_notification_config(config)
+
+
+@router.patch("/config/notifications", response_model=NotificationConfigResponse)
+def patch_admin_notification_config(
+    payload: NotificationConfigUpdateRequest,
+    auth_context: AuthContext = Depends(require_staff),
+    session: Session = Depends(get_db_session),
+) -> NotificationConfigResponse:
+    if not payload.has_updates():
+        raise AppError(status_code=422, code="VALIDATION_ERROR", detail="At least one notification config field must be provided.")
+    config = update_notification_config(
+        session,
+        actor_id=auth_context.app_user_id,
+        notify_staff_on_apply=payload.notify_staff_on_apply,
+        notify_employer_on_apply=payload.notify_employer_on_apply,
+        share_applicants_with_employer=payload.share_applicants_with_employer,
+    )
+    return NotificationConfigResponse(config=serialize_notification_config(config))
 
 
 @router.get("/match/jobseeker/{jobseeker_id}", response_model=JobForJobseekerMatchResponse)

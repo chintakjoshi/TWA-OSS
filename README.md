@@ -118,11 +118,13 @@ FastAPI serves OpenAPI docs out of the box:
 
 ## Email Testing
 
-MailHog is included for local notification testing.
+MailHog is included for local notification testing, and the TWA backend now uses it for Phase 11 email notifications.
 
 - SMTP host: `localhost`
 - SMTP port: `1025`
+- Default sender: `notifications@localhost`
 - Web UI: `http://localhost:8025`
+- Override with `TWA_SMTP_HOST`, `TWA_SMTP_PORT`, `TWA_SMTP_TIMEOUT_SECONDS`, `TWA_EMAIL_FROM`, and `TWA_NOTIFICATION_EMAIL_ENABLED` when needed
 
 ## SDK Integration Note
 
