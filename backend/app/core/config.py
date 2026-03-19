@@ -46,6 +46,11 @@ class Settings(BaseSettings):
         default="https://nominatim.openstreetmap.org/search",
         validation_alias="TWA_GEOCODING_BASE_URL",
     )
+    notification_email_enabled: bool = Field(default=True, validation_alias="TWA_NOTIFICATION_EMAIL_ENABLED")
+    smtp_host: str = Field(default="localhost", validation_alias="TWA_SMTP_HOST")
+    smtp_port: int = Field(default=1025, validation_alias="TWA_SMTP_PORT")
+    smtp_timeout_seconds: float = Field(default=10.0, validation_alias="TWA_SMTP_TIMEOUT_SECONDS")
+    email_from: str = Field(default="notifications@localhost", validation_alias="TWA_EMAIL_FROM")
 
     model_config = SettingsConfigDict(
         env_file="../.env",

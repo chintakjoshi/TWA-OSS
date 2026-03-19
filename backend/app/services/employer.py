@@ -21,8 +21,8 @@ from app.services.common import (
     ensure_found,
 )
 from app.services.geocoding import geocode_address
+from app.services.notifications import notify_employer_review_decision, notify_listing_review_decision
 from app.services.transit import compute_transit_accessibility
-
 
 EMPLOYER_ALLOWED_FILTERS = {
     "review_status": Employer.review_status,
@@ -312,6 +312,7 @@ def list_listings(
 
 def review_employer(session: Session, *, employer: Employer, reviewer: AppUser, review_status: str, review_note: str | None) -> Employer:
     old_value = serialize_employer(employer).model_dump(mode="json")
+    previous_review_status = employer.review_status
     employer.review_status = EmployerReviewStatus(review_status)
     employer.review_note = review_note
     employer.reviewed_by = reviewer.id
@@ -328,6 +329,8 @@ def review_employer(session: Session, *, employer: Employer, reviewer: AppUser, 
     )
     session.commit()
     session.refresh(employer)
+    if employer.review_status != previous_review_status and employer.review_status.value in {"approved", "rejected"}:
+        notify_employer_review_decision(session, employer=employer)
     return employer
 
 
@@ -345,6 +348,7 @@ def review_listing(
         raise AppError(status_code=422, code="VALIDATION_ERROR", detail="At least one listing review field must be provided.")
 
     old_value = serialize_listing(listing).model_dump(mode="json")
+    previous_review_status = listing.review_status
     if review_status is not None:
         listing.review_status = ListingReviewStatus(review_status)
     if lifecycle_status is not None:
@@ -379,4 +383,7 @@ def review_listing(
     )
     session.commit()
     session.refresh(listing)
-    return ensure_found(get_listing_by_id(session, listing.id), entity_name="Job listing")
+    listing = ensure_found(get_listing_by_id(session, listing.id), entity_name="Job listing")
+    if listing.review_status != previous_review_status and listing.review_status.value in {"approved", "rejected"}:
+        notify_listing_review_decision(session, listing=listing)
+    return listing

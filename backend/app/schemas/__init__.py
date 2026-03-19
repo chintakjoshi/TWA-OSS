@@ -50,6 +50,14 @@ from app.schemas.matching import (
     MatchJobseekerSummaryPayload,
 )
 from app.schemas.meta import ApiVersionResponse
+from app.schemas.notifications import (
+    NotificationConfigPayload,
+    NotificationConfigResponse,
+    NotificationConfigUpdateRequest,
+    NotificationPayload,
+    NotificationReadResponse,
+    NotificationReadResultPayload,
+)
 
 __all__ = [
     "AdminApplicationJobSummaryPayload",
@@ -92,6 +100,12 @@ __all__ = [
     "MatchJobSummaryPayload",
     "MatchJobseekerSummaryPayload",
     "MyApplicationListItemPayload",
+    "NotificationConfigPayload",
+    "NotificationConfigResponse",
+    "NotificationConfigUpdateRequest",
+    "NotificationPayload",
+    "NotificationReadResponse",
+    "NotificationReadResultPayload",
     "UpdateApplicationStatusRequest",
     "UpdateApplicationStatusResponse",
     "UpdateApplicationStatusResultPayload",

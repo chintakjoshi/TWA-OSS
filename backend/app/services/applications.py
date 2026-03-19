@@ -33,6 +33,7 @@ from app.services.common import (
 )
 from app.services.employer import serialize_listing
 from app.services.matching import evaluate_jobseeker_listing_match
+from app.services.notifications import notify_application_status_changed, notify_application_submitted
 
 VISIBLE_JOB_ALLOWED_SORTS = {
     "created_at": JobListing.created_at,
@@ -228,7 +229,9 @@ def create_application(session: Session, *, jobseeker: Jobseeker, job_listing_id
         new_value=serialize_application(application).model_dump(mode="json"),
     )
     session.commit()
-    return ensure_found(get_application_by_id(session, application.id), entity_name="Application")
+    application = ensure_found(get_application_by_id(session, application.id), entity_name="Application")
+    notify_application_submitted(session, application=application)
+    return application
 
 
 
@@ -319,6 +322,7 @@ def update_application_status(
         )
 
     old_application_value = serialize_application(application).model_dump(mode="json")
+    previous_status = application.status
     listing_will_close = (
         close_listing_after_hire
         and target_status == ApplicationStatus.HIRED
@@ -361,7 +365,10 @@ def update_application_status(
         )
 
     session.commit()
-    return ensure_found(get_application_by_id(session, application.id), entity_name="Application")
+    application = ensure_found(get_application_by_id(session, application.id), entity_name="Application")
+    if application_changed:
+        notify_application_status_changed(session, application=application, previous_status=previous_status)
+    return application
 
 
 
