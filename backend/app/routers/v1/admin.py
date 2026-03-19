@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import datetime
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query
@@ -10,6 +11,7 @@ from app.core.exceptions import AppError
 from app.core.responses import PaginatedResponse
 from app.db.session import get_db_session
 from app.models import AppUser
+from app.schemas.admin import AdminDashboardPayload, AuditLogPayload
 from app.schemas.applications import (
     AdminApplicationListItemPayload,
     UpdateApplicationStatusRequest,
@@ -35,6 +37,7 @@ from app.schemas.notifications import (
     NotificationConfigResponse,
     NotificationConfigUpdateRequest,
 )
+from app.services.admin import get_admin_dashboard_summary, list_audit_logs
 from app.services.applications import (
     get_application_by_id,
     list_admin_applications,
@@ -67,6 +70,14 @@ from app.services.notifications import (
 )
 
 router = APIRouter(prefix="/api/v1/admin", tags=["admin"])
+
+
+@router.get("/dashboard", response_model=AdminDashboardPayload)
+def get_admin_dashboard(
+    _: AuthContext = Depends(require_staff),
+    session: Session = Depends(get_db_session),
+) -> AdminDashboardPayload:
+    return get_admin_dashboard_summary(session)
 
 
 @router.get("/queue/employers", response_model=PaginatedResponse[EmployerProfilePayload])
@@ -282,6 +293,30 @@ def patch_admin_notification_config(
         share_applicants_with_employer=payload.share_applicants_with_employer,
     )
     return NotificationConfigResponse(config=serialize_notification_config(config))
+
+
+@router.get("/audit-log", response_model=PaginatedResponse[AuditLogPayload])
+def get_admin_audit_log(
+    actor_id: UUID | None = Query(default=None),
+    entity_type: str | None = Query(default=None),
+    entity_id: UUID | None = Query(default=None),
+    action: str | None = Query(default=None),
+    date_from: datetime | None = Query(default=None),
+    date_to: datetime | None = Query(default=None),
+    pagination: PaginationParams = Depends(get_pagination_params),
+    _: AuthContext = Depends(require_staff),
+    session: Session = Depends(get_db_session),
+) -> PaginatedResponse[AuditLogPayload]:
+    return list_audit_logs(
+        session,
+        pagination=pagination,
+        actor_id=actor_id,
+        entity_type=entity_type,
+        entity_id=entity_id,
+        action=action,
+        date_from=date_from,
+        date_to=date_to,
+    )
 
 
 @router.get("/match/jobseeker/{jobseeker_id}", response_model=JobForJobseekerMatchResponse)
