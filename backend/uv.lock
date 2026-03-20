@@ -57,7 +57,7 @@ wheels = [
 
 [[package]]
 name = "auth-service-sdk"
-version = "1.0.2"
+version = "1.1.0"
 source = { git = "https://github.com/chintakjoshi/authSDK.git?subdirectory=sdk&rev=b8a05c17a4ffd045087c12db741cfd9a0df57c27#b8a05c17a4ffd045087c12db741cfd9a0df57c27" }
 dependencies = [
     { name = "cachetools" },

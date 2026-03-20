@@ -36,7 +36,7 @@ The repo supports two local workflows:
 
 ## Notes
 
-- `AUTHSDK_PATH` defaults to `../authSDK-1.0.2`, which matches the current local desktop layout and is only required for the Dockerized auth service.
+- `AUTHSDK_PATH` defaults to `../authSDK-1.1.0`, which matches the current local desktop layout and is only required for the Dockerized auth service.
 - `twa-backend` runs `alembic upgrade head` on container startup so migrations stay applied.
 - `shared/frontend/` contains the shared frontend design tokens, primitives, auth client, and route-guard layer used by all three apps.
 - Frontend auth requests should use the same-origin `/_auth` path and rely on the Vite proxy target instead of calling `http://localhost:8000` directly from the browser. This keeps the public `/auth` SPA route free for the app itself.
@@ -46,5 +46,5 @@ The repo supports two local workflows:
 - TWA email notifications use `TWA_SMTP_HOST`, `TWA_SMTP_PORT`, `TWA_SMTP_TIMEOUT_SECONDS`, `TWA_EMAIL_FROM`, and `TWA_NOTIFICATION_EMAIL_ENABLED`. The defaults are already set up for local MailHog.
 - When you use the full Docker workflow, rebuild with `docker compose up --build` after source changes so containers pick up new code.
 - Run `uv run python -m app.db.seed` after migrations if you want the default notification config and an optional staff bootstrap user.
-- `backend/pyproject.toml` pins `auth-service-sdk` to the official `authSDK` GitHub source for `v1.0.2`, so backend installs and CI do not rely on a sibling SDK checkout.
+- `backend/pyproject.toml` pins `auth-service-sdk` to the official `authSDK` GitHub source for `v1.1.0`, so backend installs and CI do not rely on a sibling SDK checkout.
 - Transit accessibility uses the official Metro St. Louis GTFS feed at `https://www.metrostlouis.org/Transit/google_transit.zip`, stored locally at `backend/data/metro_stl_gtfs.zip`.
