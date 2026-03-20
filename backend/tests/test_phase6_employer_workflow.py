@@ -21,6 +21,8 @@ from app.models.enums import (
     ListingReviewStatus,
 )
 from app.services.auth import AuthProviderIdentity, get_auth_provider_identity
+from app.services.geocoding import GeocodeResult
+from app.services.transit import TransitComputationResult
 
 
 @pytest.fixture()
@@ -393,8 +395,19 @@ def test_staff_cannot_reopen_closed_listing(phase6_env) -> None:
 
 def test_employer_can_view_listing_applicants_when_sharing_is_enabled(
     phase6_env,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     client, state, session_factory = phase6_env
+    monkeypatch.setattr(
+        "app.services.employer.geocode_address",
+        lambda **_: GeocodeResult(38.6270, -90.1994, "St. Louis"),
+    )
+    monkeypatch.setattr(
+        "app.services.employer.compute_transit_accessibility",
+        lambda **_: TransitComputationResult(
+            transit_accessible=True, nearest_stop_distance_miles=0.2, warning=None
+        ),
+    )
 
     bootstrap = client.post(
         "/api/v1/auth/bootstrap",

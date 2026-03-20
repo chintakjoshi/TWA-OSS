@@ -5,6 +5,8 @@
   "type": "module",
   "scripts": {
     "lint:frontend": "eslint \"frontend/**/*.{ts,tsx}\" \"shared/frontend/**/*.{ts,tsx}\"",
+    "test:frontend": "vitest run",
+    "test:frontend:watch": "vitest",
     "format": "prettier --write \"frontend/**/*.{ts,tsx,css,html}\" \"shared/frontend/**/*.{ts,tsx,css}\" \"*.{json,md}\"",
     "format:check": "prettier --check \"frontend/**/*.{ts,tsx,css,html}\" \"shared/frontend/**/*.{ts,tsx,css}\" \"*.{json,md}\""
   },
@@ -15,12 +17,17 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.4",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.0",
+    "@testing-library/user-event": "^14.6.1",
     "@types/react": "^19.1.10",
     "@types/react-dom": "^19.1.7",
     "eslint": "^9.39.4",
     "eslint-plugin-react-hooks": "^7.0.1",
     "globals": "^17.4.0",
+    "jsdom": "^27.0.1",
     "prettier": "^3.8.1",
-    "typescript-eslint": "^8.57.1"
+    "typescript-eslint": "^8.57.1",
+    "vitest": "^3.2.4"
   }
 }

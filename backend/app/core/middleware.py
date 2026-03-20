@@ -24,6 +24,8 @@ class PathAwareJWTAuthMiddleware(JWTAuthMiddleware):
         )
 
     async def dispatch(self, request: Request, call_next) -> Response:
+        if request.method.upper() == "OPTIONS":
+            return await call_next(request)
         path = request.url.path.rstrip("/") or "/"
         if path in self._public_exact_paths:
             return await call_next(request)

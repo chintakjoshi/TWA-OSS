@@ -24,15 +24,6 @@ def create_app() -> FastAPI:
         swagger_ui_parameters={"persistAuthorization": True},
     )
 
-    if settings.cors_origins_list:
-        app.add_middleware(
-            CORSMiddleware,
-            allow_origins=settings.cors_origins_list,
-            allow_credentials=True,
-            allow_methods=["*"],
-            allow_headers=["*"],
-        )
-
     if settings.auth_enabled:
         app.add_middleware(
             PathAwareJWTAuthMiddleware,
@@ -50,6 +41,14 @@ def create_app() -> FastAPI:
     app.add_middleware(
         RequestLoggingMiddleware, request_id_header=settings.request_id_header
     )
+    if settings.cors_origins_list:
+        app.add_middleware(
+            CORSMiddleware,
+            allow_origins=settings.cors_origins_list,
+            allow_credentials=True,
+            allow_methods=["*"],
+            allow_headers=["*"],
+        )
     register_exception_handlers(app)
     app.include_router(api_router)
     return app

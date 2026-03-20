@@ -13,7 +13,7 @@ TWA is a web application for Saint Louis University's Transformative Workforce A
 - `docker-compose.yml`: local stack for TWA, `authSDK`, PostgreSQL, Adminer, and MailHog
 
 The TWA backend uses `auth-service-sdk` middleware to trust `authSDK` bearer tokens. TWA-specific roles such as `jobseeker`, `employer`, and `staff` are stored locally in the TWA database.
-The frontend apps talk to `authSDK` through a same-origin `/auth` proxy during local development, which avoids browser CORS issues and matches the production expectation of a reverse-proxied auth surface.
+The frontend apps talk to `authSDK` through a same-origin `/_auth` proxy during local development, which avoids browser CORS issues without colliding with the apps' public `/auth` route and matches the production expectation of a reverse-proxied auth surface.
 
 ## Local Development Options
 
@@ -88,7 +88,7 @@ Copy-Item frontend\employer\.env.example frontend\employer\.env.local
 Copy-Item frontend\admin\.env.example frontend\admin\.env.local
 ```
 
-The default frontend setup leaves `VITE_AUTH_BASE_URL` blank and proxies `/auth` to `VITE_AUTH_PROXY_TARGET`. Keep that pattern unless your deployed auth service already handles browser CORS.
+The default frontend setup points `VITE_AUTH_BASE_URL` at `/_auth` and proxies that internal path to `VITE_AUTH_PROXY_TARGET`. Keep that pattern unless your deployed auth service already handles browser CORS.
 
 5. Run the frontends:
 
@@ -136,6 +136,7 @@ Frontend quality tools are configured at the repo root:
 
 ```powershell
 npm run lint:frontend
+npm run test:frontend
 npm run format:check
 ```
 
@@ -179,10 +180,11 @@ A small root `package.json` now owns the React dependencies used by shared code 
 - [api-contract.md](api-contract.md)
 - [RULES.md](RULES.md)
 - [docs/local-development.md](docs/local-development.md)
+- [docs/testing-qa.md](docs/testing-qa.md)
 - [CONTRIBUTING.md](CONTRIBUTING.md)
 - [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)
 - [LICENSE](LICENSE)
 
 ## CI
 
-GitHub Actions CI lives in `.github/workflows/ci.yml` and currently runs backend tests plus builds all three frontend apps on every push, pull request, and manual dispatch.
+GitHub Actions CI lives in `.github/workflows/ci.yml` and now runs backend tests, frontend lint/format/test checks, and builds all three frontend apps on every push, pull request, and manual dispatch.
