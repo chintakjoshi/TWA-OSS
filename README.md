@@ -25,7 +25,7 @@ The frontend apps talk to `authSDK` through a same-origin `/_auth` proxy during 
 Copy-Item .env.example .env
 ```
 
-2. Make sure the local auth checkout exists at `C:\Users\srava\Desktop\authSDK-1.0.2` or update `AUTHSDK_PATH` in `.env`. This is only needed for the local Docker auth service build.
+2. Make sure the local auth checkout exists at `C:\Users\srava\Desktop\authSDK-1.1.0` or update `AUTHSDK_PATH` in `.env`. This is only needed for the local Docker auth service build.
 
 3. Start the full stack:
 
@@ -160,7 +160,7 @@ MailHog is included for local notification testing, and the TWA backend now uses
 
 ## SDK Integration Note
 
-The backend now installs `auth-service-sdk` from the official `authSDK` GitHub repository pinned to the `v1.0.2` source revision in `backend/pyproject.toml`. The local `AUTHSDK_PATH` setting is still used for the Dockerized auth service, but backend dependency installation and GitHub CI no longer depend on a sibling SDK checkout.
+The backend now installs `auth-service-sdk` from the official `authSDK` GitHub repository pinned to the `v1.1.0` source revision in `backend/pyproject.toml`. The local `AUTHSDK_PATH` setting is still used for the Dockerized auth service, but backend dependency installation and GitHub CI no longer depend on a sibling SDK checkout.
 
 ## Frontend Foundation
 

@@ -105,7 +105,7 @@ TWA-OSS/
    - MailHog
 
 8. Prepare local `authSDK` usage.
-   - Default local path can point to `\Desktop\authSDK-1.0.2`
+   - Default local path can point to `\Desktop\authSDK-1.1.0`
    - Record `AUTH_BASE_URL` and `TWA_AUTH_AUDIENCE=twa-api`
    - Make the Docker setup work with a sibling checkout of `authSDK`
 
