@@ -51,7 +51,7 @@ services:
       timeout: 5s
       retries: 5
     ports:
-      - "5432:5432"
+      - "${DATABASE_PORT:-5432}:5432"
     volumes:
       - twa_postgres_data:/var/lib/postgresql/data
     networks:
@@ -71,7 +71,7 @@ services:
       timeout: 5s
       retries: 5
     ports:
-      - "5433:5432"
+      - "${AUTH_POSTGRES_PORT:-5433}:5432"
     volumes:
       - auth_postgres_data:/var/lib/postgresql/data
     networks:
@@ -87,7 +87,7 @@ services:
       timeout: 5s
       retries: 5
     ports:
-      - "6380:6379"
+      - "${AUTH_REDIS_PORT:-6380}:6379"
     networks:
       - twa-network
 
@@ -101,7 +101,7 @@ services:
       auth-postgres:
         condition: service_healthy
     ports:
-      - "8080:8080"
+      - "${ADMINER_PORT:-8080}:8080"
     networks:
       - twa-network
 
@@ -110,8 +110,8 @@ services:
     container_name: twa-mailhog
     restart: unless-stopped
     ports:
-      - "1025:1025"
-      - "8025:8025"
+      - "${MAILHOG_SMTP_PORT:-1025}:1025"
+      - "${MAILHOG_UI_PORT:-8025}:8025"
     networks:
       - twa-network
 
@@ -148,7 +148,7 @@ services:
       retries: 10
       start_period: 20s
     ports:
-      - "8000:8000"
+      - "${AUTH_SERVICE_PORT:-8000}:8000"
     networks:
       - twa-network
 
@@ -224,17 +224,26 @@ services:
     environment:
       DATABASE_URL: postgresql+psycopg://twa:twa@twa-postgres:5432/twa
       AUTH_BASE_URL: http://auth-service:8000
-      TWA_AUTH_AUDIENCE: twa-api
-      TWA_ENVIRONMENT: development
-      TWA_DEBUG: "true"
-      TWA_CORS_ORIGINS: http://localhost:5173,http://localhost:5174,http://localhost:5175
-      TWA_NOTIFICATION_EMAIL_ENABLED: "true"
+      TWA_AUTH_AUDIENCE: ${TWA_AUTH_AUDIENCE:-twa-api}
+      TWA_ENVIRONMENT: ${TWA_ENVIRONMENT:-development}
+      TWA_DEBUG: "${TWA_DEBUG:-true}"
+      TWA_LOG_LEVEL: ${TWA_LOG_LEVEL:-INFO}
+      TWA_REQUEST_ID_HEADER: ${TWA_REQUEST_ID_HEADER:-X-Request-ID}
+      TWA_CORS_ORIGINS: ${TWA_CORS_ORIGINS:-http://localhost:5173,http://localhost:5174,http://localhost:5175}
+      TWA_NOTIFICATION_EMAIL_ENABLED: "${TWA_NOTIFICATION_EMAIL_ENABLED:-true}"
       TWA_SMTP_HOST: mailhog
-      TWA_SMTP_PORT: "1025"
-      TWA_EMAIL_FROM: notifications@localhost
+      TWA_SMTP_PORT: "${TWA_SMTP_PORT:-1025}"
+      TWA_SMTP_TIMEOUT_SECONDS: "${TWA_SMTP_TIMEOUT_SECONDS:-10}"
+      TWA_EMAIL_FROM: ${TWA_EMAIL_FROM:-notifications@localhost}
+      TWA_SEED_STAFF_AUTH_USER_ID: ${TWA_SEED_STAFF_AUTH_USER_ID:-}
+      TWA_SEED_STAFF_EMAIL: ${TWA_SEED_STAFF_EMAIL:-}
+      TWA_SEED_STAFF_PROVIDER_ROLE: ${TWA_SEED_STAFF_PROVIDER_ROLE:-admin}
     command: >
       /bin/sh -c '
       uv run alembic upgrade head &&
+      if [ -n "$$TWA_SEED_STAFF_AUTH_USER_ID" ] && [ -n "$$TWA_SEED_STAFF_EMAIL" ]; then
+        uv run python -m app.db.seed;
+      fi &&
       uv run uvicorn app.main:app --host 0.0.0.0 --port 9000
       '
     healthcheck:
@@ -244,7 +253,7 @@ services:
       retries: 10
       start_period: 15s
     ports:
-      - "9000:9000"
+      - "${BACKEND_PORT:-9000}:9000"
     networks:
       - twa-network
 
@@ -262,7 +271,7 @@ services:
       VITE_AUTH_BASE_URL: ${VITE_AUTH_BASE_URL-}
       VITE_AUTH_PROXY_TARGET: ${DOCKER_VITE_AUTH_PROXY_TARGET:-http://auth-service:8000}
     ports:
-      - "5173:5173"
+      - "${JOBSEEKER_PORT:-5173}:5173"
     networks:
       - twa-network
 
@@ -280,7 +289,7 @@ services:
       VITE_AUTH_BASE_URL: ${VITE_AUTH_BASE_URL-}
       VITE_AUTH_PROXY_TARGET: ${DOCKER_VITE_AUTH_PROXY_TARGET:-http://auth-service:8000}
     ports:
-      - "5174:5174"
+      - "${EMPLOYER_PORT:-5174}:5174"
     networks:
       - twa-network
 
@@ -298,7 +307,7 @@ services:
       VITE_AUTH_BASE_URL: ${VITE_AUTH_BASE_URL-}
       VITE_AUTH_PROXY_TARGET: ${DOCKER_VITE_AUTH_PROXY_TARGET:-http://auth-service:8000}
     ports:
-      - "5175:5175"
+      - "${ADMIN_PORT:-5175}:5175"
     networks:
       - twa-network
 

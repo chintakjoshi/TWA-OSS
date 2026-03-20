@@ -33,10 +33,11 @@ export default defineConfig(({ mode }) => {
         ],
       },
       proxy: {
-        '/auth': {
+        '/_auth': {
           target: authProxyTarget,
           changeOrigin: true,
           secure: false,
+          rewrite: (incomingPath) => incomingPath.replace(/^\/_auth/, ''),
         },
       },
     },

@@ -39,7 +39,7 @@ The repo supports two local workflows:
 - `AUTHSDK_PATH` defaults to `../authSDK-1.0.2`, which matches the current local desktop layout and is only required for the Dockerized auth service.
 - `twa-backend` runs `alembic upgrade head` on container startup so migrations stay applied.
 - `shared/frontend/` contains the shared frontend design tokens, primitives, auth client, and route-guard layer used by all three apps.
-- Frontend auth requests should use the same-origin `/auth` path and rely on the Vite proxy target instead of calling `http://localhost:8000` directly from the browser.
+- Frontend auth requests should use the same-origin `/_auth` path and rely on the Vite proxy target instead of calling `http://localhost:8000` directly from the browser. This keeps the public `/auth` SPA route free for the app itself.
 - Run `npm install` from the repo root once so shared frontend imports can resolve React and router packages from the workspace root.
 - The current backend migration chain starts with a bootstrap revision and the first real schema revision.
 - FastAPI Swagger UI is available at `/docs`, and ReDoc is available at `/redoc`.

@@ -1,4 +1,10 @@
-import type { ReactNode } from 'react'
+import {
+  cloneElement,
+  isValidElement,
+  useId,
+  type ReactElement,
+  type ReactNode,
+} from 'react'
 
 function cx(...parts: Array<string | false | null | undefined>): string {
   return parts.filter(Boolean).join(' ')
@@ -127,11 +133,36 @@ export function Field({
   hint?: string
   children: ReactNode
 }) {
+  const generatedId = useId()
+  const hintId = `${generatedId}-hint`
+  const controlElement =
+    isValidElement(children) && typeof children.type === 'string'
+      ? children
+      : null
+  const controlProps = controlElement?.props as
+    | { id?: string; 'aria-describedby'?: string }
+    | undefined
+  const controlId = controlProps?.id ?? generatedId
+  const describedBy = [controlProps?.['aria-describedby'], hint ? hintId : null]
+    .filter(Boolean)
+    .join(' ')
+  const enhancedChildren =
+    controlElement !== null
+      ? cloneElement(controlElement as ReactElement<Record<string, unknown>>, {
+          id: controlId,
+          'aria-describedby': describedBy || undefined,
+        })
+      : children
+
   return (
     <div className="field">
-      <label>{label}</label>
-      {children}
-      {hint ? <p className="field-hint">{hint}</p> : null}
+      <label htmlFor={controlElement ? controlId : undefined}>{label}</label>
+      {enhancedChildren}
+      {hint ? (
+        <p className="field-hint" id={hintId}>
+          {hint}
+        </p>
+      ) : null}
     </div>
   )
 }

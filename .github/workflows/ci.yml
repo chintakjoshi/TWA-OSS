@@ -73,6 +73,9 @@ jobs:
       - name: Run frontend format check
         run: npm run format:check
 
+      - name: Run frontend tests
+        run: npm run test:frontend
+
   frontend:
     name: Frontend (${{ matrix.app.name }})
     runs-on: ubuntu-latest
