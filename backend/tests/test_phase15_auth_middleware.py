@@ -100,9 +100,7 @@ def test_auth_middleware_allows_cors_preflight_without_authentication(
         dispatch_calls.append(request.url.path)
         return JSONResponse(
             status_code=401,
-            content={
-                "error": {"code": "UNAUTHENTICATED", "message": "Missing token."}
-            },
+            content={"error": {"code": "UNAUTHENTICATED", "message": "Missing token."}},
         )
 
     monkeypatch.setattr(JWTAuthMiddleware, "dispatch", fake_dispatch)
