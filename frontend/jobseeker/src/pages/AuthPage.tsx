@@ -6,7 +6,7 @@ import { getAuthStateLabel } from '@shared/lib/auth-client'
 import { Badge, Button, Card, CardBody } from '@shared/ui/primitives'
 
 const highlights = [
-  'Direct authSDK sign-in, signup, OTP, refresh, logout, and password reset all live here.',
+  'Direct authSDK sign-in, signup, email verification resend, OTP, refresh, logout, and password reset all live here.',
   'Bootstrap into TWA happens after auth and creates the local jobseeker account the backend expects.',
   'Once the profile is complete, the UI unlocks jobs and applications routes instead of letting the backend surprise the user with a block.',
 ]

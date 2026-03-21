@@ -15,6 +15,7 @@ import type {
   ForgotPasswordRequest,
   LoginOTPChallengeResponse,
   LoginRequest,
+  ResendVerifyEmailRequest,
   ResetPasswordRequest,
   SignupRequest,
   StoredSession,
@@ -28,6 +29,9 @@ interface AuthContextValue {
   otpChallenge: LoginOTPChallengeResponse | null
   reload: () => Promise<void>
   signup: (payload: SignupRequest) => Promise<void>
+  requestVerificationEmailResend: (
+    payload: ResendVerifyEmailRequest
+  ) => Promise<void>
   login: (payload: LoginRequest) => Promise<void>
   verifyLoginOtp: (payload: VerifyLoginOTPRequest) => Promise<void>
   resendLoginOtp: () => Promise<void>
@@ -107,6 +111,9 @@ export function AuthProvider({
       },
       async signup(payload: SignupRequest) {
         await client.signup(payload)
+      },
+      async requestVerificationEmailResend(payload: ResendVerifyEmailRequest) {
+        await client.requestVerificationEmailResend(payload)
       },
       async login(payload: LoginRequest) {
         setState('loading')

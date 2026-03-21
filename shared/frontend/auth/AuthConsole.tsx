@@ -32,6 +32,9 @@ export function AuthConsole({
   const [busy, setBusy] = useState(false)
   const [notice, setNotice] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [verificationEmail, setVerificationEmail] = useState<string | null>(
+    null
+  )
 
   const activeMode = auth.state === 'otp_required' ? 'otp' : mode
   const availableModes = useMemo<Mode[]>(
@@ -105,10 +108,26 @@ export function AuthConsole({
                 event.preventDefault()
                 const form = new FormData(event.currentTarget)
                 void run(async () => {
-                  await auth.login({
-                    email: String(form.get('email') ?? ''),
-                    password: String(form.get('password') ?? ''),
-                  })
+                  const email = String(form.get('email') ?? '').trim()
+                  try {
+                    await auth.login({
+                      email,
+                      password: String(form.get('password') ?? ''),
+                    })
+                  } catch (nextError) {
+                    if (
+                      nextError instanceof HttpError &&
+                      nextError.code === 'email_not_verified'
+                    ) {
+                      setVerificationEmail(email)
+                      setNotice(
+                        'Verify your email before signing in. You can resend the verification email below.'
+                      )
+                      return
+                    }
+                    throw nextError
+                  }
+                  setVerificationEmail(null)
                   setNotice('You are signed in through authSDK.')
                 })
               }}
@@ -132,13 +151,15 @@ export function AuthConsole({
                 event.preventDefault()
                 const form = new FormData(event.currentTarget)
                 void run(async () => {
+                  const email = String(form.get('email') ?? '').trim()
                   await auth.signup({
-                    email: String(form.get('email') ?? ''),
+                    email,
                     password: String(form.get('password') ?? ''),
                   })
+                  setVerificationEmail(email)
                   setMode('login')
                   setNotice(
-                    'Account created in authSDK. Sign in next to continue into TWA.'
+                    'Account created in authSDK. Check your email to verify the account before signing in.'
                   )
                 })
               }}
@@ -165,6 +186,7 @@ export function AuthConsole({
                   await auth.requestPasswordReset({
                     email: String(form.get('email') ?? ''),
                   })
+                  setVerificationEmail(null)
                   setNotice(
                     'If that email exists, authSDK has sent a password reset link.'
                   )
@@ -191,6 +213,7 @@ export function AuthConsole({
                     token: String(form.get('token') ?? ''),
                     new_password: String(form.get('new_password') ?? ''),
                   })
+                  setVerificationEmail(null)
                   setMode('login')
                   setNotice('Password updated. Sign in with the new password.')
                 })
@@ -227,6 +250,7 @@ export function AuthConsole({
                     challenge_token: auth.otpChallenge!.challenge_token,
                     code: String(form.get('code') ?? ''),
                   })
+                  setVerificationEmail(null)
                   setNotice('OTP verified. You can continue into TWA now.')
                 })
               }}
@@ -264,6 +288,34 @@ export function AuthConsole({
                 </Button>
               </div>
             </form>
+          ) : null}
+
+          {verificationEmail ? (
+            <Alert tone="info">
+              <div className="stack-sm">
+                <p>
+                  Verification is still pending for{' '}
+                  <strong>{verificationEmail}</strong>.
+                </p>
+                <div className="inline-actions">
+                  <Button
+                    disabled={busy}
+                    onClick={() => {
+                      void run(async () => {
+                        await auth.requestVerificationEmailResend({
+                          email: verificationEmail,
+                        })
+                        setNotice(
+                          'If that account exists and still needs verification, authSDK has sent a fresh verification email.'
+                        )
+                      })
+                    }}
+                  >
+                    Resend verification email
+                  </Button>
+                </div>
+              </div>
+            </Alert>
           ) : null}
 
           {auth.state === 'authenticated' ? children : null}

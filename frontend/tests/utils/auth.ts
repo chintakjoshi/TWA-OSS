@@ -7,6 +7,8 @@ import type {
   LoginOTPChallengeResponse,
   LoginRequest,
   OTPMessageSentResponse,
+  ResendVerifyEmailRequest,
+  ResendVerifyEmailResponse,
   ResetPasswordRequest,
   ResetPasswordResponse,
   SignupRequest,
@@ -26,6 +28,7 @@ type MockAuthState = {
 type MockAuthClientOptions = {
   session?: StoredSession | null
   authMe?: AuthMeResponse | null
+  loginError?: Error
   loginResult?: LoginOTPChallengeResponse | TokenPairResponse
   verifyOtpResult?: TokenPairResponse
   fetchAuthMeError?: Error
@@ -123,6 +126,7 @@ export function createMockAuthClient(options: MockAuthClientOptions = {}) {
       payload: LoginRequest
     ): Promise<LoginOTPChallengeResponse | TokenPairResponse> => {
       void payload
+      if (options.loginError) throw options.loginError
       if ('access_token' in loginResult) {
         state.session = {
           accessToken: loginResult.access_token,
@@ -133,6 +137,15 @@ export function createMockAuthClient(options: MockAuthClientOptions = {}) {
         state.otpChallenge = loginResult
       }
       return loginResult
+    }
+  )
+
+  const requestVerificationEmailResend = vi.fn(
+    async (
+      payload: ResendVerifyEmailRequest
+    ): Promise<ResendVerifyEmailResponse> => {
+      void payload
+      return { sent: true }
     }
   )
 
@@ -245,6 +258,7 @@ export function createMockAuthClient(options: MockAuthClientOptions = {}) {
       state.otpChallenge = null
     },
     signup,
+    requestVerificationEmailResend,
     login,
     verifyLoginOtp,
     resendLoginOtp,
@@ -262,6 +276,7 @@ export function createMockAuthClient(options: MockAuthClientOptions = {}) {
     state,
     spies: {
       signup,
+      requestVerificationEmailResend,
       login,
       verifyLoginOtp,
       resendLoginOtp,
