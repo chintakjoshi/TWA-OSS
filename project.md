@@ -50,11 +50,11 @@ TWA connects justice-involved individuals with fair-chance employers in Missouri
 
 ## Three Interfaces, One Backend
 
-| Interface         | Audience   | Access                                                                |
-| ----------------- | ---------- | --------------------------------------------------------------------- |
+| Interface         | Audience   | Access                                                                                     |
+| ----------------- | ---------- | ------------------------------------------------------------------------------------------ |
 | Jobseeker Portal  | Jobseekers | Public, requires auth-service signup + email verification + TWA bootstrap                  |
 | Employer Portal   | Employers  | Public, requires auth-service signup + email verification + TWA bootstrap + staff approval |
-| Staff Admin Panel | TWA staff  | Internal, staff-created local app accounts tied to auth identities    |
+| Staff Admin Panel | TWA staff  | Internal, staff-created local app accounts tied to auth identities                         |
 
 All three frontends share one TWA backend API and one external auth service.
 
@@ -418,7 +418,7 @@ When the "share applicant info with employer" toggle is OFF, the employer portal
 
 | Screen          | Description                                                                                                                                                                                                                                                      |
 | --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Signup / Login  | Frontend uses `authSDK` for signup, email verification, login, password reset, and auth lifecycle                                                                                                                                                                  |
+| Signup / Login  | Frontend uses `authSDK` for signup, email verification, login, password reset, and auth lifecycle                                                                                                                                                                |
 | Bootstrap       | Choose or confirm local TWA role if needed                                                                                                                                                                                                                       |
 | Profile Setup   | Location, transit type, charge categories, with sensitivity messaging                                                                                                                                                                                            |
 | Job Board       | All active listings; each card shows role, employer, location, transit requirement, and a simple eligibility tag. Ineligible listings show a distance tag rather than a detailed reason. No charge-based ineligibility reason is ever surfaced to the jobseeker. |
@@ -430,7 +430,7 @@ When the "share applicant info with employer" toggle is OFF, the employer portal
 | Screen                   | Description                                                                                                                                               |
 | ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Signup / Login           | Frontend uses `authSDK` for signup, email verification, login, password reset, and auth lifecycle                                                         |
-| Bootstrap                | Create local employer app record after auth-service verification/login                                                                                     |
+| Bootstrap                | Create local employer app record after auth-service verification/login                                                                                    |
 | Dashboard                | Status of employer account (pending / approved / rejected)                                                                                                |
 | Submit Job Listing       | Title, description, location, transit requirement, disqualifying charge categories                                                                        |
 | My Listings              | All submitted listings with review and lifecycle statuses                                                                                                 |
