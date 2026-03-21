@@ -7,7 +7,7 @@ import { getAuthStateLabel } from '@shared/lib/auth-client'
 import { Badge, Button, Card, CardBody, Field } from '@shared/ui/primitives'
 
 const portalChecks = [
-  'Shared authSDK login, signup, OTP, refresh, logout, and password reset are available here.',
+  'Shared authSDK login, signup, email verification resend, OTP, refresh, logout, and password reset are available here.',
   'Employer bootstrap collects the organization details TWA needs to create the local employer record.',
   'Once bootstrapped, the portal routes employers into dashboard, profile, listings, and applicants workflows.',
 ]

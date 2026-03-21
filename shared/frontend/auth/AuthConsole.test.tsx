@@ -4,6 +4,7 @@ import { MemoryRouter } from 'react-router-dom'
 import { expect, test } from 'vitest'
 
 import { createMockAuthClient } from '../../../frontend/tests/utils/auth'
+import { HttpError } from '../lib/http'
 import { AuthProvider } from './AuthProvider'
 import { AuthConsole } from './AuthConsole'
 
@@ -95,7 +96,58 @@ test('signup form keeps validation constraints and calls authSDK signup', async 
   })
   expect(
     await screen.findByText(
-      'Account created in authSDK. Sign in next to continue into TWA.'
+      'Account created in authSDK. Check your email to verify the account before signing in.'
+    )
+  ).toBeInTheDocument()
+  expect(
+    screen.getByRole('button', { name: 'Resend verification email' })
+  ).toBeInTheDocument()
+})
+
+test('login surfaces resend verification flow for unverified accounts', async () => {
+  const user = userEvent.setup()
+  const { client, spies } = createMockAuthClient({
+    loginError: new HttpError(400, 'Email is not verified.', {
+      code: 'email_not_verified',
+      detail: 'Email is not verified.',
+    }),
+  })
+
+  renderConsole(client)
+
+  const email = await screen.findByLabelText('Email')
+  const password = screen.getByLabelText('Password')
+  const form = email.closest('form')
+
+  expect(form).not.toBeNull()
+
+  await user.type(email, 'pending@example.com')
+  await user.type(password, 'Password123')
+  await user.click(
+    within(form as HTMLFormElement).getByRole('button', { name: 'Sign In' })
+  )
+
+  expect(
+    await screen.findByText(
+      'Verify your email before signing in. You can resend the verification email below.'
+    )
+  ).toBeInTheDocument()
+  expect(
+    screen.getByText(/Verification is still pending for/i)
+  ).toBeInTheDocument()
+
+  await user.click(
+    screen.getByRole('button', { name: 'Resend verification email' })
+  )
+
+  await waitFor(() => {
+    expect(spies.requestVerificationEmailResend).toHaveBeenCalledWith({
+      email: 'pending@example.com',
+    })
+  })
+  expect(
+    await screen.findByText(
+      'If that account exists and still needs verification, authSDK has sent a fresh verification email.'
     )
   ).toBeInTheDocument()
 })

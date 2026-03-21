@@ -9,6 +9,8 @@ import type {
   LoginOTPChallengeResponse,
   LoginRequest,
   OTPMessageSentResponse,
+  ResendVerifyEmailRequest,
+  ResendVerifyEmailResponse,
   ResetPasswordRequest,
   ResetPasswordResponse,
   SignupRequest,
@@ -30,6 +32,9 @@ export interface AuthClient {
   loadStoredSession(): StoredSession | null
   clearStoredSession(): void
   signup(payload: SignupRequest): Promise<SignupResponse>
+  requestVerificationEmailResend(
+    payload: ResendVerifyEmailRequest
+  ): Promise<ResendVerifyEmailResponse>
   login(
     payload: LoginRequest
   ): Promise<LoginOTPChallengeResponse | TokenPairResponse>
@@ -95,6 +100,12 @@ export function createAuthClient(config: AuthClientConfig): AuthClient {
     signup(payload) {
       return requestJson<SignupResponse>(
         joinUrl(config.authBaseUrl, '/auth/signup'),
+        { method: 'POST', body: JSON.stringify(payload) }
+      )
+    },
+    requestVerificationEmailResend(payload) {
+      return requestJson<ResendVerifyEmailResponse>(
+        joinUrl(config.authBaseUrl, '/auth/verify-email/resend/request'),
         { method: 'POST', body: JSON.stringify(payload) }
       )
     },

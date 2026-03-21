@@ -22,7 +22,7 @@ TWA connects justice-involved individuals with fair-chance employers in Missouri
 ### 1. Jobseeker (public-facing portal)
 
 - Justice-involved individuals referred to or self-directed to TWA
-- Self-register through the auth service, then bootstrap into the TWA app
+- Self-register through the auth service, verify email, then login and bootstrap into the TWA app
 - Fill out a profile including location, transportation type, and self-reported charge categories
 - Browse all active job listings with eligibility indicated per listing
 - Apply to jobs through the app
@@ -31,7 +31,7 @@ TWA connects justice-involved individuals with fair-chance employers in Missouri
 ### 2. Employer (public-facing portal, limited)
 
 - Organizations willing to hire fair-chance candidates
-- Self-register through the auth service, then bootstrap into the TWA app
+- Self-register through the auth service, verify email, then login and bootstrap into the TWA app
 - Employer account goes into a pending state until approved by TWA staff
 - Once approved, can submit job listing requests for staff review
 - Can view the status of their submitted listings
@@ -52,8 +52,8 @@ TWA connects justice-involved individuals with fair-chance employers in Missouri
 
 | Interface         | Audience   | Access                                                                |
 | ----------------- | ---------- | --------------------------------------------------------------------- |
-| Jobseeker Portal  | Jobseekers | Public, requires auth-service signup + TWA bootstrap                  |
-| Employer Portal   | Employers  | Public, requires auth-service signup + TWA bootstrap + staff approval |
+| Jobseeker Portal  | Jobseekers | Public, requires auth-service signup + email verification + TWA bootstrap                  |
+| Employer Portal   | Employers  | Public, requires auth-service signup + email verification + TWA bootstrap + staff approval |
 | Staff Admin Panel | TWA staff  | Internal, staff-created local app accounts tied to auth identities    |
 
 All three frontends share one TWA backend API and one external auth service.
@@ -99,12 +99,14 @@ Use `authSDK` unchanged as the centralized authentication authority.
 
 ### Production Flow
 
-1. Frontend calls `authSDK` directly for signup or login
-2. `authSDK` issues an access token with audience `twa-api`
-3. Frontend calls the TWA backend with that bearer token
-4. TWA validates the token using `auth-service-sdk`
-5. TWA resolves or creates the local app user using `auth_user_id`
-6. TWA authorizes access using the local app role, not the auth-provider role in the token
+1. Frontend calls `authSDK` directly for signup
+2. `authSDK` sends an email verification link and the user must complete verification before password login
+3. Frontend calls `authSDK` for login
+4. `authSDK` issues an access token with audience `twa-api`
+5. Frontend calls the TWA backend with that bearer token
+6. TWA validates the token using `auth-service-sdk`
+7. TWA resolves or creates the local app user using `auth_user_id`
+8. TWA authorizes access using the local app role, not the auth-provider role in the token
 
 ---
 
@@ -303,6 +305,8 @@ The `ineligibility_tag` is distance-based only. Charge incompatibility is never 
 ```text
 # External auth service (`authSDK`)
 POST   {AUTH_BASE_URL}/auth/signup         # create auth identity
+GET    {AUTH_BASE_URL}/auth/verify-email   # verify email from the auth-service link
+POST   {AUTH_BASE_URL}/auth/verify-email/resend/request  # resend verification email without a session
 POST   {AUTH_BASE_URL}/auth/login          # login with audience=twa-api
 POST   {AUTH_BASE_URL}/auth/token          # refresh token
 POST   {AUTH_BASE_URL}/auth/logout         # logout
@@ -310,7 +314,7 @@ GET    {AUTH_BASE_URL}/auth/validate       # token/session validation for SDK
 GET    {AUTH_BASE_URL}/.well-known/jwks.json
 
 # TWA local auth context
-POST   /api/v1/auth/bootstrap              # assign local TWA app role after auth-service signup/login
+POST   /api/v1/auth/bootstrap              # assign local TWA app role after auth-service verification + login
 GET    /api/v1/auth/me                     # current local app auth context
 
 # Jobseeker portal
@@ -414,7 +418,7 @@ When the "share applicant info with employer" toggle is OFF, the employer portal
 
 | Screen          | Description                                                                                                                                                                                                                                                      |
 | --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Signup / Login  | Frontend uses `authSDK` for signup, login, password reset, and auth lifecycle                                                                                                                                                                                    |
+| Signup / Login  | Frontend uses `authSDK` for signup, email verification, login, password reset, and auth lifecycle                                                                                                                                                                  |
 | Bootstrap       | Choose or confirm local TWA role if needed                                                                                                                                                                                                                       |
 | Profile Setup   | Location, transit type, charge categories, with sensitivity messaging                                                                                                                                                                                            |
 | Job Board       | All active listings; each card shows role, employer, location, transit requirement, and a simple eligibility tag. Ineligible listings show a distance tag rather than a detailed reason. No charge-based ineligibility reason is ever surfaced to the jobseeker. |
@@ -425,8 +429,8 @@ When the "share applicant info with employer" toggle is OFF, the employer portal
 
 | Screen                   | Description                                                                                                                                               |
 | ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Signup / Login           | Frontend uses `authSDK` for signup, login, password reset, and auth lifecycle                                                                             |
-| Bootstrap                | Create local employer app record after auth-service signup/login                                                                                          |
+| Signup / Login           | Frontend uses `authSDK` for signup, email verification, login, password reset, and auth lifecycle                                                         |
+| Bootstrap                | Create local employer app record after auth-service verification/login                                                                                     |
 | Dashboard                | Status of employer account (pending / approved / rejected)                                                                                                |
 | Submit Job Listing       | Title, description, location, transit requirement, disqualifying charge categories                                                                        |
 | My Listings              | All submitted listings with review and lifecycle statuses                                                                                                 |
@@ -458,9 +462,9 @@ Build in this sequence to keep dependencies clean:
 1. Database setup and SQLAlchemy models
 2. Auth integration: connect TWA backend to `authSDK`, add JWT middleware, add local app-user bootstrap and role guards
 3. GTFS data pipeline: download feed, parse stops, build transit accessibility checker
-4. Employer auth-service signup, local bootstrap, and approval flow
+4. Employer auth-service signup, email verification, local bootstrap, and approval flow
 5. Job listing submission and staff review queue; geocode address and compute `transit_accessible` at creation
-6. Jobseeker auth-service signup, local bootstrap, and profile setup
+6. Jobseeker auth-service signup, email verification, local bootstrap, and profile setup
 7. Job board with eligibility indicators and distance tags
 8. Application submission and notification dispatch
 9. Two-way matching views in the admin panel

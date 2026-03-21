@@ -6,7 +6,7 @@ import { getAuthStateLabel } from '@shared/lib/auth-client'
 import { Badge, Button, Card, CardBody } from '@shared/ui/primitives'
 
 const adminFocus = [
-  'Staff sign-in runs through the same shared authSDK flow as the public apps.',
+  'Staff sign-in runs through the same shared authSDK flow as the public apps, including the updated verification-aware login handling.',
   'Only locally provisioned TWA staff accounts can enter the admin workspace.',
   'Once signed in, the portal exposes dashboard, queues, matches, applications, notifications, and audit tools.',
 ]

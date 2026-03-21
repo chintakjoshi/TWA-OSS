@@ -281,7 +281,7 @@ Use `authSDK` for authentication while keeping TWA-specific roles and authorizat
    - inactive local app users cannot use the TWA backend
 
 8. Decide onboarding flow.
-   - Recommended approach: auth-service signup/login first, then TWA bootstrap, then force profile completion before browsing/applying for jobseekers
+   - Recommended approach: auth-service signup, email verification, login, then TWA bootstrap, then force profile completion before browsing/applying for jobseekers
 
 ### Deliverables
 
@@ -341,7 +341,7 @@ def write_audit(
 
 ### Goal
 
-Ship the first complete business workflow: auth-service signup, TWA employer bootstrap, staff approval, listing submission, and review.
+Ship the first complete business workflow: auth-service signup, email verification, TWA employer bootstrap, staff approval, listing submission, and review.
 
 ### Tasks
 
@@ -679,7 +679,7 @@ Build the three frontend apps against stable API contracts.
 
 ### Tasks
 
-1. Build signup/login handoff to `authSDK`.
+1. Build signup, email verification resend, and login handoff to `authSDK`.
 2. Build TWA bootstrap/profile-setup flow.
 3. Build job board.
 4. Build job detail screen.
@@ -698,7 +698,7 @@ Build the three frontend apps against stable API contracts.
 
 ### Tasks
 
-1. Build signup/login handoff to `authSDK`.
+1. Build signup, email verification resend, and login handoff to `authSDK`.
 2. Build employer bootstrap flow.
 3. Build dashboard with approval status.
 4. Build submit listing form.
@@ -790,7 +790,7 @@ Write tests for:
 Write tests for:
 
 - protected routes
-- signup/login handoff to `authSDK`
+- signup, verification, and login handoff to `authSDK`
 - bootstrap flows
 - form validation
 - job board eligibility rendering
@@ -801,8 +801,8 @@ Write tests for:
 
 Run these end-to-end scenarios:
 
-1. Employer signs up through `authSDK`, bootstraps into TWA, waits for approval, gets approved, submits listing, listing gets approved.
-2. Jobseeker signs up through `authSDK`, bootstraps into TWA, completes profile, views jobs, sees eligible and ineligible states, applies.
+1. Employer signs up through `authSDK`, verifies email, logs in, bootstraps into TWA, waits for approval, gets approved, submits listing, listing gets approved.
+2. Jobseeker signs up through `authSDK`, verifies email, logs in, bootstraps into TWA, completes profile, views jobs, sees eligible and ineligible states, applies.
 3. Staff logs in, reviews application, marks hired, and optionally closes listing.
 4. Employer applicant visibility toggles off and on correctly.
 5. Audit log records all changes.
@@ -860,88 +860,3 @@ Launch safely with enough observability and operational discipline.
 
 - Production environment deployed
 - Monitoring and backups enabled
-
----
-
-## Suggested Execution Timeline
-
-If one developer is building this app, a practical order is:
-
-1. Week 1: repo setup, backend skeleton, schema, migrations, authSDK integration
-2. Week 2: employer flow and listing review workflow
-3. Week 3: jobseeker flow, GTFS integration, matching service
-4. Week 4: applications, hiring, notifications, audit log
-5. Week 5: staff admin UI
-6. Week 6: jobseeker and employer UIs, testing, polish, deployment
-
-If a small team is building it, split work like this:
-
-- Backend engineer: schema, auth integration, workflows, matching, notifications, audit
-- Frontend engineer: all three portals after API contracts stabilize
-- Shared owner: deployment, QA, GTFS refresh, product validation
-
----
-
-## High-Risk Areas to Handle Carefully
-
-These parts deserve extra attention during implementation:
-
-1. Local role modeling and auth bootstrap
-   - Keep auth-provider identity separate from TWA app authorization
-
-2. State modeling for employers and listings
-   - Avoid ambiguous status fields
-
-3. Matching privacy rules
-   - Jobseeker-facing responses and employer-facing responses should not accidentally reuse the same serializer without policy checks
-
-4. External data dependencies
-   - GTFS and geocoding failures must degrade gracefully
-
-5. Audit completeness
-   - Missing audit writes are easy to introduce if the pattern is not centralized
-
-6. Notification duplication
-   - Make dispatch idempotent where possible
-
----
-
-## Recommended First Coding Milestone
-
-Start with this exact milestone:
-
-1. FastAPI app boots
-2. PostgreSQL connection works
-3. SQLAlchemy models and migrations exist
-4. `auth-service-sdk` middleware is wired into TWA
-5. Local `app_users` bootstrap works
-6. Local role guards work
-7. Staff seed app user exists
-
-That milestone gives the project a strong base and makes every later feature easier to build and test.
-
----
-
-## Definition of Done for v1
-
-The app is ready for a first real-world pilot when:
-
-- Jobseekers can sign up through `authSDK`, bootstrap into TWA, complete profiles, browse jobs, and apply
-- Employers can sign up through `authSDK`, bootstrap into TWA, get approved, submit listings, and monitor listing status
-- Staff can log in, approve employers and listings, run matching, manage applications, mark hires, close listings, and view audit history
-- Transit accessibility is computed from GTFS-backed logic
-- Notifications work in-app and by email
-- Audit logs exist for all important write actions
-- The app is deployed with backups, logs, and basic monitoring
-
----
-
-## Next Document to Create After This One
-
-Once implementation starts, the most useful follow-up docs would be:
-
-1. database schema and migration document
-2. backend scaffold and router map
-3. frontend route map for each app
-4. QA test checklist
-5. deployment runbook

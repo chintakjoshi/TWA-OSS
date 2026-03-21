@@ -38,6 +38,7 @@ TWA uses `authSDK` as an external auth service.
 Production integration model:
 
 - Frontends call `authSDK` directly for signup, login, refresh, logout, password reset, email verification, and OTP
+- Frontends must complete authSDK email verification before password login will succeed
 - `authSDK` issues access tokens with audience `twa-api`
 - The TWA backend validates those tokens using `auth-service-sdk` middleware and online session validation
 - The TWA backend resolves the local app user from the auth token subject (`sub`) and enforces the local TWA role from its own database
@@ -390,7 +391,34 @@ Creates an auth identity.
 
 - This creates the auth identity only
 - It does not assign the TWA app role
-- After signup, the client should call `POST /api/v1/auth/bootstrap`
+- It returns `email_verified: false` for new password signups
+- After signup, the client should complete `GET {AUTH_BASE_URL}/auth/verify-email`, then login, then call `POST /api/v1/auth/bootstrap`
+
+### `GET {AUTH_BASE_URL}/auth/verify-email`
+
+Marks the auth identity email as verified from the emailed verification link.
+
+#### Notes
+
+- This does not log the user in
+- After verification, the client must still call `POST {AUTH_BASE_URL}/auth/login`
+
+### `POST {AUTH_BASE_URL}/auth/verify-email/resend/request`
+
+Requests a fresh verification email without requiring an authenticated session.
+
+#### Request Body
+
+```json
+{
+  "email": "jane@example.com"
+}
+```
+
+#### Notes
+
+- Returns `200 {"sent": true}` for unknown, verified, and unverified emails
+- The client should use this after `email_not_verified` or when a user says they did not receive the original email
 
 ### `POST {AUTH_BASE_URL}/auth/login`
 
@@ -409,6 +437,11 @@ Authenticates the user through `authSDK` and returns tokens.
 #### Response
 
 Defined by `authSDK`, not by the TWA backend contract.
+
+#### Policy Note
+
+- When the verified-email login policy is enabled, correct credentials for an unverified account return `400 {"detail":"Email is not verified.","code":"email_not_verified"}`
+- No access token or refresh token is issued in that branch
 
 ### `POST {AUTH_BASE_URL}/auth/token`
 
@@ -432,7 +465,7 @@ Used by `auth-service-sdk` middleware for JWT verification.
 
 Creates or returns the local TWA app user for an already authenticated `authSDK` user.
 
-This is the first TWA-specific call after successful signup or first login.
+This is the first TWA-specific call after successful email verification and login.
 
 ### Auth
 

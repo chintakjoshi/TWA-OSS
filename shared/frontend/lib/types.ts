@@ -44,6 +44,12 @@ export interface SignupResponse {
   email: string
   email_verified: boolean
 }
+export interface ResendVerifyEmailRequest {
+  email: string
+}
+export interface ResendVerifyEmailResponse {
+  sent: true
+}
 export interface LoginRequest {
   email: string
   password: string
