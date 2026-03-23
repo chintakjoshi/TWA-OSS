@@ -1,15 +1,16 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
 
 import { useAuth } from '@shared/auth/AuthProvider'
 
-import { listEmployerQueue, reviewEmployer } from '../api/adminApi'
+import { listEmployers, reviewEmployer } from '../api/adminApi'
 import { AdminWorkspaceLayout } from '../components/layout/AdminWorkspaceLayout'
 import { useAdminShell } from '../components/layout/AdminShellProvider'
 import {
   AdminButton,
   AdminPanel,
   DefinitionList,
+  InlineNotice,
   Modal,
   PanelBody,
   PanelHeader,
@@ -19,17 +20,18 @@ import {
   TableWrap,
   DataTable,
   inputClassName,
-  InlineNotice,
 } from '../components/ui/AdminUi'
 import { EmptyState, ErrorState, LoadingState } from '../components/PageState'
 import { announceComingSoon } from '../lib/comingSoon'
 import { formatDate, formatDateTime, reviewTone } from '../lib/formatting'
 import type { EmployerProfile } from '../types/admin'
 
-export function AdminEmployersPage() {
+export function AdminEmployersDirectoryPage() {
   const auth = useAuth()
-  const { refreshSummary, summary } = useAdminShell()
+  const { refreshSummary } = useAdminShell()
   const [page, setPage] = useState(1)
+  const [statusFilter, setStatusFilter] = useState('')
+  const [search, setSearch] = useState('')
   const [items, setItems] = useState<EmployerProfile[]>([])
   const [totalPages, setTotalPages] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
@@ -41,27 +43,41 @@ export function AdminEmployersPage() {
   const [reviewNote, setReviewNote] = useState('')
   const [isSaving, setIsSaving] = useState(false)
 
-  const loadQueue = useCallback(async () => {
+  const loadData = useCallback(async () => {
     setIsLoading(true)
     setError(null)
     try {
-      const response = await listEmployerQueue(auth.requestTwa, page)
+      const response = await listEmployers(auth.requestTwa, {
+        page,
+        pageSize: 12,
+        reviewStatus: statusFilter,
+      })
       setItems(response.items)
       setTotalPages(response.meta.total_pages)
     } catch (nextError) {
       setError(
         nextError instanceof Error
           ? nextError.message
-          : 'Unable to load pending employers.'
+          : 'Unable to load employers.'
       )
     } finally {
       setIsLoading(false)
     }
-  }, [auth.requestTwa, page])
+  }, [auth.requestTwa, page, statusFilter])
 
   useEffect(() => {
-    void loadQueue()
-  }, [loadQueue])
+    void loadData()
+  }, [loadData])
+
+  const visibleItems = useMemo(() => {
+    const query = search.trim().toLowerCase()
+    if (!query) return items
+    return items.filter((employer) =>
+      [employer.org_name, employer.contact_name, employer.city]
+        .filter(Boolean)
+        .some((value) => value!.toLowerCase().includes(query))
+    )
+  }, [items, search])
 
   async function submitReview(
     employer: EmployerProfile,
@@ -74,15 +90,9 @@ export function AdminEmployersPage() {
         review_status: nextStatus,
         review_note: note,
       })
-      toast.success(
-        nextStatus === 'approved'
-          ? `${employer.org_name} approved.`
-          : nextStatus === 'rejected'
-            ? `${employer.org_name} rejected.`
-            : `${employer.org_name} returned to pending.`
-      )
+      toast.success(`Saved ${employer.org_name}.`)
       setSelected(null)
-      await Promise.all([loadQueue(), refreshSummary()])
+      await Promise.all([loadData(), refreshSummary()])
     } catch (nextError) {
       setError(
         nextError instanceof Error
@@ -96,36 +106,52 @@ export function AdminEmployersPage() {
 
   return (
     <AdminWorkspaceLayout
-      title="Employer Approval Queue"
+      title="All Employers"
       primaryActionLabel="Add Employer"
       onPrimaryAction={() => announceComingSoon('Add Employer')}
     >
       <div className="space-y-6">
-        {error ? (
-          <InlineNotice tone="danger">{error}</InlineNotice>
-        ) : null}
+        {error ? <InlineNotice tone="danger">{error}</InlineNotice> : null}
 
-        {isLoading ? <LoadingState title="Loading employer queue..." /> : null}
+        {isLoading ? <LoadingState title="Loading employers..." /> : null}
         {!isLoading && error && items.length === 0 ? (
-          <ErrorState title="Employer queue unavailable" message={error} />
+          <ErrorState title="Employers unavailable" message={error} />
         ) : null}
 
         {!isLoading ? (
           <AdminPanel>
             <PanelHeader
               action={
-                <StatusBadge tone="warning">
-                  {summary?.pending_employers ?? items.length} Pending
-                </StatusBadge>
+                <div className="grid gap-3 md:grid-cols-[220px_180px]">
+                  <input
+                    className={inputClassName}
+                    placeholder="Search employers..."
+                    value={search}
+                    onChange={(event) => setSearch(event.target.value)}
+                  />
+                  <select
+                    className={inputClassName}
+                    value={statusFilter}
+                    onChange={(event) => {
+                      setPage(1)
+                      setStatusFilter(event.target.value)
+                    }}
+                  >
+                    <option value="">All Statuses</option>
+                    <option value="pending">Pending</option>
+                    <option value="approved">Approved</option>
+                    <option value="rejected">Rejected</option>
+                  </select>
+                </div>
               }
-              title="Pending Employer Registrations"
+              title="All Employers"
             />
             <PanelBody className="p-0">
-              {items.length === 0 ? (
+              {visibleItems.length === 0 ? (
                 <div className="px-6 py-8">
                   <EmptyState
-                    title="No pending employers"
-                    message="The approval queue is clear right now."
+                    title="No employers found"
+                    message="Try broadening the current filters."
                   />
                 </div>
               ) : (
@@ -135,56 +161,40 @@ export function AdminEmployersPage() {
                       <thead>
                         <TableHeadRow>
                           <TableCell header>Organization</TableCell>
+                          <TableCell header>City</TableCell>
                           <TableCell header>Contact</TableCell>
-                          <TableCell header>Phone</TableCell>
-                          <TableCell header>Submitted</TableCell>
                           <TableCell header>Status</TableCell>
+                          <TableCell header>Joined</TableCell>
                           <TableCell header>Actions</TableCell>
                         </TableHeadRow>
                       </thead>
                       <tbody>
-                        {items.map((employer) => (
+                        {visibleItems.map((employer) => (
                           <tr key={employer.id}>
                             <TableCell className="font-semibold text-slate-950">
                               {employer.org_name}
                             </TableCell>
-                            <TableCell>{employer.contact_name ?? 'No contact'}</TableCell>
-                            <TableCell>{employer.phone ?? 'No phone'}</TableCell>
-                            <TableCell>{formatDate(employer.created_at)}</TableCell>
+                            <TableCell>{employer.city ?? 'Unknown'}</TableCell>
+                            <TableCell>
+                              {employer.contact_name ?? 'No contact'}
+                            </TableCell>
                             <TableCell>
                               <StatusBadge tone={reviewTone(employer.review_status)}>
                                 {employer.review_status}
                               </StatusBadge>
                             </TableCell>
+                            <TableCell>{formatDate(employer.created_at)}</TableCell>
                             <TableCell>
-                              <div className="flex flex-wrap gap-2">
-                                <AdminButton
-                                  variant="success"
-                                  onClick={() =>
-                                    void submitReview(employer, 'approved', '')
-                                  }
-                                >
-                                  Approve
-                                </AdminButton>
-                                <AdminButton
-                                  variant="danger"
-                                  onClick={() =>
-                                    void submitReview(employer, 'rejected', '')
-                                  }
-                                >
-                                  Reject
-                                </AdminButton>
-                                <AdminButton
-                                  variant="secondary"
-                                  onClick={() => {
-                                    setSelected(employer)
-                                    setReviewStatus(employer.review_status)
-                                    setReviewNote(employer.review_note ?? '')
-                                  }}
-                                >
-                                  Open review
-                                </AdminButton>
-                              </div>
+                              <AdminButton
+                                variant="secondary"
+                                onClick={() => {
+                                  setSelected(employer)
+                                  setReviewStatus(employer.review_status)
+                                  setReviewNote(employer.review_note ?? '')
+                                }}
+                              >
+                                Review
+                              </AdminButton>
                             </TableCell>
                           </tr>
                         ))}
@@ -219,7 +229,7 @@ export function AdminEmployersPage() {
 
       <Modal
         open={selected !== null}
-        title={selected ? `Review ${selected.org_name}` : 'Review employer'}
+        title={selected ? selected.org_name : 'Employer review'}
         onClose={() => setSelected(null)}
       >
         {selected ? (
@@ -244,8 +254,8 @@ export function AdminEmployersPage() {
                   value: formatDateTime(selected.created_at),
                 },
                 {
-                  label: 'Last reviewed',
-                  value: formatDateTime(selected.reviewed_at),
+                  label: 'Review note',
+                  value: selected.review_note ?? 'No note on file',
                 },
               ]}
             />
@@ -254,13 +264,13 @@ export function AdminEmployersPage() {
               <div>
                 <label
                   className="block text-xs font-semibold uppercase tracking-[0.16em] text-[#8da2c5]"
-                  htmlFor="review-status"
+                  htmlFor="directory-review-status"
                 >
                   Review status
                 </label>
                 <select
                   className={inputClassName}
-                  id="review-status"
+                  id="directory-review-status"
                   value={reviewStatus}
                   onChange={(event) =>
                     setReviewStatus(
@@ -283,13 +293,13 @@ export function AdminEmployersPage() {
             <div>
               <label
                 className="block text-xs font-semibold uppercase tracking-[0.16em] text-[#8da2c5]"
-                htmlFor="review-note"
+                htmlFor="directory-review-note"
               >
                 Staff note
               </label>
               <textarea
                 className={`${inputClassName} min-h-36 py-3`}
-                id="review-note"
+                id="directory-review-note"
                 value={reviewNote}
                 onChange={(event) => setReviewNote(event.target.value)}
               />

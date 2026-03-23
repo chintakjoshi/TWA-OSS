@@ -4,6 +4,7 @@ import type {
   AdminJobseekerDetailResponse,
   ApplicationUpdateInput,
   AuditLogEntry,
+  ChargeFlags,
   EmployerProfile,
   EmployerReviewInput,
   JobListing,
@@ -43,11 +44,11 @@ export function listEmployerQueue(requestTwa: RequestTwa, page = 1) {
 
 export function listEmployers(
   requestTwa: RequestTwa,
-  options: { page?: number; reviewStatus?: string } = {}
+  options: { page?: number; pageSize?: number; reviewStatus?: string } = {}
 ) {
-  const { page = 1, reviewStatus } = options
+  const { page = 1, pageSize = 8, reviewStatus } = options
   return requestTwa<PaginatedResponse<EmployerProfile>>(
-    `/api/v1/admin/employers${buildQuery({ page, page_size: 8, sort: 'created_at', order: 'desc', review_status: reviewStatus })}`
+    `/api/v1/admin/employers${buildQuery({ page, page_size: pageSize, sort: 'created_at', order: 'desc', review_status: reviewStatus })}`
   )
 }
 
@@ -75,13 +76,25 @@ export function listListings(
   requestTwa: RequestTwa,
   options: {
     page?: number
+    pageSize?: number
     reviewStatus?: string
     lifecycleStatus?: string
+    employerId?: string
+    city?: string
+    search?: string
   } = {}
 ) {
-  const { page = 1, reviewStatus, lifecycleStatus } = options
+  const {
+    page = 1,
+    pageSize = 8,
+    reviewStatus,
+    lifecycleStatus,
+    employerId,
+    city,
+    search,
+  } = options
   return requestTwa<PaginatedResponse<JobListing>>(
-    `/api/v1/admin/listings${buildQuery({ page, page_size: 8, sort: 'created_at', order: 'desc', review_status: reviewStatus, lifecycle_status: lifecycleStatus })}`
+    `/api/v1/admin/listings${buildQuery({ page, page_size: pageSize, sort: 'created_at', order: 'desc', review_status: reviewStatus, lifecycle_status: lifecycleStatus, employer_id: employerId, city, search })}`
   )
 }
 
@@ -108,14 +121,37 @@ export function listJobseekers(
   requestTwa: RequestTwa,
   options: {
     page?: number
+    pageSize?: number
     search?: string
     status?: string
     transitType?: string
+    chargeKey?: keyof ChargeFlags | ''
   } = {}
 ) {
-  const { page = 1, search, status, transitType } = options
+  const {
+    page = 1,
+    pageSize = 10,
+    search,
+    status,
+    transitType,
+    chargeKey,
+  } = options
   return requestTwa<PaginatedResponse<JobseekerListItem>>(
-    `/api/v1/admin/jobseekers${buildQuery({ page, page_size: 10, sort: 'created_at', order: 'desc', search, status, transit_type: transitType })}`
+    `/api/v1/admin/jobseekers${buildQuery({
+      page,
+      page_size: pageSize,
+      sort: 'created_at',
+      order: 'desc',
+      search,
+      status,
+      transit_type: transitType,
+      charge_sex_offense: chargeKey === 'sex_offense' ? true : undefined,
+      charge_violent: chargeKey === 'violent' ? true : undefined,
+      charge_armed: chargeKey === 'armed' ? true : undefined,
+      charge_children: chargeKey === 'children' ? true : undefined,
+      charge_drug: chargeKey === 'drug' ? true : undefined,
+      charge_theft: chargeKey === 'theft' ? true : undefined,
+    })}`
   )
 }
 
@@ -150,11 +186,25 @@ export function updateJobseeker(
 
 export function listApplications(
   requestTwa: RequestTwa,
-  options: { page?: number; status?: string } = {}
+  options: {
+    page?: number
+    pageSize?: number
+    status?: string
+    jobListingId?: string
+    jobseekerId?: string
+    employerId?: string
+  } = {}
 ) {
-  const { page = 1, status } = options
+  const {
+    page = 1,
+    pageSize = 10,
+    status,
+    jobListingId,
+    jobseekerId,
+    employerId,
+  } = options
   return requestTwa<PaginatedResponse<AdminApplication>>(
-    `/api/v1/admin/applications${buildQuery({ page, page_size: 10, sort: 'applied_at', order: 'desc', status })}`
+    `/api/v1/admin/applications${buildQuery({ page, page_size: pageSize, sort: 'applied_at', order: 'desc', status, job_listing_id: jobListingId, jobseeker_id: jobseekerId, employer_id: employerId })}`
   )
 }
 
@@ -190,6 +240,7 @@ export function listAuditLog(
   requestTwa: RequestTwa,
   options: {
     page?: number
+    pageSize?: number
     actorId?: string
     entityType?: string
     action?: string
@@ -197,9 +248,17 @@ export function listAuditLog(
     dateTo?: string
   } = {}
 ) {
-  const { page = 1, actorId, entityType, action, dateFrom, dateTo } = options
+  const {
+    page = 1,
+    pageSize = 12,
+    actorId,
+    entityType,
+    action,
+    dateFrom,
+    dateTo,
+  } = options
   return requestTwa<PaginatedResponse<AuditLogEntry>>(
-    `/api/v1/admin/audit-log${buildQuery({ page, page_size: 12, actor_id: actorId, entity_type: entityType, action, date_from: dateFrom, date_to: dateTo })}`
+    `/api/v1/admin/audit-log${buildQuery({ page, page_size: pageSize, actor_id: actorId, entity_type: entityType, action, date_from: dateFrom, date_to: dateTo })}`
   )
 }
 
