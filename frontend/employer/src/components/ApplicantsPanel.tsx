@@ -2,33 +2,29 @@ import { useEffect, useState } from 'react'
 
 import { useAuth } from '@shared/auth/AuthProvider'
 import { HttpError } from '@shared/lib/http'
-import {
-  Alert,
-  Badge,
-  Button,
-  Card,
-  CardBody,
-  DataTable,
-} from '@shared/ui/primitives'
 
 import { listEmployerApplicants } from '../api/employerApi'
+import { announceComingSoon } from '../lib/comingSoon'
 import {
   formatChargeFlags,
-  formatDateTime,
+  formatDate,
   formatStatusLabel,
+  formatTransitType,
+  getApplicationTone,
+  getInitials,
 } from '../lib/formatting'
 import type { EmployerApplicant } from '../types/employer'
 import { EmptyState, LoadingState } from './PageState'
-
-function applicantStatusTone(status: EmployerApplicant['status']) {
-  if (status === 'hired') return 'success'
-  if (status === 'reviewed') return 'info'
-  return 'warning'
-}
+import {
+  InlineNotice,
+  PortalBadge,
+  PortalButton,
+  PortalPanel,
+} from './ui/EmployerUi'
 
 export function ApplicantsPanel({
   listingId,
-  title = 'Review shared applicants for this listing.',
+  title = 'Applicants matched to this listing',
   description = 'TWA staff controls whether applicant sharing is enabled for employers.',
 }: {
   listingId: string
@@ -88,27 +84,48 @@ export function ApplicantsPanel({
   }, [auth, listingId, page])
 
   return (
-    <Card strong>
-      <CardBody className="stack-md">
-        <div className="stack-sm">
-          <p className="portal-eyebrow">Applicants</p>
-          <h2 className="card-title">{title}</h2>
-          <p className="card-copy">{description}</p>
+    <PortalPanel>
+      <div className="space-y-6 px-6 py-6">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="space-y-1">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#8da2c5]">
+              Applicants
+            </p>
+            <h2 className="employer-display text-[1.7rem] font-semibold text-slate-950">
+              {title}
+            </h2>
+            <p className="text-sm text-slate-500">{description}</p>
+          </div>
+          {!applicantVisibilityDisabled ? (
+            <PortalBadge tone="success">Applicant sharing enabled by TWA</PortalBadge>
+          ) : null}
         </div>
 
         {isLoading ? <LoadingState title="Loading applicants..." /> : null}
         {!isLoading && applicantVisibilityDisabled ? (
-          <Alert tone="warning">
-            <p>
+          <div className="space-y-4 rounded-[24px] border border-[#d7cab4] bg-[#fffdf9] px-6 py-10 text-center">
+            <div className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-[#fff4d7] text-3xl">
+              🔒
+            </div>
+            <h3 className="employer-display text-[2rem] font-semibold text-slate-950">
+              Applicant visibility is currently off
+            </h3>
+            <p className="mx-auto max-w-[560px] text-sm leading-7 text-slate-500">
               {message ??
-                'Applicant visibility is currently disabled for employers.'}
+                'TWA staff control whether employers can view applicant information.'}
             </p>
-          </Alert>
+            <div className="flex justify-center">
+              <PortalButton
+                variant="secondary"
+                onClick={() => announceComingSoon('Applicant sharing preview')}
+              >
+                Preview with sharing enabled
+              </PortalButton>
+            </div>
+          </div>
         ) : null}
         {!isLoading && !applicantVisibilityDisabled && message ? (
-          <Alert tone="danger">
-            <p>{message}</p>
-          </Alert>
+          <InlineNotice tone="danger">{message}</InlineNotice>
         ) : null}
 
         {!isLoading &&
@@ -117,71 +134,99 @@ export function ApplicantsPanel({
         !message ? (
           <EmptyState
             title="No applicants yet"
-            message="Once jobseekers apply to this listing, they will appear here with their shared profile details."
+            message="Once jobseekers apply to this listing, their shared profiles will appear here."
           />
         ) : null}
 
         {!isLoading && !applicantVisibilityDisabled && applicants.length > 0 ? (
-          <Card>
-            <CardBody className="stack-md">
-              <DataTable
-                columns={[
-                  'Applicant',
-                  'Phone',
-                  'City',
-                  'Transit',
-                  'Charges',
-                  'Status',
-                  'Applied',
-                ]}
-                rows={applicants.map((applicant) => [
-                  applicant.jobseeker.full_name ?? 'Name not provided',
-                  applicant.jobseeker.phone ?? 'No phone',
-                  applicant.jobseeker.city ?? 'Unknown',
-                  applicant.jobseeker.transit_type
-                    ? formatStatusLabel(applicant.jobseeker.transit_type)
-                    : 'Not set',
-                  formatChargeFlags(applicant.jobseeker.charges).join(', ') ||
-                    'None',
-                  <Badge
-                    key={`${applicant.application_id}-status`}
-                    tone={applicantStatusTone(applicant.status)}
-                  >
-                    {applicant.status}
-                  </Badge>,
-                  formatDateTime(applicant.applied_at),
-                ])}
-              />
-            </CardBody>
-          </Card>
+          <div className="space-y-4">
+            {applicants.map((applicant) => {
+              const chargeLabels = formatChargeFlags(applicant.jobseeker.charges)
+              return (
+                <div
+                  className="flex flex-col gap-4 rounded-[24px] border border-[#e6dbc8] bg-[#fcfaf6] px-5 py-5 lg:flex-row lg:items-center lg:justify-between"
+                  key={applicant.application_id}
+                >
+                  <div className="flex gap-4">
+                    <div className="grid h-14 w-14 shrink-0 place-items-center rounded-full border border-[#cbd5f1] bg-[#f2f6ff] text-base font-semibold text-[#2458b8]">
+                      {getInitials(applicant.jobseeker.full_name)}
+                    </div>
+                    <div className="space-y-2">
+                      <div>
+                        <p className="text-xl font-semibold text-slate-950">
+                          {applicant.jobseeker.full_name ?? 'Applicant name pending'}
+                        </p>
+                        <p className="text-sm text-slate-500">
+                          Applied {formatDate(applicant.applied_at)} ·{' '}
+                          {formatTransitType(applicant.jobseeker.transit_type)} ·{' '}
+                          {applicant.jobseeker.city ?? 'City pending'}
+                        </p>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {chargeLabels.length > 0 ? (
+                          chargeLabels.map((charge) => (
+                            <PortalBadge className="font-medium" key={charge} tone="danger">
+                              {charge}
+                            </PortalBadge>
+                          ))
+                        ) : (
+                          <PortalBadge tone="info">No disclosures</PortalBadge>
+                        )}
+                        <PortalBadge tone="info">
+                          {applicant.jobseeker.profile_complete
+                            ? 'Profile complete'
+                            : 'Profile incomplete'}
+                        </PortalBadge>
+                        {applicant.jobseeker.phone ? (
+                          <PortalBadge tone="neutral">{applicant.jobseeker.phone}</PortalBadge>
+                        ) : null}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col items-start gap-3 lg:items-end">
+                    <PortalBadge tone={getApplicationTone(applicant.status)}>
+                      {formatStatusLabel(applicant.status)}
+                    </PortalBadge>
+                    <PortalButton
+                      variant="secondary"
+                      onClick={() => announceComingSoon('Express interest')}
+                    >
+                      Express interest
+                    </PortalButton>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
         ) : null}
 
         {!isLoading &&
         !applicantVisibilityDisabled &&
         applicants.length > 0 &&
         totalPages > 1 ? (
-          <div className="cluster pagination-row">
-            <p className="card-copy">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <p className="text-sm text-slate-500">
               Applicant page {page} of {totalPages}
             </p>
-            <div className="inline-actions">
-              <Button
+            <div className="flex flex-wrap gap-3">
+              <PortalButton
                 disabled={page <= 1}
-                tone="secondary"
+                variant="secondary"
                 onClick={() => setPage((current) => current - 1)}
               >
                 Previous
-              </Button>
-              <Button
+              </PortalButton>
+              <PortalButton
                 disabled={page >= totalPages}
                 onClick={() => setPage((current) => current + 1)}
               >
                 Next
-              </Button>
+              </PortalButton>
             </div>
           </div>
         ) : null}
-      </CardBody>
-    </Card>
+      </div>
+    </PortalPanel>
   )
 }

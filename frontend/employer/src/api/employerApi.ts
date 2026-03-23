@@ -46,15 +46,16 @@ export function listEmployerListings(
   requestTwa: RequestTwa,
   options: {
     page?: number
+    pageSize?: number
     reviewStatus?: string
     lifecycleStatus?: string
   } = {}
 ) {
-  const { page = 1, reviewStatus, lifecycleStatus } = options
+  const { page = 1, pageSize = 8, reviewStatus, lifecycleStatus } = options
   return requestTwa<PaginatedResponse<JobListing>>(
     `/api/v1/employer/listings${buildQuery({
       page,
-      page_size: 8,
+      page_size: pageSize,
       sort: 'created_at',
       order: 'desc',
       review_status: reviewStatus,

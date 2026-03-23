@@ -54,12 +54,12 @@ test('approved employers can submit a listing and navigate to the listing detail
   })
 
   render(
-    <MemoryRouter initialEntries={['/listings/new']}>
+    <MemoryRouter initialEntries={['/submit-listing']}>
       <AuthProvider client={client}>
         <Routes>
-          <Route path="/listings/new" element={<EmployerNewListingPage />} />
+          <Route path="/submit-listing" element={<EmployerNewListingPage />} />
           <Route
-            path="/listings/:listingId"
+            path="/my-listings/:listingId"
             element={<div>Listing detail page</div>}
           />
         </Routes>
@@ -80,6 +80,7 @@ test('approved employers can submit a listing and navigate to the listing detail
   await user.type(screen.getByLabelText('ZIP code'), '63103')
   await user.click(screen.getByLabelText('Drug offense'))
   await user.click(screen.getByRole('button', { name: 'Submit listing' }))
+  await user.click(screen.getByRole('button', { name: 'Confirm & Submit' }))
 
   await waitFor(() => {
     expect(spies.requestTwa).toHaveBeenCalledWith(
