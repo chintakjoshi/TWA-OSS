@@ -139,11 +139,14 @@ export function JobseekerJobDetailPage() {
                     </div>
                   </div>
                   <PortalBadge
-                    tone={detail.eligibility.is_eligible ? 'success' : 'warning'}
+                    tone={
+                      detail.eligibility.is_eligible ? 'success' : 'warning'
+                    }
                   >
                     {detail.eligibility.is_eligible
                       ? 'Eligible'
-                      : (detail.eligibility.ineligibility_tag ?? 'Not eligible')}
+                      : (detail.eligibility.ineligibility_tag ??
+                        'Not eligible')}
                   </PortalBadge>
                 </div>
 
@@ -237,7 +240,9 @@ export function JobseekerJobDetailPage() {
                     <PortalButton
                       className="flex-1"
                       disabled={
-                        !detail.eligibility.is_eligible || isApplying || hasApplied
+                        !detail.eligibility.is_eligible ||
+                        isApplying ||
+                        hasApplied
                       }
                       onClick={() => setConfirmOpen(true)}
                     >
@@ -272,12 +277,13 @@ export function JobseekerJobDetailPage() {
                   <div className="flex items-start gap-3 rounded-2xl border border-[#eadfce] bg-[#fcfaf6] px-4 py-4 text-sm text-slate-600">
                     <Check className="mt-0.5 h-4 w-4 text-[#2f7d4b]" />
                     Your profile stays private to the TWA workflow. Job detail
-                    eligibility here does not expose sensitive background reasons.
+                    eligibility here does not expose sensitive background
+                    reasons.
                   </div>
                   <div className="flex items-start gap-3 rounded-2xl border border-[#eadfce] bg-[#fcfaf6] px-4 py-4 text-sm text-slate-600">
                     <NotebookPen className="mt-0.5 h-4 w-4 text-[#d0922c]" />
-                    Keep your profile current before applying so staff matching stays
-                    accurate.
+                    Keep your profile current before applying so staff matching
+                    stays accurate.
                   </div>
                 </PanelBody>
               </PortalPanel>

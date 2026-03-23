@@ -63,14 +63,19 @@ export function EmployerHeader({
               T
             </div>
             <div>
-              <p className="text-lg font-semibold text-slate-950">TWA Employers</p>
+              <p className="text-lg font-semibold text-slate-950">
+                TWA Employers
+              </p>
               <p className="text-[11px] uppercase tracking-[0.16em] text-[#8ea3c4]">
                 Transformative Workforce Academy
               </p>
             </div>
           </NavLink>
 
-          <nav className="flex flex-wrap items-center gap-5" aria-label="Employer workspace">
+          <nav
+            className="flex flex-wrap items-center gap-5"
+            aria-label="Employer workspace"
+          >
             <EmployerNavLink label="Dashboard" to="/dashboard" />
             <EmployerNavLink label="Submit Listing" to="/submit-listing" />
             <EmployerNavLink

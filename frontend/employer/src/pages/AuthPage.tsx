@@ -38,7 +38,9 @@ export function EmployerAuthPage() {
   const [busy, setBusy] = useState(false)
   const [notice, setNotice] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [verificationEmail, setVerificationEmail] = useState<string | null>(null)
+  const [verificationEmail, setVerificationEmail] = useState<string | null>(
+    null
+  )
 
   useEffect(() => {
     if (auth.state === 'otp_required') setMode('otp')
@@ -87,8 +89,7 @@ export function EmployerAuthPage() {
           <div className="mt-20 max-w-[390px]">
             <h1 className="employer-display text-[clamp(3rem,5vw,4.5rem)] leading-[0.96] font-semibold">
               Build a stronger workforce with{' '}
-              <span className="text-[#f3ac34] italic">fair-chance</span>{' '}
-              talent.
+              <span className="text-[#f3ac34] italic">fair-chance</span> talent.
             </h1>
             <p className="mt-8 text-xl leading-9 text-[#aebfd6]">
               Join Missouri employers using TWA to open vetted opportunities,
@@ -99,7 +100,9 @@ export function EmployerAuthPage() {
               {supportPoints.map((point) => (
                 <li key={point} className="flex gap-4">
                   <span className="mt-2 h-2.5 w-2.5 rounded-full bg-[#d99a2b]" />
-                  <span className="text-lg leading-8 text-[#dce6f2]">{point}</span>
+                  <span className="text-lg leading-8 text-[#dce6f2]">
+                    {point}
+                  </span>
                 </li>
               ))}
             </ul>
@@ -127,13 +130,15 @@ export function EmployerAuthPage() {
           </p>
 
           <div className="mt-8 space-y-4">
-            {notice ? <InlineNotice tone="success">{notice}</InlineNotice> : null}
+            {notice ? (
+              <InlineNotice tone="success">{notice}</InlineNotice>
+            ) : null}
             {error ? <InlineNotice tone="danger">{error}</InlineNotice> : null}
             {wrongPortal ? (
               <InlineNotice tone="danger">
                 This account is linked to the{' '}
-                <strong>{auth.authMe?.app_user?.app_role}</strong> portal, so the
-                employer workspace stays locked here.
+                <strong>{auth.authMe?.app_user?.app_role}</strong> portal, so
+                the employer workspace stays locked here.
               </InlineNotice>
             ) : null}
           </div>
@@ -238,7 +243,11 @@ export function EmployerAuthPage() {
                     </button>
                   </div>
 
-                  <PortalButton className="w-full" disabled={busy} type="submit">
+                  <PortalButton
+                    className="w-full"
+                    disabled={busy}
+                    type="submit"
+                  >
                     {busy ? 'Signing in...' : 'Sign In'}
                   </PortalButton>
                 </form>
@@ -289,7 +298,11 @@ export function EmployerAuthPage() {
                       type="password"
                     />
                   </div>
-                  <PortalButton className="w-full" disabled={busy} type="submit">
+                  <PortalButton
+                    className="w-full"
+                    disabled={busy}
+                    type="submit"
+                  >
                     {busy ? 'Creating account...' : 'Create Employer Account'}
                   </PortalButton>
                 </form>
@@ -326,7 +339,10 @@ export function EmployerAuthPage() {
                     <PortalButton disabled={busy} type="submit">
                       {busy ? 'Sending...' : 'Send reset email'}
                     </PortalButton>
-                    <PortalButton variant="secondary" onClick={() => setMode('login')}>
+                    <PortalButton
+                      variant="secondary"
+                      onClick={() => setMode('login')}
+                    >
                       Back to sign in
                     </PortalButton>
                   </div>
@@ -345,7 +361,9 @@ export function EmployerAuthPage() {
                         new_password: String(form.get('new_password') ?? ''),
                       })
                       setMode('login')
-                      setNotice('Password updated. Sign in with the new password.')
+                      setNotice(
+                        'Password updated. Sign in with the new password.'
+                      )
                     })
                   }}
                 >
@@ -371,7 +389,10 @@ export function EmployerAuthPage() {
                     <PortalButton disabled={busy} type="submit">
                       {busy ? 'Resetting...' : 'Reset password'}
                     </PortalButton>
-                    <PortalButton variant="secondary" onClick={() => setMode('login')}>
+                    <PortalButton
+                      variant="secondary"
+                      onClick={() => setMode('login')}
+                    >
                       Back to sign in
                     </PortalButton>
                   </div>
@@ -437,8 +458,8 @@ export function EmployerAuthPage() {
                       Verify your email
                     </h3>
                     <p className="mx-auto mt-4 max-w-[380px] text-sm leading-7 text-slate-500">
-                      We sent a confirmation link to your work email. Activate the
-                      account, then return here to continue employer setup.
+                      We sent a confirmation link to your work email. Activate
+                      the account, then return here to continue employer setup.
                     </p>
                     <div className="mt-6 rounded-2xl border border-[#eadfce] bg-white px-4 py-3 font-medium text-slate-700">
                       {verificationEmail ?? 'you@yourcompany.com'}
@@ -449,7 +470,9 @@ export function EmployerAuthPage() {
                       className="flex-1"
                       onClick={() => {
                         setMode('login')
-                        setNotice('Once your email is verified, sign in to continue.')
+                        setNotice(
+                          'Once your email is verified, sign in to continue.'
+                        )
                       }}
                     >
                       I&apos;ve verified my email

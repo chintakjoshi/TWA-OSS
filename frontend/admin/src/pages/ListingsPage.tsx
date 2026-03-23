@@ -44,10 +44,12 @@ export function AdminListingsPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [selected, setSelected] = useState<JobListing | null>(null)
-  const [reviewStatus, setReviewStatus] = useState<'pending' | 'approved' | 'rejected'>(
-    'approved'
+  const [reviewStatus, setReviewStatus] = useState<
+    'pending' | 'approved' | 'rejected'
+  >('approved')
+  const [lifecycleStatus, setLifecycleStatus] = useState<'open' | 'closed'>(
+    'open'
   )
-  const [lifecycleStatus, setLifecycleStatus] = useState<'open' | 'closed'>('open')
   const [reviewNote, setReviewNote] = useState('')
   const [isSaving, setIsSaving] = useState(false)
 
@@ -59,9 +61,10 @@ export function AdminListingsPage() {
         listListings(auth.requestTwa, {
           page,
           pageSize: 12,
-          lifecycleStatus: statusFilter === 'open' || statusFilter === 'closed'
-            ? statusFilter
-            : '',
+          lifecycleStatus:
+            statusFilter === 'open' || statusFilter === 'closed'
+              ? statusFilter
+              : '',
           reviewStatus:
             statusFilter === 'pending' ||
             statusFilter === 'approved' ||
@@ -232,7 +235,9 @@ export function AdminListingsPage() {
                                   : 'No'}
                             </TableCell>
                             <TableCell>
-                              <StatusBadge tone={reviewTone(listing.review_status)}>
+                              <StatusBadge
+                                tone={reviewTone(listing.review_status)}
+                              >
                                 {listing.review_status}
                               </StatusBadge>
                             </TableCell>
@@ -324,8 +329,9 @@ export function AdminListingsPage() {
                 {
                   label: 'Charges',
                   value:
-                    formatChargeFlags(selected.disqualifying_charges).join(', ') ||
-                    'None',
+                    formatChargeFlags(selected.disqualifying_charges).join(
+                      ', '
+                    ) || 'None',
                 },
               ]}
             />
@@ -343,9 +349,7 @@ export function AdminListingsPage() {
                   id="all-listing-review-status"
                   value={reviewStatus}
                   onChange={(event) =>
-                    setReviewStatus(
-                      event.target.value as typeof reviewStatus
-                    )
+                    setReviewStatus(event.target.value as typeof reviewStatus)
                   }
                 >
                   <option value="pending">Pending</option>
@@ -425,7 +429,10 @@ export function AdminListingsPage() {
               >
                 Request Changes
               </AdminButton>
-              <AdminButton variant="secondary" onClick={() => setSelected(null)}>
+              <AdminButton
+                variant="secondary"
+                onClick={() => setSelected(null)}
+              >
                 Close
               </AdminButton>
             </div>

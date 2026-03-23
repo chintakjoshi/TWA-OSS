@@ -43,7 +43,10 @@ export function JobseekerHeader() {
           aria-label="Jobseeker workspace"
           className="flex flex-1 flex-wrap items-center gap-2"
         >
-          <NavLink className={({ isActive }) => linkClassName(isActive)} to="/jobs">
+          <NavLink
+            className={({ isActive }) => linkClassName(isActive)}
+            to="/jobs"
+          >
             Browse Jobs
           </NavLink>
           <NavLink
@@ -64,7 +67,9 @@ export function JobseekerHeader() {
           <PortalBadge
             tone={auth.authMe?.profile_complete ? 'success' : 'warning'}
           >
-            {auth.authMe?.profile_complete ? 'Profile complete' : 'Profile setup'}
+            {auth.authMe?.profile_complete
+              ? 'Profile complete'
+              : 'Profile setup'}
           </PortalBadge>
           <div className="flex items-center gap-3 rounded-full border border-[#ddcfba] bg-[#fcfaf6] px-3 py-2">
             <div className="grid h-10 w-10 place-items-center rounded-full border border-[#bfd5e7] bg-[#eef6ff] text-sm font-semibold text-[#2458b8]">

@@ -27,7 +27,10 @@ export function AdminShellProvider({ children }: { children: ReactNode }) {
   const [summaryLoading, setSummaryLoading] = useState(true)
 
   const refreshSummary = useCallback(async () => {
-    if (auth.state !== 'authenticated' || auth.authMe?.app_user?.app_role !== 'staff') {
+    if (
+      auth.state !== 'authenticated' ||
+      auth.authMe?.app_user?.app_role !== 'staff'
+    ) {
       setSummary(null)
       setSummaryLoading(false)
       return

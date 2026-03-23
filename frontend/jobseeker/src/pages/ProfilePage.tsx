@@ -1,8 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import {
-  Check,
-  CircleAlert,
-} from 'lucide-react'
+import { Check, CircleAlert } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
@@ -121,7 +118,12 @@ function inferInitialStep(profile: JobseekerProfile | null): WizardStep {
     return 1
   }
   if (!profile.full_name || !profile.phone) return 2
-  if (!profile.address || !profile.city || !profile.zip || !profile.transit_type)
+  if (
+    !profile.address ||
+    !profile.city ||
+    !profile.zip ||
+    !profile.transit_type
+  )
     return 3
   return 4
 }
@@ -271,7 +273,9 @@ export function JobseekerProfilePage() {
     if (step === 3) {
       const refreshed = await saveDraft(4)
       if (refreshed) {
-        setSuccess('Location and transit details saved. Finish with background info.')
+        setSuccess(
+          'Location and transit details saved. Finish with background info.'
+        )
       }
       return
     }
@@ -296,7 +300,9 @@ export function JobseekerProfilePage() {
       return
     }
 
-    setSuccess('Profile saved. Finish the remaining required fields to unlock jobs.')
+    setSuccess(
+      'Profile saved. Finish the remaining required fields to unlock jobs.'
+    )
   }
 
   if (isLoading) {
@@ -334,7 +340,9 @@ export function JobseekerProfilePage() {
               <PanelBody className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
                 <div className="flex items-center gap-5">
                   <div className="grid h-20 w-20 place-items-center rounded-full border border-white/20 bg-white/10 text-3xl font-semibold text-white">
-                    {getInitials(profile.full_name ?? auth.authMe?.app_user?.email)}
+                    {getInitials(
+                      profile.full_name ?? auth.authMe?.app_user?.email
+                    )}
                   </div>
                   <div>
                     <h1 className="jobseeker-display text-[2.6rem] leading-none font-semibold">
@@ -342,7 +350,8 @@ export function JobseekerProfilePage() {
                     </h1>
                     <p className="mt-3 text-sm text-[#cfdbeb]">
                       Member since {formatMonthYear(profile.created_at)} .{' '}
-                      <span className="capitalize">{profile.status}</span> jobseeker
+                      <span className="capitalize">{profile.status}</span>{' '}
+                      jobseeker
                     </p>
                     <div className="mt-4 flex flex-wrap gap-2">
                       <PortalBadge tone="success">Profile complete</PortalBadge>
@@ -365,7 +374,9 @@ export function JobseekerProfilePage() {
               </PanelBody>
             </PortalPanel>
 
-            {success ? <InlineNotice tone="success">{success}</InlineNotice> : null}
+            {success ? (
+              <InlineNotice tone="success">{success}</InlineNotice>
+            ) : null}
 
             <Surface>
               <div className="flex flex-wrap items-center justify-between gap-3">
@@ -383,9 +394,15 @@ export function JobseekerProfilePage() {
                 className="mt-6"
                 items={[
                   { label: 'Full Name', value: profile.full_name ?? 'Not set' },
-                  { label: 'Email', value: auth.authMe?.app_user?.email ?? 'Not set' },
+                  {
+                    label: 'Email',
+                    value: auth.authMe?.app_user?.email ?? 'Not set',
+                  },
                   { label: 'Phone', value: profile.phone ?? 'Not set' },
-                  { label: 'Preferred Contact', value: draft.preferred_contact },
+                  {
+                    label: 'Preferred Contact',
+                    value: draft.preferred_contact,
+                  },
                 ]}
               />
             </Surface>
@@ -435,7 +452,10 @@ export function JobseekerProfilePage() {
               <DefinitionList
                 className="mt-6"
                 items={[
-                  { label: 'Case Manager', value: 'Assigned through TWA staff' },
+                  {
+                    label: 'Case Manager',
+                    value: 'Assigned through TWA staff',
+                  },
                   { label: 'Office', value: 'Saint Louis University TWA' },
                   {
                     label: 'Background Status',
@@ -446,7 +466,9 @@ export function JobseekerProfilePage() {
                   },
                   {
                     label: 'Profile Stage',
-                    value: profile.profile_complete ? 'Ready for job browsing' : 'Setup in progress',
+                    value: profile.profile_complete
+                      ? 'Ready for job browsing'
+                      : 'Setup in progress',
                   },
                 ]}
               />
@@ -454,9 +476,9 @@ export function JobseekerProfilePage() {
 
             <Surface className="border-[#ead6a8] bg-[#fff9e9]">
               <p className="text-sm leading-7 text-[#8d6a20]">
-                Your background information is securely stored and only visible to
-                your TWA case manager and internal workflow. It is never shown
-                publicly inside this portal.
+                Your background information is securely stored and only visible
+                to your TWA case manager and internal workflow. It is never
+                shown publicly inside this portal.
               </p>
             </Surface>
           </div>
@@ -473,7 +495,9 @@ export function JobseekerProfilePage() {
                   </p>
                 </div>
                 <h1 className="jobseeker-display mt-6 text-[3rem] leading-[0.98] font-semibold text-slate-950">
-                  {profile.profile_complete ? 'Update your profile' : 'Set up your profile'}
+                  {profile.profile_complete
+                    ? 'Update your profile'
+                    : 'Set up your profile'}
                 </h1>
                 <p className="mt-4 text-lg leading-8 text-slate-500">
                   This information helps TWA match you with the right job
@@ -499,7 +523,9 @@ export function JobseekerProfilePage() {
                         </div>
                         <span
                           className={`text-sm font-semibold ${
-                            current || complete ? 'text-slate-900' : 'text-slate-400'
+                            current || complete
+                              ? 'text-slate-900'
+                              : 'text-slate-400'
                           }`}
                         >
                           {item.label}
@@ -514,7 +540,9 @@ export function JobseekerProfilePage() {
               </div>
             </Surface>
 
-            {success ? <InlineNotice tone="success">{success}</InlineNotice> : null}
+            {success ? (
+              <InlineNotice tone="success">{success}</InlineNotice>
+            ) : null}
             {error ? <InlineNotice tone="danger">{error}</InlineNotice> : null}
 
             <PortalPanel className="mx-auto max-w-[760px]">
@@ -529,8 +557,8 @@ export function JobseekerProfilePage() {
                         Confirm your portal account
                       </h2>
                       <p className="mt-3 text-sm leading-7 text-slate-500">
-                        Your shared auth account is ready. Next, you&apos;ll add the
-                        profile details TWA uses for job matching.
+                        Your shared auth account is ready. Next, you&apos;ll add
+                        the profile details TWA uses for job matching.
                       </p>
                     </div>
 
@@ -548,13 +576,18 @@ export function JobseekerProfilePage() {
                           Profile status
                         </p>
                         <div className="mt-3">
-                          <PortalBadge tone="warning">Setup in progress</PortalBadge>
+                          <PortalBadge tone="warning">
+                            Setup in progress
+                          </PortalBadge>
                         </div>
                       </div>
                     </div>
 
                     <div className="flex justify-end">
-                      <PortalButton disabled={isSaving} onClick={() => void handleNext()}>
+                      <PortalButton
+                        disabled={isSaving}
+                        onClick={() => void handleNext()}
+                      >
                         Next: Personal Info
                       </PortalButton>
                     </div>
@@ -581,7 +614,10 @@ export function JobseekerProfilePage() {
                           className={inputClassName}
                           value={draft.first_name}
                           onChange={(event) =>
-                            setDraft({ ...draft, first_name: event.target.value })
+                            setDraft({
+                              ...draft,
+                              first_name: event.target.value,
+                            })
                           }
                         />
                       </div>
@@ -593,7 +629,10 @@ export function JobseekerProfilePage() {
                           className={inputClassName}
                           value={draft.last_name}
                           onChange={(event) =>
-                            setDraft({ ...draft, last_name: event.target.value })
+                            setDraft({
+                              ...draft,
+                              last_name: event.target.value,
+                            })
                           }
                         />
                       </div>
@@ -617,7 +656,9 @@ export function JobseekerProfilePage() {
                         <label className="block text-xs font-semibold uppercase tracking-[0.16em] text-[#8da2c5]">
                           Preferred contact
                         </label>
-                        <PortalBadge tone="warning">Frontend placeholder</PortalBadge>
+                        <PortalBadge tone="warning">
+                          Frontend placeholder
+                        </PortalBadge>
                       </div>
                       <select
                         className={inputClassName}
@@ -625,7 +666,8 @@ export function JobseekerProfilePage() {
                         onChange={(event) =>
                           setDraft({
                             ...draft,
-                            preferred_contact: event.target.value as PreferredContact,
+                            preferred_contact: event.target
+                              .value as PreferredContact,
                           })
                         }
                       >
@@ -636,10 +678,16 @@ export function JobseekerProfilePage() {
                     </div>
 
                     <div className="flex flex-wrap justify-between gap-3">
-                      <PortalButton variant="secondary" onClick={() => setStep(1)}>
+                      <PortalButton
+                        variant="secondary"
+                        onClick={() => setStep(1)}
+                      >
                         Back
                       </PortalButton>
-                      <PortalButton disabled={isSaving} onClick={() => void handleNext()}>
+                      <PortalButton
+                        disabled={isSaving}
+                        onClick={() => void handleNext()}
+                      >
                         {isSaving ? 'Saving...' : 'Next: Location & Transit'}
                       </PortalButton>
                     </div>
@@ -752,10 +800,16 @@ export function JobseekerProfilePage() {
                     </div>
 
                     <div className="flex flex-wrap justify-between gap-3">
-                      <PortalButton variant="secondary" onClick={() => setStep(2)}>
+                      <PortalButton
+                        variant="secondary"
+                        onClick={() => setStep(2)}
+                      >
                         Back
                       </PortalButton>
-                      <PortalButton disabled={isSaving} onClick={() => void handleNext()}>
+                      <PortalButton
+                        disabled={isSaving}
+                        onClick={() => void handleNext()}
+                      >
                         {isSaving ? 'Saving...' : 'Next: Background'}
                       </PortalButton>
                     </div>
@@ -772,7 +826,8 @@ export function JobseekerProfilePage() {
                         Private matching information
                       </h2>
                       <p className="mt-3 text-sm leading-7 text-slate-500">
-                        This step is sensitive. Please read carefully before selecting.
+                        This step is sensitive. Please read carefully before
+                        selecting.
                       </p>
                     </div>
 
@@ -782,8 +837,8 @@ export function JobseekerProfilePage() {
                         <p>
                           <strong>Your privacy is protected.</strong> This
                           information is only shared within your TWA case
-                          management workflow and is used to avoid surfacing jobs
-                          that are not a fit for your background.
+                          management workflow and is used to avoid surfacing
+                          jobs that are not a fit for your background.
                         </p>
                       </div>
                     </div>
@@ -816,10 +871,16 @@ export function JobseekerProfilePage() {
                     </div>
 
                     <div className="flex flex-wrap justify-between gap-3">
-                      <PortalButton variant="secondary" onClick={() => setStep(3)}>
+                      <PortalButton
+                        variant="secondary"
+                        onClick={() => setStep(3)}
+                      >
                         Back
                       </PortalButton>
-                      <PortalButton disabled={isSaving} onClick={() => void handleNext()}>
+                      <PortalButton
+                        disabled={isSaving}
+                        onClick={() => void handleNext()}
+                      >
                         {isSaving
                           ? 'Saving...'
                           : profile.profile_complete

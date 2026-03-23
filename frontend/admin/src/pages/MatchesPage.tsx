@@ -2,10 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 
 import { useAuth } from '@shared/auth/AuthProvider'
 
-import {
-  getMatchesForJobseeker,
-  listJobseekers,
-} from '../api/adminApi'
+import { getMatchesForJobseeker, listJobseekers } from '../api/adminApi'
 import { AdminWorkspaceLayout } from '../components/layout/AdminWorkspaceLayout'
 import {
   AdminPanel,
@@ -78,7 +75,9 @@ export function AdminMatchesPage() {
   }, [auth.requestTwa, selectedJobseekerId])
 
   const selectedJobseeker = useMemo(
-    () => jobseekers.find((jobseeker) => jobseeker.id === selectedJobseekerId) ?? null,
+    () =>
+      jobseekers.find((jobseeker) => jobseeker.id === selectedJobseekerId) ??
+      null,
     [jobseekers, selectedJobseekerId]
   )
 
@@ -100,7 +99,9 @@ export function AdminMatchesPage() {
                 <select
                   className={inputClassName}
                   value={selectedJobseekerId}
-                  onChange={(event) => setSelectedJobseekerId(event.target.value)}
+                  onChange={(event) =>
+                    setSelectedJobseekerId(event.target.value)
+                  }
                 >
                   {jobseekers.map((jobseeker) => (
                     <option key={jobseeker.id} value={jobseeker.id}>
@@ -148,7 +149,9 @@ export function AdminMatchesPage() {
                             </TableCell>
                             <TableCell>{item.job.city ?? 'Unknown'}</TableCell>
                             <TableCell>
-                              <StatusBadge tone={item.is_eligible ? 'success' : 'danger'}>
+                              <StatusBadge
+                                tone={item.is_eligible ? 'success' : 'danger'}
+                              >
                                 {item.is_eligible ? 'Eligible' : 'Ineligible'}
                               </StatusBadge>
                             </TableCell>
@@ -157,7 +160,11 @@ export function AdminMatchesPage() {
                                 ? 'Matches current criteria.'
                                 : item.ineligibility_reasons
                                     .map(describeMatchReason)
-                                    .concat(item.ineligibility_tag ? [item.ineligibility_tag] : [])
+                                    .concat(
+                                      item.ineligibility_tag
+                                        ? [item.ineligibility_tag]
+                                        : []
+                                    )
                                     .join(' · ')}
                             </TableCell>
                           </tr>

@@ -1,4 +1,9 @@
-import { ArrowRight, BriefcaseBusiness, MapPinned, ShieldCheck } from 'lucide-react'
+import {
+  ArrowRight,
+  BriefcaseBusiness,
+  MapPinned,
+  ShieldCheck,
+} from 'lucide-react'
 import { Link } from 'react-router-dom'
 
 import { adminAppUrl, employerAppUrl } from '../app/authClient'
@@ -52,9 +57,9 @@ export function JobseekerLandingPage() {
               Find your next chapter with a clearer path forward.
             </h1>
             <p className="mt-6 max-w-[540px] text-lg leading-8 text-[#c8d6e7]">
-              Build your TWA profile, browse open fair-chance listings, and track
-              the applications you submit through your case manager-supported
-              workflow.
+              Build your TWA profile, browse open fair-chance listings, and
+              track the applications you submit through your case
+              manager-supported workflow.
             </p>
 
             <div className="mt-10 flex flex-wrap gap-3">
@@ -89,7 +94,8 @@ export function JobseekerLandingPage() {
                   Match by transit
                 </p>
                 <p className="mt-2 text-sm leading-6 text-[#dbe5f1]">
-                  Surface listings that respect how you can realistically travel.
+                  Surface listings that respect how you can realistically
+                  travel.
                 </p>
               </div>
               <div className="rounded-[24px] border border-white/10 bg-white/5 p-5">

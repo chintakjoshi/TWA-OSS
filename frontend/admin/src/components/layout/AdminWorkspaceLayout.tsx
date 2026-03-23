@@ -11,7 +11,11 @@ import { useAdminShell } from './AdminShellProvider'
 import { adminNavItems } from './adminNav'
 import { AdminButton, StatusBadge } from '../ui/AdminUi'
 
-function isItemActive(pathname: string, href: string, activePrefixes?: string[]) {
+function isItemActive(
+  pathname: string,
+  href: string,
+  activePrefixes?: string[]
+) {
   if (activePrefixes?.some((prefix) => pathname.startsWith(prefix))) return true
   if (href === '/dashboard') return pathname === href
   return pathname === href
@@ -61,7 +65,11 @@ export function AdminWorkspaceLayout({
             type="button"
             onClick={() => setSidebarOpen((open) => !open)}
           >
-            {sidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            {sidebarOpen ? (
+              <X className="h-5 w-5" />
+            ) : (
+              <Menu className="h-5 w-5" />
+            )}
           </button>
           <div className="min-w-0 flex-1">
             <h1 className="admin-display text-[1.9rem] leading-none font-semibold text-slate-950">
@@ -96,7 +104,9 @@ export function AdminWorkspaceLayout({
         </div>
       </div>
 
-      <main className="min-h-[calc(100vh-85px)] px-4 py-7 sm:px-7">{children}</main>
+      <main className="min-h-[calc(100vh-85px)] px-4 py-7 sm:px-7">
+        {children}
+      </main>
     </>
   )
 
@@ -144,7 +154,9 @@ export function AdminWorkspaceLayout({
                         )
                         const Icon = item.icon
                         const badgeValue =
-                          item.badgeKey && summary ? summary[item.badgeKey] : null
+                          item.badgeKey && summary
+                            ? summary[item.badgeKey]
+                            : null
 
                         return (
                           <NavLink
@@ -158,7 +170,10 @@ export function AdminWorkspaceLayout({
                             to={item.href}
                             onClick={() => setSidebarOpen(false)}
                           >
-                            <Icon className="h-4 w-4 shrink-0" strokeWidth={1.8} />
+                            <Icon
+                              className="h-4 w-4 shrink-0"
+                              strokeWidth={1.8}
+                            />
                             <span className="min-w-0 flex-1">{item.label}</span>
                             {badgeValue && badgeValue > 0 ? (
                               <span className="inline-flex min-h-6 min-w-6 items-center justify-center rounded-full bg-[#d99a2b] px-2 text-xs font-semibold text-white">
@@ -177,7 +192,8 @@ export function AdminWorkspaceLayout({
             <div className="border-t border-white/7 px-5 py-5">
               <div className="flex items-center gap-3">
                 <div className="grid h-10 w-10 place-items-center rounded-full border border-[#8c7340] bg-[#243245] font-semibold text-[#ffb13d]">
-                  {auth.authMe?.app_user?.email?.slice(0, 2).toUpperCase() ?? 'TW'}
+                  {auth.authMe?.app_user?.email?.slice(0, 2).toUpperCase() ??
+                    'TW'}
                 </div>
                 <div className="min-w-0">
                   <p className="truncate text-sm font-semibold text-white">

@@ -117,7 +117,10 @@ function EmployerRoutes() {
         path="/listings/new"
         element={<Navigate replace to="/submit-listing" />}
       />
-      <Route path="/listings" element={<Navigate replace to="/my-listings" />} />
+      <Route
+        path="/listings"
+        element={<Navigate replace to="/my-listings" />}
+      />
       <Route
         path="/listings/:listingId"
         element={

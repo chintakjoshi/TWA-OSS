@@ -116,7 +116,9 @@ export function EmployerListingDetailPage() {
 
               <div className="flex flex-wrap gap-3">
                 <Link to="/my-listings">
-                  <PortalButton variant="secondary">Back to listings</PortalButton>
+                  <PortalButton variant="secondary">
+                    Back to listings
+                  </PortalButton>
                 </Link>
                 <PortalButton
                   variant="ghost"
@@ -143,7 +145,8 @@ export function EmployerListingDetailPage() {
               Listing overview
             </h2>
             <p className="mt-4 text-sm leading-7 text-slate-600">
-              {listing.description ?? 'No listing description has been added yet.'}
+              {listing.description ??
+                'No listing description has been added yet.'}
             </p>
 
             <DefinitionList
@@ -171,7 +174,8 @@ export function EmployerListingDetailPage() {
                 },
                 {
                   label: 'Lifecycle',
-                  value: listing.lifecycle_status === 'open' ? 'Open' : 'Closed',
+                  value:
+                    listing.lifecycle_status === 'open' ? 'Open' : 'Closed',
                 },
               ]}
             />

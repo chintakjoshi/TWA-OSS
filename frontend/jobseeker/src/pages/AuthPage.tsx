@@ -39,7 +39,9 @@ export function JobseekerAuthPage() {
   const [busy, setBusy] = useState(false)
   const [notice, setNotice] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [verificationEmail, setVerificationEmail] = useState<string | null>(null)
+  const [verificationEmail, setVerificationEmail] = useState<string | null>(
+    null
+  )
   const [loginReminder, setLoginReminder] = useState(true)
 
   useEffect(() => {
@@ -47,7 +49,8 @@ export function JobseekerAuthPage() {
   }, [auth.state])
 
   const authenticatedJobseeker = auth.authMe?.app_user?.app_role === 'jobseeker'
-  const needsBootstrap = auth.state === 'authenticated' && !auth.authMe?.app_user
+  const needsBootstrap =
+    auth.state === 'authenticated' && !auth.authMe?.app_user
   const wrongPortal =
     auth.authMe?.app_user && auth.authMe.app_user.app_role !== 'jobseeker'
   const showForms = !authenticatedJobseeker && !needsBootstrap && !wrongPortal
@@ -97,15 +100,17 @@ export function JobseekerAuthPage() {
             </h1>
             <p className="mt-8 text-xl leading-9 text-[#aebfd6]">
               TWA connects justice-involved individuals with fair-chance
-              opportunities while keeping the profile and application path simple
-              and clear.
+              opportunities while keeping the profile and application path
+              simple and clear.
             </p>
 
             <ul className="mt-12 space-y-6">
               {supportPoints.map((point) => (
                 <li key={point} className="flex gap-4">
                   <span className="mt-2 h-2.5 w-2.5 rounded-full bg-[#d99a2b]" />
-                  <span className="text-lg leading-8 text-[#dce6f2]">{point}</span>
+                  <span className="text-lg leading-8 text-[#dce6f2]">
+                    {point}
+                  </span>
                 </li>
               ))}
             </ul>
@@ -132,14 +137,16 @@ export function JobseekerAuthPage() {
           </p>
 
           <div className="mt-8 space-y-4">
-            {notice ? <InlineNotice tone="success">{notice}</InlineNotice> : null}
+            {notice ? (
+              <InlineNotice tone="success">{notice}</InlineNotice>
+            ) : null}
             {error ? <InlineNotice tone="danger">{error}</InlineNotice> : null}
 
             {wrongPortal ? (
               <InlineNotice tone="danger">
                 This account is linked to the{' '}
-                <strong>{auth.authMe?.app_user?.app_role}</strong> portal, so the
-                jobseeker routes stay locked here.
+                <strong>{auth.authMe?.app_user?.app_role}</strong> portal, so
+                the jobseeker routes stay locked here.
               </InlineNotice>
             ) : null}
 
@@ -181,9 +188,14 @@ export function JobseekerAuthPage() {
                   className="inline-flex min-h-11 items-center justify-center rounded-xl border border-[#d0922c] bg-[#d0922c] px-4 text-sm font-semibold text-white transition hover:border-[#b67a1b] hover:bg-[#b67a1b] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d0922c]/60"
                   to={auth.authMe?.profile_complete ? '/jobs' : '/profile'}
                 >
-                  {auth.authMe?.profile_complete ? 'Go to jobs' : 'Complete profile'}
+                  {auth.authMe?.profile_complete
+                    ? 'Go to jobs'
+                    : 'Complete profile'}
                 </Link>
-                <PortalButton variant="secondary" onClick={() => void auth.logout()}>
+                <PortalButton
+                  variant="secondary"
+                  onClick={() => void auth.logout()}
+                >
                   Sign out
                 </PortalButton>
               </div>
@@ -199,8 +211,8 @@ export function JobseekerAuthPage() {
                 Create your local TWA jobseeker record.
               </h3>
               <p className="mt-3 text-sm leading-7 text-slate-500">
-                Shared auth signs you in first. The button below creates the local
-                TWA jobseeker account the rest of the portal expects.
+                Shared auth signs you in first. The button below creates the
+                local TWA jobseeker account the rest of the portal expects.
               </p>
               <div className="mt-6">
                 <PortalButton
@@ -316,7 +328,9 @@ export function JobseekerAuthPage() {
                         checked={loginReminder}
                         className="h-4 w-4 rounded border-[#d8ccb9]"
                         type="checkbox"
-                        onChange={(event) => setLoginReminder(event.target.checked)}
+                        onChange={(event) =>
+                          setLoginReminder(event.target.checked)
+                        }
                       />
                       Keep me signed in
                     </label>
@@ -329,7 +343,11 @@ export function JobseekerAuthPage() {
                     </button>
                   </div>
 
-                  <PortalButton className="w-full" disabled={busy} type="submit">
+                  <PortalButton
+                    className="w-full"
+                    disabled={busy}
+                    type="submit"
+                  >
                     {busy ? 'Signing in...' : 'Sign In'}
                   </PortalButton>
                 </form>
@@ -380,7 +398,11 @@ export function JobseekerAuthPage() {
                       type="password"
                     />
                   </div>
-                  <PortalButton className="w-full" disabled={busy} type="submit">
+                  <PortalButton
+                    className="w-full"
+                    disabled={busy}
+                    type="submit"
+                  >
                     {busy ? 'Creating account...' : 'Create My Account'}
                   </PortalButton>
                 </form>
@@ -417,7 +439,10 @@ export function JobseekerAuthPage() {
                     <PortalButton disabled={busy} type="submit">
                       {busy ? 'Sending...' : 'Send reset email'}
                     </PortalButton>
-                    <PortalButton variant="secondary" onClick={() => setMode('login')}>
+                    <PortalButton
+                      variant="secondary"
+                      onClick={() => setMode('login')}
+                    >
                       Back to sign in
                     </PortalButton>
                   </div>
@@ -436,7 +461,9 @@ export function JobseekerAuthPage() {
                         new_password: String(form.get('new_password') ?? ''),
                       })
                       setMode('login')
-                      setNotice('Password updated. Sign in with the new password.')
+                      setNotice(
+                        'Password updated. Sign in with the new password.'
+                      )
                     })
                   }}
                 >
@@ -467,7 +494,10 @@ export function JobseekerAuthPage() {
                     <PortalButton disabled={busy} type="submit">
                       {busy ? 'Resetting...' : 'Reset password'}
                     </PortalButton>
-                    <PortalButton variant="secondary" onClick={() => setMode('login')}>
+                    <PortalButton
+                      variant="secondary"
+                      onClick={() => setMode('login')}
+                    >
                       Back to sign in
                     </PortalButton>
                   </div>
@@ -537,9 +567,9 @@ export function JobseekerAuthPage() {
                       Check your inbox
                     </h3>
                     <p className="mx-auto mt-4 max-w-[380px] text-sm leading-7 text-slate-500">
-                      We sent a verification link to your email. Click the link to
-                      confirm your address, then return here to continue setting up
-                      your account.
+                      We sent a verification link to your email. Click the link
+                      to confirm your address, then return here to continue
+                      setting up your account.
                     </p>
                     <div className="mt-6 rounded-2xl border border-[#eadfce] bg-white px-4 py-3 font-medium text-slate-700">
                       {verificationEmail ?? 'your@email.com'}
@@ -550,7 +580,9 @@ export function JobseekerAuthPage() {
                       className="flex-1"
                       onClick={() => {
                         setMode('login')
-                        setNotice('Once your email is verified, sign in to continue.')
+                        setNotice(
+                          'Once your email is verified, sign in to continue.'
+                        )
                       }}
                     >
                       I&apos;ve verified my email
@@ -598,7 +630,10 @@ export function JobseekerAuthPage() {
 
               <p className="mt-8 text-center text-sm text-slate-400">
                 Looking for another experience? Visit the{' '}
-                <a className="font-semibold text-[#d0922c]" href={employerAppUrl}>
+                <a
+                  className="font-semibold text-[#d0922c]"
+                  href={employerAppUrl}
+                >
                   Employer Portal
                 </a>{' '}
                 or{' '}
@@ -625,7 +660,9 @@ export function JobseekerAuthPage() {
 
               <div className="mt-6 flex items-center gap-2 text-sm text-[#8ea3c4]">
                 <ShieldCheck className="h-4 w-4" />
-                <span>Shared auth foundation with TWA role-based access checks.</span>
+                <span>
+                  Shared auth foundation with TWA role-based access checks.
+                </span>
               </div>
             </>
           ) : null}

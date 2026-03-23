@@ -4,7 +4,10 @@ import { Link } from 'react-router-dom'
 import { useAuth } from '@shared/auth/AuthProvider'
 import { HttpError } from '@shared/lib/http'
 
-import { listEmployerApplicants, listEmployerListings } from '../api/employerApi'
+import {
+  listEmployerApplicants,
+  listEmployerListings,
+} from '../api/employerApi'
 import { EmployerHeader } from '../components/EmployerHeader'
 import { EmptyState, ErrorState, LoadingState } from '../components/PageState'
 import {
@@ -28,7 +31,9 @@ export function EmployerListingsPage() {
   const [totalPages, setTotalPages] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [applicantCounts, setApplicantCounts] = useState<Record<string, number | null>>({})
+  const [applicantCounts, setApplicantCounts] = useState<
+    Record<string, number | null>
+  >({})
 
   useEffect(() => {
     let active = true
@@ -55,12 +60,19 @@ export function EmployerListingsPage() {
 
         const nextCounts: Record<string, number | null> = {}
         for (const listing of response.items) {
-          if (listing.review_status !== 'approved' || listing.lifecycle_status !== 'open') {
+          if (
+            listing.review_status !== 'approved' ||
+            listing.lifecycle_status !== 'open'
+          ) {
             nextCounts[listing.id] = null
             continue
           }
           try {
-            const applicants = await listEmployerApplicants(auth.requestTwa, listing.id, 1)
+            const applicants = await listEmployerApplicants(
+              auth.requestTwa,
+              listing.id,
+              1
+            )
             nextCounts[listing.id] = applicants.meta.total_items
           } catch (nextError) {
             if (
@@ -95,7 +107,10 @@ export function EmployerListingsPage() {
 
   const reviewGate = auth.authMe?.employer_review_status ?? 'pending'
   const highlightedRejected = useMemo(
-    () => items.find((listing) => listing.review_status === 'rejected' && listing.review_note),
+    () =>
+      items.find(
+        (listing) => listing.review_status === 'rejected' && listing.review_note
+      ),
     [items]
   )
 
@@ -111,8 +126,8 @@ export function EmployerListingsPage() {
                   My listings
                 </h1>
                 <p className="mt-3 text-base leading-8 text-slate-500">
-                  Track every listing you have submitted, including pending reviews,
-                  approved jobs, and rejected requests.
+                  Track every listing you have submitted, including pending
+                  reviews, approved jobs, and rejected requests.
                 </p>
               </div>
               <Link to="/submit-listing">
@@ -121,7 +136,9 @@ export function EmployerListingsPage() {
             </div>
 
             {reviewGate !== 'approved' ? (
-              <InlineNotice tone={reviewGate === 'rejected' ? 'danger' : 'info'}>
+              <InlineNotice
+                tone={reviewGate === 'rejected' ? 'danger' : 'info'}
+              >
                 {reviewGate === 'rejected'
                   ? 'Your employer account is currently not approved, so new listing submission remains locked until staff reassesses the account.'
                   : 'Your employer account is still pending review. You can monitor previous listings here, but new submissions stay locked until approval.'}
@@ -168,7 +185,9 @@ export function EmployerListingsPage() {
           </div>
         </PortalPanel>
 
-        {isLoading ? <LoadingState title="Loading employer listings..." /> : null}
+        {isLoading ? (
+          <LoadingState title="Loading employer listings..." />
+        ) : null}
         {!isLoading && error ? (
           <ErrorState title="Listings unavailable" message={error} />
         ) : null}
@@ -204,9 +223,13 @@ export function EmployerListingsPage() {
                     <tr className="border-t border-[#eadfce]" key={listing.id}>
                       <td className="px-6 py-4">
                         <div>
-                          <p className="font-semibold text-slate-950">{listing.title}</p>
+                          <p className="font-semibold text-slate-950">
+                            {listing.title}
+                          </p>
                           <p className="text-slate-500">
-                            {listing.review_note ? 'Staff note attached' : 'No staff note'}
+                            {listing.review_note
+                              ? 'Staff note attached'
+                              : 'No staff note'}
                           </p>
                         </div>
                       </td>
@@ -227,32 +250,44 @@ export function EmployerListingsPage() {
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex flex-wrap gap-2">
-                          <PortalBadge tone={getStatusTone(listing.review_status)}>
+                          <PortalBadge
+                            tone={getStatusTone(listing.review_status)}
+                          >
                             {listing.review_status === 'approved'
                               ? 'Approved'
                               : listing.review_status === 'rejected'
                                 ? 'Changes requested'
                                 : 'Under review'}
                           </PortalBadge>
-                          <PortalBadge tone={getStatusTone(listing.lifecycle_status)}>
-                            {listing.lifecycle_status === 'open' ? 'Live' : 'Closed'}
+                          <PortalBadge
+                            tone={getStatusTone(listing.lifecycle_status)}
+                          >
+                            {listing.lifecycle_status === 'open'
+                              ? 'Live'
+                              : 'Closed'}
                           </PortalBadge>
                         </div>
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex flex-wrap gap-2">
                           <Link to={`/my-listings/${listing.id}`}>
-                            <PortalButton variant="secondary">View</PortalButton>
+                            <PortalButton variant="secondary">
+                              View
+                            </PortalButton>
                           </Link>
                           {listing.review_status === 'approved' &&
                           listing.lifecycle_status === 'open' ? (
                             <>
                               <Link to={`/listings/${listing.id}/applicants`}>
-                                <PortalButton variant="ghost">Applicants</PortalButton>
+                                <PortalButton variant="ghost">
+                                  Applicants
+                                </PortalButton>
                               </Link>
                               <PortalButton
                                 variant="danger"
-                                onClick={() => announceComingSoon('Close listing')}
+                                onClick={() =>
+                                  announceComingSoon('Close listing')
+                                }
                               >
                                 Close
                               </PortalButton>
@@ -265,7 +300,9 @@ export function EmployerListingsPage() {
                           ) : null}
                           {listing.review_status === 'rejected' ? (
                             <PortalButton
-                              onClick={() => announceComingSoon('Edit and resubmit')}
+                              onClick={() =>
+                                announceComingSoon('Edit and resubmit')
+                              }
                             >
                               Edit &amp; Resubmit
                             </PortalButton>
@@ -273,7 +310,9 @@ export function EmployerListingsPage() {
                           {listing.lifecycle_status === 'closed' ? (
                             <PortalButton
                               variant="secondary"
-                              onClick={() => announceComingSoon('Reactivate listing')}
+                              onClick={() =>
+                                announceComingSoon('Reactivate listing')
+                              }
                             >
                               Reactivate
                             </PortalButton>
@@ -297,7 +336,9 @@ export function EmployerListingsPage() {
               {highlightedRejected.review_note}
             </p>
             <div className="mt-5">
-              <PortalButton onClick={() => announceComingSoon('Edit and resubmit')}>
+              <PortalButton
+                onClick={() => announceComingSoon('Edit and resubmit')}
+              >
                 Edit &amp; Resubmit
               </PortalButton>
             </div>

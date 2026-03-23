@@ -41,10 +41,12 @@ export function AdminListingQueuePage() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [selected, setSelected] = useState<JobListing | null>(null)
-  const [reviewStatus, setReviewStatus] = useState<'pending' | 'approved' | 'rejected'>(
-    'approved'
+  const [reviewStatus, setReviewStatus] = useState<
+    'pending' | 'approved' | 'rejected'
+  >('approved')
+  const [lifecycleStatus, setLifecycleStatus] = useState<'open' | 'closed'>(
+    'open'
   )
-  const [lifecycleStatus, setLifecycleStatus] = useState<'open' | 'closed'>('open')
   const [reviewNote, setReviewNote] = useState('')
   const [isSaving, setIsSaving] = useState(false)
 
@@ -154,8 +156,9 @@ export function AdminListingQueuePage() {
                               {listing.employer?.org_name ?? 'Unknown employer'}
                             </TableCell>
                             <TableCell>
-                              {[listing.city, listing.zip].filter(Boolean).join(', ') ||
-                                'Unknown'}
+                              {[listing.city, listing.zip]
+                                .filter(Boolean)
+                                .join(', ') || 'Unknown'}
                             </TableCell>
                             <TableCell>
                               <span
@@ -170,21 +173,24 @@ export function AdminListingQueuePage() {
                             </TableCell>
                             <TableCell>
                               <div className="flex flex-wrap gap-2">
-                                {formatChargeFlags(listing.disqualifying_charges).length >
-                                0 ? (
-                                  formatChargeFlags(listing.disqualifying_charges).map(
-                                    (charge) => (
-                                      <StatusBadge key={charge} tone="danger">
-                                        {charge}
-                                      </StatusBadge>
-                                    )
-                                  )
+                                {formatChargeFlags(
+                                  listing.disqualifying_charges
+                                ).length > 0 ? (
+                                  formatChargeFlags(
+                                    listing.disqualifying_charges
+                                  ).map((charge) => (
+                                    <StatusBadge key={charge} tone="danger">
+                                      {charge}
+                                    </StatusBadge>
+                                  ))
                                 ) : (
                                   <span className="text-slate-400">None</span>
                                 )}
                               </div>
                             </TableCell>
-                            <TableCell>{formatDate(listing.created_at)}</TableCell>
+                            <TableCell>
+                              {formatDate(listing.created_at)}
+                            </TableCell>
                             <TableCell>
                               <div className="flex flex-wrap gap-2">
                                 <AdminButton
@@ -302,8 +308,9 @@ export function AdminListingQueuePage() {
                 {
                   label: 'Charges',
                   value:
-                    formatChargeFlags(selected.disqualifying_charges).join(', ') ||
-                    'None',
+                    formatChargeFlags(selected.disqualifying_charges).join(
+                      ', '
+                    ) || 'None',
                 },
               ]}
             />
@@ -321,9 +328,7 @@ export function AdminListingQueuePage() {
                   id="listing-review-status"
                   value={reviewStatus}
                   onChange={(event) =>
-                    setReviewStatus(
-                      event.target.value as typeof reviewStatus
-                    )
+                    setReviewStatus(event.target.value as typeof reviewStatus)
                   }
                 >
                   <option value="pending">Pending</option>
@@ -392,7 +397,10 @@ export function AdminListingQueuePage() {
               >
                 {isSaving ? 'Saving...' : 'Save listing decision'}
               </AdminButton>
-              <AdminButton variant="secondary" onClick={() => setSelected(null)}>
+              <AdminButton
+                variant="secondary"
+                onClick={() => setSelected(null)}
+              >
                 Cancel
               </AdminButton>
             </div>

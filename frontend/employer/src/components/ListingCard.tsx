@@ -1,6 +1,11 @@
 import { Link } from 'react-router-dom'
 
-import { formatChargeSummary, formatDate, formatTransitRequirement, getStatusTone } from '../lib/formatting'
+import {
+  formatChargeSummary,
+  formatDate,
+  formatTransitRequirement,
+  getStatusTone,
+} from '../lib/formatting'
 import type { JobListing } from '../types/employer'
 import { PortalBadge, PortalButton, PortalPanel } from './ui/EmployerUi'
 
@@ -23,7 +28,8 @@ export function ListingCard({
               {listing.title}
             </h3>
             <p className="mt-1 text-sm text-slate-500">
-              {listing.city || 'Location pending'} {listing.zip ? `· ${listing.zip}` : ''}
+              {listing.city || 'Location pending'}{' '}
+              {listing.zip ? `· ${listing.zip}` : ''}
             </p>
           </div>
           <div className="space-y-2 text-right">
@@ -45,7 +51,9 @@ export function ListingCard({
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#8da2c5]">
               Transit
             </p>
-            <p className="mt-1">{formatTransitRequirement(listing.transit_required)}</p>
+            <p className="mt-1">
+              {formatTransitRequirement(listing.transit_required)}
+            </p>
           </div>
           <div className="rounded-2xl bg-[#fcfaf6] px-4 py-3">
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#8da2c5]">
@@ -67,7 +75,10 @@ export function ListingCard({
           <Link className="inline-flex" to={`/my-listings/${listing.id}`}>
             <PortalButton variant="secondary">View details</PortalButton>
           </Link>
-          <Link className="inline-flex" to={`/listings/${listing.id}/applicants`}>
+          <Link
+            className="inline-flex"
+            to={`/listings/${listing.id}/applicants`}
+          >
             <PortalButton variant="ghost">Applicants</PortalButton>
           </Link>
         </div>

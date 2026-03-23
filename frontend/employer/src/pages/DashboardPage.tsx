@@ -90,7 +90,9 @@ export function EmployerDashboardPage() {
           let hireCount = 0
           applicantResponses.forEach((response) => {
             applicantCount += response.meta.total_items
-            hireCount += response.items.filter((item) => item.status === 'hired').length
+            hireCount += response.items.filter(
+              (item) => item.status === 'hired'
+            ).length
           })
           setMetrics({
             applicants: applicantCount,
@@ -127,7 +129,8 @@ export function EmployerDashboardPage() {
     }
   }, [auth])
 
-  const reviewStatus = profile?.review_status ?? auth.authMe?.employer_review_status ?? 'pending'
+  const reviewStatus =
+    profile?.review_status ?? auth.authMe?.employer_review_status ?? 'pending'
   const visibleListings = useMemo(
     () => listings.filter(isListingVisible).length,
     [listings]
@@ -138,7 +141,9 @@ export function EmployerDashboardPage() {
     <div className="min-h-screen bg-[#f7f1e5]">
       <EmployerHeader listingCount={listingTotal} />
       <main className="mx-auto max-w-[1280px] space-y-8 px-4 py-8 lg:px-8">
-        {isLoading ? <LoadingState title="Loading employer dashboard..." /> : null}
+        {isLoading ? (
+          <LoadingState title="Loading employer dashboard..." />
+        ) : null}
         {!isLoading && error ? (
           <ErrorState title="Dashboard unavailable" message={error} />
         ) : null}
@@ -168,7 +173,8 @@ export function EmployerDashboardPage() {
                     </div>
                     <div className="space-y-3">
                       <PortalBadge tone={getStatusTone(reviewStatus)}>
-                        Account status: {reviewStatus === 'approved'
+                        Account status:{' '}
+                        {reviewStatus === 'approved'
                           ? 'approved'
                           : reviewStatus === 'rejected'
                             ? 'not approved'
@@ -206,7 +212,9 @@ export function EmployerDashboardPage() {
                         ) : reviewStatus === 'rejected' ? (
                           <>
                             <PortalButton
-                              onClick={() => announceComingSoon('Request re-review')}
+                              onClick={() =>
+                                announceComingSoon('Request re-review')
+                              }
                             >
                               Request Review
                             </PortalButton>
@@ -220,7 +228,9 @@ export function EmployerDashboardPage() {
                         ) : (
                           <PortalButton
                             variant="secondary"
-                            onClick={() => announceComingSoon('Contact TWA staff')}
+                            onClick={() =>
+                              announceComingSoon('Contact TWA staff')
+                            }
                           >
                             Contact TWA Staff
                           </PortalButton>
@@ -254,15 +264,23 @@ export function EmployerDashboardPage() {
                 icon={Users}
                 label="Total Applicants"
                 value={
-                  metrics.applicants === null ? 'Locked' : String(metrics.applicants)
+                  metrics.applicants === null
+                    ? 'Locked'
+                    : String(metrics.applicants)
                 }
               />
               <StatCard
                 accent="#2a8150"
-                hint={metrics.hires === null ? 'Shared applicant data required' : 'Recorded in employer applicant feeds'}
+                hint={
+                  metrics.hires === null
+                    ? 'Shared applicant data required'
+                    : 'Recorded in employer applicant feeds'
+                }
                 icon={ClipboardList}
                 label="Hires Via TWA"
-                value={metrics.hires === null ? 'Locked' : String(metrics.hires)}
+                value={
+                  metrics.hires === null ? 'Locked' : String(metrics.hires)
+                }
               />
             </div>
 
@@ -274,11 +292,14 @@ export function EmployerDashboardPage() {
                       Recent listing activity
                     </h2>
                     <p className="mt-1 text-sm text-slate-500">
-                      Review submission timing, status, and which listings are still waiting on staff.
+                      Review submission timing, status, and which listings are
+                      still waiting on staff.
                     </p>
                   </div>
                   <Link to="/my-listings">
-                    <PortalButton variant="secondary">All listings</PortalButton>
+                    <PortalButton variant="secondary">
+                      All listings
+                    </PortalButton>
                   </Link>
                 </div>
               </div>
@@ -295,10 +316,15 @@ export function EmployerDashboardPage() {
                   </thead>
                   <tbody>
                     {recentListings.map((listing) => (
-                      <tr className="border-t border-[#eadfce]" key={listing.id}>
+                      <tr
+                        className="border-t border-[#eadfce]"
+                        key={listing.id}
+                      >
                         <td className="px-6 py-4">
                           <div>
-                            <p className="font-semibold text-slate-950">{listing.title}</p>
+                            <p className="font-semibold text-slate-950">
+                              {listing.title}
+                            </p>
                             <p className="text-slate-500">
                               {listing.city || 'Location pending'}
                             </p>
@@ -308,7 +334,9 @@ export function EmployerDashboardPage() {
                           {formatDate(listing.created_at)}
                         </td>
                         <td className="px-6 py-4">
-                          <PortalBadge tone={getStatusTone(listing.review_status)}>
+                          <PortalBadge
+                            tone={getStatusTone(listing.review_status)}
+                          >
                             {listing.review_status === 'approved'
                               ? 'Approved'
                               : listing.review_status === 'rejected'
@@ -317,8 +345,12 @@ export function EmployerDashboardPage() {
                           </PortalBadge>
                         </td>
                         <td className="px-6 py-4">
-                          <PortalBadge tone={getStatusTone(listing.lifecycle_status)}>
-                            {listing.lifecycle_status === 'open' ? 'Live' : 'Closed'}
+                          <PortalBadge
+                            tone={getStatusTone(listing.lifecycle_status)}
+                          >
+                            {listing.lifecycle_status === 'open'
+                              ? 'Live'
+                              : 'Closed'}
                           </PortalBadge>
                         </td>
                       </tr>

@@ -51,8 +51,15 @@ export function EmployerApplicantsPage() {
 
     async function load() {
       if (listingId) {
-        const listingResponse = await getEmployerListing(auth.requestTwa, listingId)
-        const applicantsResponse = await listEmployerApplicants(auth.requestTwa, listingId, 1)
+        const listingResponse = await getEmployerListing(
+          auth.requestTwa,
+          listingId
+        )
+        const applicantsResponse = await listEmployerApplicants(
+          auth.requestTwa,
+          listingId,
+          1
+        )
         if (!active) return
         setListingTotal(1)
         setGroups([
@@ -79,7 +86,11 @@ export function EmployerApplicantsPage() {
 
       const nextGroups: ApplicantGroup[] = []
       for (const listing of visibleListings) {
-        const applicantResponse = await listEmployerApplicants(auth.requestTwa, listing.id, 1)
+        const applicantResponse = await listEmployerApplicants(
+          auth.requestTwa,
+          listing.id,
+          1
+        )
         nextGroups.push({ listing, applicants: applicantResponse.items })
       }
       if (active) setGroups(nextGroups)
@@ -124,11 +135,14 @@ export function EmployerApplicantsPage() {
                   Applicants
                 </h1>
                 <p className="mt-3 text-base leading-8 text-slate-500">
-                  Candidates matched to and applied for your visible TWA listings.
+                  Candidates matched to and applied for your visible TWA
+                  listings.
                 </p>
               </div>
               {!sharingDisabled ? (
-                <PortalBadge tone="success">Applicant sharing enabled by TWA</PortalBadge>
+                <PortalBadge tone="success">
+                  Applicant sharing enabled by TWA
+                </PortalBadge>
               ) : null}
             </div>
           </div>
@@ -147,8 +161,9 @@ export function EmployerApplicantsPage() {
               Applicant visibility is currently off
             </h2>
             <p className="mx-auto mt-4 max-w-[560px] text-sm leading-7 text-slate-500">
-              TWA staff control whether employers can view applicant information.
-              When enabled, matched candidates for your listings will appear here.
+              TWA staff control whether employers can view applicant
+              information. When enabled, matched candidates for your listings
+              will appear here.
             </p>
             <div className="mt-6 flex justify-center">
               <PortalButton
@@ -178,20 +193,25 @@ export function EmployerApplicantsPage() {
                         {group.listing.title}
                       </h2>
                       <p className="mt-1 text-sm text-slate-500">
-                        {group.listing.city || 'Location pending'} · {group.applicants.length} applicants
+                        {group.listing.city || 'Location pending'} ·{' '}
+                        {group.applicants.length} applicants
                       </p>
                     </div>
                     <div className="flex flex-wrap gap-2">
                       <PortalBadge tone="success">Live</PortalBadge>
                       <Link to={`/my-listings/${group.listing.id}`}>
-                        <PortalButton variant="secondary">Listing details</PortalButton>
+                        <PortalButton variant="secondary">
+                          Listing details
+                        </PortalButton>
                       </Link>
                     </div>
                   </div>
                 </div>
                 <div className="space-y-4 px-6 py-6">
                   {group.applicants.map((applicant) => {
-                    const charges = formatChargeFlags(applicant.jobseeker.charges)
+                    const charges = formatChargeFlags(
+                      applicant.jobseeker.charges
+                    )
                     return (
                       <div
                         className="flex flex-col gap-4 rounded-[24px] border border-[#e6dbc8] bg-[#fcfaf6] px-5 py-5 lg:flex-row lg:items-center lg:justify-between"
@@ -204,38 +224,53 @@ export function EmployerApplicantsPage() {
                           <div className="space-y-2">
                             <div>
                               <p className="text-xl font-semibold text-slate-950">
-                                {applicant.jobseeker.full_name ?? 'Applicant name pending'}
+                                {applicant.jobseeker.full_name ??
+                                  'Applicant name pending'}
                               </p>
                               <p className="text-sm text-slate-500">
                                 Applied {formatDate(applicant.applied_at)} ·{' '}
-                                {formatTransitType(applicant.jobseeker.transit_type)} ·{' '}
-                                {applicant.jobseeker.city ?? 'City pending'}
+                                {formatTransitType(
+                                  applicant.jobseeker.transit_type
+                                )}{' '}
+                                · {applicant.jobseeker.city ?? 'City pending'}
                               </p>
                             </div>
                             <div className="flex flex-wrap gap-2">
                               {charges.length > 0 ? (
                                 charges.map((charge) => (
-                                  <PortalBadge className="font-medium" key={charge} tone="danger">
+                                  <PortalBadge
+                                    className="font-medium"
+                                    key={charge}
+                                    tone="danger"
+                                  >
                                     {charge}
                                   </PortalBadge>
                                 ))
                               ) : (
-                                <PortalBadge tone="info">No disclosures</PortalBadge>
+                                <PortalBadge tone="info">
+                                  No disclosures
+                                </PortalBadge>
                               )}
                               <PortalBadge tone="info">
-                                {applicant.jobseeker.status === 'hired' ? 'Hired' : 'Active'}
+                                {applicant.jobseeker.status === 'hired'
+                                  ? 'Hired'
+                                  : 'Active'}
                               </PortalBadge>
                             </div>
                           </div>
                         </div>
 
                         <div className="flex flex-col items-start gap-3 lg:items-end">
-                          <PortalBadge tone={getApplicationTone(applicant.status)}>
+                          <PortalBadge
+                            tone={getApplicationTone(applicant.status)}
+                          >
                             {formatStatusLabel(applicant.status)}
                           </PortalBadge>
                           <PortalButton
                             variant="secondary"
-                            onClick={() => announceComingSoon('Express interest')}
+                            onClick={() =>
+                              announceComingSoon('Express interest')
+                            }
                           >
                             Express interest
                           </PortalButton>

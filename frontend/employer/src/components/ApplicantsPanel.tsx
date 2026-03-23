@@ -97,7 +97,9 @@ export function ApplicantsPanel({
             <p className="text-sm text-slate-500">{description}</p>
           </div>
           {!applicantVisibilityDisabled ? (
-            <PortalBadge tone="success">Applicant sharing enabled by TWA</PortalBadge>
+            <PortalBadge tone="success">
+              Applicant sharing enabled by TWA
+            </PortalBadge>
           ) : null}
         </div>
 
@@ -141,7 +143,9 @@ export function ApplicantsPanel({
         {!isLoading && !applicantVisibilityDisabled && applicants.length > 0 ? (
           <div className="space-y-4">
             {applicants.map((applicant) => {
-              const chargeLabels = formatChargeFlags(applicant.jobseeker.charges)
+              const chargeLabels = formatChargeFlags(
+                applicant.jobseeker.charges
+              )
               return (
                 <div
                   className="flex flex-col gap-4 rounded-[24px] border border-[#e6dbc8] bg-[#fcfaf6] px-5 py-5 lg:flex-row lg:items-center lg:justify-between"
@@ -154,18 +158,23 @@ export function ApplicantsPanel({
                     <div className="space-y-2">
                       <div>
                         <p className="text-xl font-semibold text-slate-950">
-                          {applicant.jobseeker.full_name ?? 'Applicant name pending'}
+                          {applicant.jobseeker.full_name ??
+                            'Applicant name pending'}
                         </p>
                         <p className="text-sm text-slate-500">
                           Applied {formatDate(applicant.applied_at)} ·{' '}
-                          {formatTransitType(applicant.jobseeker.transit_type)} ·{' '}
-                          {applicant.jobseeker.city ?? 'City pending'}
+                          {formatTransitType(applicant.jobseeker.transit_type)}{' '}
+                          · {applicant.jobseeker.city ?? 'City pending'}
                         </p>
                       </div>
                       <div className="flex flex-wrap gap-2">
                         {chargeLabels.length > 0 ? (
                           chargeLabels.map((charge) => (
-                            <PortalBadge className="font-medium" key={charge} tone="danger">
+                            <PortalBadge
+                              className="font-medium"
+                              key={charge}
+                              tone="danger"
+                            >
                               {charge}
                             </PortalBadge>
                           ))
@@ -178,7 +187,9 @@ export function ApplicantsPanel({
                             : 'Profile incomplete'}
                         </PortalBadge>
                         {applicant.jobseeker.phone ? (
-                          <PortalBadge tone="neutral">{applicant.jobseeker.phone}</PortalBadge>
+                          <PortalBadge tone="neutral">
+                            {applicant.jobseeker.phone}
+                          </PortalBadge>
                         ) : null}
                       </div>
                     </div>
