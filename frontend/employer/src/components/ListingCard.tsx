@@ -1,75 +1,77 @@
-import type { ReactNode } from 'react'
+import { Link } from 'react-router-dom'
 
-import { Badge, Card, CardBody } from '@shared/ui/primitives'
-
-import {
-  formatChargeFlags,
-  formatDate,
-  formatTransitAccessibility,
-  formatTransitRequirement,
-} from '../lib/formatting'
+import { formatChargeSummary, formatDate, formatTransitRequirement, getStatusTone } from '../lib/formatting'
 import type { JobListing } from '../types/employer'
+import { PortalBadge, PortalButton, PortalPanel } from './ui/EmployerUi'
 
 export function ListingCard({
   listing,
-  children,
+  applicantsCount,
 }: {
   listing: JobListing
-  children?: ReactNode
+  applicantsCount?: number | null
 }) {
-  const reviewTone =
-    listing.review_status === 'approved'
-      ? 'success'
-      : listing.review_status === 'rejected'
-        ? 'danger'
-        : 'warning'
-  const lifecycleTone =
-    listing.lifecycle_status === 'open' ? 'success' : 'neutral'
-  const charges = formatChargeFlags(listing.disqualifying_charges)
-
   return (
-    <Card className="listing-card-stack" strong>
-      <CardBody className="stack-md">
-        <div
-          className="cluster"
-          style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}
-        >
-          <div className="stack-sm">
-            <h2 className="card-title">{listing.title}</h2>
-            <p className="card-copy">
-              {listing.city ?? 'City not set'}
-              {listing.zip ? `, ${listing.zip}` : ''}
+    <PortalPanel className="h-full">
+      <div className="space-y-6 px-6 py-6">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#8da2c5]">
+              {formatDate(listing.created_at)}
+            </p>
+            <h3 className="employer-display mt-2 text-[1.4rem] font-semibold text-slate-950">
+              {listing.title}
+            </h3>
+            <p className="mt-1 text-sm text-slate-500">
+              {listing.city || 'Location pending'} {listing.zip ? `· ${listing.zip}` : ''}
             </p>
           </div>
-          <div className="cluster">
-            <Badge tone={reviewTone}>{listing.review_status}</Badge>
-            <Badge tone={lifecycleTone}>{listing.lifecycle_status}</Badge>
+          <div className="space-y-2 text-right">
+            <PortalBadge tone={getStatusTone(listing.review_status)}>
+              {listing.review_status === 'approved'
+                ? 'Approved'
+                : listing.review_status === 'rejected'
+                  ? 'Rejected'
+                  : 'Pending review'}
+            </PortalBadge>
+            <PortalBadge tone={getStatusTone(listing.lifecycle_status)}>
+              {listing.lifecycle_status === 'open' ? 'Live' : 'Closed'}
+            </PortalBadge>
           </div>
         </div>
-        <p className="card-copy">
-          {listing.description ?? 'No description added yet.'}
-        </p>
-        <div className="listing-meta-grid">
-          <p className="card-copy">
-            Submitted {formatDate(listing.created_at)}
-          </p>
-          <p className="card-copy">
-            {formatTransitRequirement(listing.transit_required)}
-          </p>
-          <p className="card-copy">
-            {formatTransitAccessibility(listing.transit_accessible)}
-          </p>
-          <p className="card-copy">
-            {charges.length > 0
-              ? `Disqualifying: ${charges.join(', ')}`
-              : 'No disqualifying charges set'}
-          </p>
+
+        <div className="grid gap-3 text-sm text-slate-600 md:grid-cols-2">
+          <div className="rounded-2xl bg-[#fcfaf6] px-4 py-3">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#8da2c5]">
+              Transit
+            </p>
+            <p className="mt-1">{formatTransitRequirement(listing.transit_required)}</p>
+          </div>
+          <div className="rounded-2xl bg-[#fcfaf6] px-4 py-3">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#8da2c5]">
+              Applicants
+            </p>
+            <p className="mt-1">
+              {applicantsCount === null || applicantsCount === undefined
+                ? 'Available when applicant sharing is enabled'
+                : `${applicantsCount} tracked in portal`}
+            </p>
+          </div>
         </div>
-        {listing.review_note ? (
-          <p className="listing-note">{listing.review_note}</p>
-        ) : null}
-        {children ? <div className="inline-actions">{children}</div> : null}
-      </CardBody>
-    </Card>
+
+        <p className="rounded-2xl bg-[#fcfaf6] px-4 py-3 text-sm text-slate-600">
+          {formatChargeSummary(listing.disqualifying_charges)}
+        </p>
+
+        <div className="flex flex-wrap gap-3">
+          <Link className="inline-flex" to={`/my-listings/${listing.id}`}>
+            <PortalButton variant="secondary">View details</PortalButton>
+          </Link>
+          <Link className="inline-flex" to={`/listings/${listing.id}/applicants`}>
+            <PortalButton variant="ghost">Applicants</PortalButton>
+          </Link>
+        </div>
+      </div>
+    </PortalPanel>
   )
 }

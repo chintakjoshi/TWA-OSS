@@ -1,217 +1,50 @@
+@import 'tailwindcss';
+
 :root {
-  --accent: #4f7b45;
-  --accent-strong: #243d22;
-  --bg-base:
-    radial-gradient(
-      circle at 18% 18%,
-      rgba(247, 190, 102, 0.22),
-      transparent 24%
-    ),
-    radial-gradient(
-      circle at 82% 12%,
-      rgba(48, 112, 73, 0.18),
-      transparent 22%
-    ),
-    linear-gradient(180deg, #f7f6ef 0%, #edf4ea 100%);
+  --employer-cream: #f7f1e5;
+  --employer-ink: #132130;
+  --employer-gold: #d0922c;
+  --employer-blue: #2458b8;
+}
+
+html {
+  min-height: 100%;
+  background: var(--employer-cream);
 }
 
 body {
-  background: var(--bg-base);
-}
-
-.portal-shell,
-.auth-portal-shell {
   min-height: 100vh;
-  padding: 1.5rem;
+  background:
+    radial-gradient(circle at top right, rgba(217, 154, 43, 0.12), transparent 18%),
+    linear-gradient(180deg, #fbf8f1 0%, #f7f1e5 100%);
+  color: #172433;
+  font-family: 'Inter', 'Segoe UI', sans-serif;
 }
 
-.portal-card h1,
-.portal-meter strong,
-.auth-portal-shell h1,
-.employer-shell-header h1 {
-  font-family: var(--font-display);
+#app {
+  min-height: 100vh;
 }
 
-.portal-card h1,
-.auth-portal-shell h1 {
-  margin: 0;
-  max-width: 12ch;
-  font-size: clamp(2.8rem, 6vw, 4.8rem);
-  line-height: 0.98;
+.employer-display {
+  font-family: 'Playfair Display', 'Iowan Old Style', serif;
 }
 
-.portal-eyebrow,
-.portal-label,
-.portal-meter span {
-  margin: 0 0 0.8rem;
-  color: #4f7b45;
-  font-size: 0.82rem;
-  font-weight: 800;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
+.employer-auth-pattern {
+  background:
+    radial-gradient(circle at 12% 18%, rgba(217, 154, 43, 0.08), transparent 18%),
+    radial-gradient(circle at 86% 14%, rgba(36, 88, 184, 0.08), transparent 18%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.88), rgba(255, 251, 244, 0.94));
 }
 
-.portal-copy,
-.portal-list {
-  color: #52634a;
+.employer-grid-surface {
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
 }
 
-.portal-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.9rem;
-}
-
-.portal-panel-body {
-  display: grid;
-  grid-template-columns: minmax(0, 1.4fr) minmax(220px, 0.8fr);
-  gap: 1rem;
-}
-
-.portal-list {
-  margin: 0;
-  padding-left: 1.1rem;
-}
-
-.portal-list li + li {
-  margin-top: 0.75rem;
-}
-
-.portal-meter {
-  display: grid;
-  align-content: start;
-  gap: 0.35rem;
-  padding: 1.15rem;
-  border-radius: 1.2rem;
-  background: linear-gradient(160deg, #304b2a, #6e8c55);
-  color: #edf5e7;
-}
-
-.portal-meter strong {
-  font-size: 1.6rem;
-  line-height: 1.08;
-}
-
-.employer-auth-shell,
-.employer-shell-page {
-  padding-top: 1rem;
-}
-
-.employer-shell-header-body {
-  display: grid;
-  gap: 1rem;
-  align-items: center;
-}
-
-.employer-shell-actions {
-  display: grid;
-  gap: 0.9rem;
-}
-
-.employer-shell-nav {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.7rem;
-}
-
-.shell-nav-link {
-  min-width: 10rem;
-}
-
-.dashboard-grid,
-.employer-form-grid,
-.filter-grid,
-.detail-grid,
-.listing-meta-grid {
-  display: grid;
-  gap: 1rem;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-.charges-grid {
-  display: grid;
-  gap: 0.8rem;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-.charge-option {
-  display: flex;
-  align-items: center;
-  gap: 0.7rem;
-  min-height: 3rem;
-  padding: 0.85rem 1rem;
-  border-radius: 1rem;
-  border: 1px solid rgba(16, 35, 31, 0.1);
-  background: rgba(255, 255, 255, 0.76);
-}
-
-.listing-grid {
-  display: grid;
-  gap: 1rem;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-.listing-card-stack {
-  height: 100%;
-}
-
-.listing-note {
-  margin: 0;
-  padding: 0.9rem 1rem;
-  border-radius: 1rem;
-  background: rgba(79, 123, 69, 0.08);
-  color: #364332;
-}
-
-.dashboard-stat {
-  margin: 0;
-  font-family: var(--font-display);
-  font-size: clamp(1.8rem, 4vw, 2.6rem);
-  line-height: 1;
-}
-
-.detail-heading {
-  margin: 0;
-  font-size: 1rem;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--text-muted);
-}
-
-.status-filter {
-  min-height: 3rem;
-  padding: 0.75rem 0.95rem;
-  border-radius: 1rem;
-  border: 1px solid rgba(16, 35, 31, 0.1);
-  background: rgba(255, 255, 255, 0.9);
-}
-
-@media (min-width: 961px) {
-  .employer-shell-header-body {
-    grid-template-columns: minmax(0, 1.1fr) auto;
-  }
-}
-
-@media (max-width: 960px) {
-  .portal-panel-body,
-  .dashboard-grid,
-  .employer-form-grid,
-  .filter-grid,
-  .detail-grid,
-  .listing-meta-grid,
-  .listing-grid,
-  .charges-grid {
-    grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 640px) {
-  .employer-shell-nav,
-  .portal-actions {
-    width: 100%;
-  }
-
-  .shell-nav-link {
-    width: 100%;
+@media (max-width: 1023px) {
+  body {
+    background: linear-gradient(180deg, #fbf8f1 0%, #f7f1e5 100%);
   }
 }

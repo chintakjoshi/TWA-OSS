@@ -2,18 +2,27 @@ import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 
 import { useAuth } from '@shared/auth/AuthProvider'
-import { Alert, Badge, Card, CardBody } from '@shared/ui/primitives'
 
 import { getEmployerListing } from '../api/employerApi'
 import { ApplicantsPanel } from '../components/ApplicantsPanel'
 import { EmployerHeader } from '../components/EmployerHeader'
 import { ErrorState, LoadingState } from '../components/PageState'
 import {
-  formatChargeFlags,
+  DefinitionList,
+  InlineNotice,
+  PortalBadge,
+  PortalButton,
+  PortalPanel,
+  Surface,
+} from '../components/ui/EmployerUi'
+import { announceComingSoon } from '../lib/comingSoon'
+import {
+  formatChargeSummary,
   formatDate,
   formatDateTime,
   formatTransitAccessibility,
   formatTransitRequirement,
+  getStatusTone,
 } from '../lib/formatting'
 import type { JobListing } from '../types/employer'
 
@@ -52,118 +61,158 @@ export function EmployerListingDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="page-frame stack-md employer-shell-page">
+      <div className="min-h-screen bg-[#f7f1e5]">
         <EmployerHeader />
-        <LoadingState title="Loading listing details..." />
+        <main className="mx-auto max-w-[1180px] px-4 py-8 lg:px-8">
+          <LoadingState title="Loading listing details..." />
+        </main>
       </div>
     )
   }
 
   if (error || !listing) {
     return (
-      <div className="page-frame stack-md employer-shell-page">
+      <div className="min-h-screen bg-[#f7f1e5]">
         <EmployerHeader />
-        <ErrorState
-          title="Listing unavailable"
-          message={error ?? 'The listing could not be loaded.'}
-        />
+        <main className="mx-auto max-w-[1180px] px-4 py-8 lg:px-8">
+          <ErrorState
+            title="Listing unavailable"
+            message={error ?? 'The listing could not be loaded.'}
+          />
+        </main>
       </div>
     )
   }
 
-  const reviewTone =
-    listing.review_status === 'approved'
-      ? 'success'
-      : listing.review_status === 'rejected'
-        ? 'danger'
-        : 'warning'
-  const lifecycleTone =
-    listing.lifecycle_status === 'open' ? 'success' : 'neutral'
-  const chargeLabels = formatChargeFlags(listing.disqualifying_charges)
-
   return (
-    <div className="page-frame stack-md employer-shell-page">
+    <div className="min-h-screen bg-[#f7f1e5]">
       <EmployerHeader />
+      <main className="mx-auto max-w-[1180px] space-y-8 px-4 py-8 lg:px-8">
+        <PortalPanel>
+          <div className="space-y-6 px-6 py-6">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <div className="flex flex-wrap gap-2">
+                  <PortalBadge tone={getStatusTone(listing.review_status)}>
+                    {listing.review_status === 'approved'
+                      ? 'Approved'
+                      : listing.review_status === 'rejected'
+                        ? 'Changes requested'
+                        : 'Under review'}
+                  </PortalBadge>
+                  <PortalBadge tone={getStatusTone(listing.lifecycle_status)}>
+                    {listing.lifecycle_status === 'open' ? 'Live' : 'Closed'}
+                  </PortalBadge>
+                </div>
+                <h1 className="employer-display mt-4 text-[2.4rem] leading-[1.02] font-semibold text-slate-950">
+                  {listing.title}
+                </h1>
+                <p className="mt-3 text-base leading-8 text-slate-500">
+                  {listing.location_address ?? 'Address pending'}
+                  {listing.city ? `, ${listing.city}` : ''}
+                  {listing.zip ? ` ${listing.zip}` : ''}
+                </p>
+              </div>
 
-      <Card strong>
-        <CardBody className="stack-md">
-          <div
-            className="cluster"
-            style={{
-              justifyContent: 'space-between',
-              alignItems: 'flex-start',
-            }}
-          >
-            <div className="stack-sm">
-              <p className="portal-eyebrow">Listing Detail</p>
-              <h2 className="card-title">{listing.title}</h2>
-              <p className="card-copy">
-                {listing.location_address ?? 'Address not provided'}
-                {listing.city ? `, ${listing.city}` : ''}
-                {listing.zip ? ` ${listing.zip}` : ''}
-              </p>
+              <div className="flex flex-wrap gap-3">
+                <Link to="/my-listings">
+                  <PortalButton variant="secondary">Back to listings</PortalButton>
+                </Link>
+                <PortalButton
+                  variant="ghost"
+                  onClick={() => announceComingSoon('Edit and resubmit')}
+                >
+                  Edit &amp; Resubmit
+                </PortalButton>
+              </div>
             </div>
-            <div className="cluster">
-              <Badge tone={reviewTone}>{listing.review_status}</Badge>
-              <Badge tone={lifecycleTone}>{listing.lifecycle_status}</Badge>
-            </div>
+
+            {listing.review_note ? (
+              <InlineNotice
+                tone={listing.review_status === 'rejected' ? 'danger' : 'info'}
+              >
+                {listing.review_note}
+              </InlineNotice>
+            ) : null}
           </div>
+        </PortalPanel>
 
-          {listing.review_note ? (
-            <Alert
-              tone={listing.review_status === 'rejected' ? 'danger' : 'info'}
-            >
-              <p>{listing.review_note}</p>
-            </Alert>
-          ) : null}
+        <div className="grid gap-6 xl:grid-cols-[minmax(0,1.15fr)_360px]">
+          <Surface>
+            <h2 className="employer-display text-[1.7rem] font-semibold text-slate-950">
+              Listing overview
+            </h2>
+            <p className="mt-4 text-sm leading-7 text-slate-600">
+              {listing.description ?? 'No listing description has been added yet.'}
+            </p>
 
-          <div className="detail-grid">
-            <div className="stack-sm">
-              <h3 className="detail-heading">Description</h3>
-              <p className="card-copy">
-                {listing.description ?? 'No description added yet.'}
-              </p>
-            </div>
-            <div className="stack-sm">
-              <h3 className="detail-heading">Transit</h3>
-              <p className="card-copy">
-                {formatTransitRequirement(listing.transit_required)}
-              </p>
-              <p className="card-copy">
-                {formatTransitAccessibility(listing.transit_accessible)}
-              </p>
-            </div>
-            <div className="stack-sm">
-              <h3 className="detail-heading">Disqualifying charges</h3>
-              <p className="card-copy">
-                {chargeLabels.length > 0
-                  ? chargeLabels.join(', ')
-                  : 'No disqualifying charge categories configured.'}
-              </p>
-            </div>
-            <div className="stack-sm">
-              <h3 className="detail-heading">Dates</h3>
-              <p className="card-copy">
-                Submitted: {formatDate(listing.created_at)}
-              </p>
-              <p className="card-copy">
-                Last updated: {formatDateTime(listing.updated_at)}
-              </p>
-            </div>
-          </div>
+            <DefinitionList
+              className="mt-6"
+              items={[
+                {
+                  label: 'Transit requirement',
+                  value: formatTransitRequirement(listing.transit_required),
+                },
+                {
+                  label: 'Transit accessibility',
+                  value: formatTransitAccessibility(listing.transit_accessible),
+                },
+                {
+                  label: 'Disqualifying charges',
+                  value: formatChargeSummary(listing.disqualifying_charges),
+                },
+                {
+                  label: 'Submitted',
+                  value: formatDate(listing.created_at),
+                },
+                {
+                  label: 'Last updated',
+                  value: formatDateTime(listing.updated_at),
+                },
+                {
+                  label: 'Lifecycle',
+                  value: listing.lifecycle_status === 'open' ? 'Open' : 'Closed',
+                },
+              ]}
+            />
+          </Surface>
 
-          <div className="inline-actions">
-            <Link
-              className="button button-secondary"
-              to={`/listings/${listing.id}/applicants`}
-            >
-              Open applicants screen
-            </Link>
-          </div>
-        </CardBody>
-      </Card>
+          <Surface>
+            <h2 className="employer-display text-[1.5rem] font-semibold text-slate-950">
+              Quick actions
+            </h2>
+            <div className="mt-5 space-y-3">
+              <PortalButton
+                className="w-full"
+                variant="secondary"
+                onClick={() => announceComingSoon('Close listing')}
+              >
+                Close listing
+              </PortalButton>
+              <PortalButton
+                className="w-full"
+                variant="secondary"
+                onClick={() => announceComingSoon('Reactivate listing')}
+              >
+                Reactivate listing
+              </PortalButton>
+              <PortalButton
+                className="w-full"
+                variant="ghost"
+                onClick={() => announceComingSoon('Export listing')}
+              >
+                Export listing
+              </PortalButton>
+            </div>
+          </Surface>
+        </div>
 
-      <ApplicantsPanel listingId={listing.id} />
+        <ApplicantsPanel
+          description="Applicant visibility depends on the current TWA notification configuration for employers."
+          listingId={listing.id}
+          title="Applicants for this listing"
+        />
+      </main>
     </div>
   )
 }

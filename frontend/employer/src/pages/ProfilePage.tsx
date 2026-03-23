@@ -1,16 +1,22 @@
 import { useEffect, useState } from 'react'
 
 import { useAuth } from '@shared/auth/AuthProvider'
-import { Alert, Badge, Card, CardBody } from '@shared/ui/primitives'
 
 import {
   getMyEmployerProfile,
   updateMyEmployerProfile,
 } from '../api/employerApi'
 import { EmployerHeader } from '../components/EmployerHeader'
-import { ErrorState, LoadingState } from '../components/PageState'
 import { EmployerProfileForm } from '../components/EmployerProfileForm'
-import { formatDateTime } from '../lib/formatting'
+import { ErrorState, LoadingState } from '../components/PageState'
+import {
+  DefinitionList,
+  InlineNotice,
+  PortalBadge,
+  PortalPanel,
+  Surface,
+} from '../components/ui/EmployerUi'
+import { formatDateTime, getStatusTone } from '../lib/formatting'
 import type { EmployerProfile } from '../types/employer'
 
 export function EmployerProfilePage() {
@@ -53,9 +59,7 @@ export function EmployerProfilePage() {
       const response = await updateMyEmployerProfile(auth.requestTwa, values)
       setProfile(response.employer)
       await auth.reload()
-      setSuccess(
-        'Employer profile saved. Staff can review the latest details from here.'
-      )
+      setSuccess('Employer profile saved. Staff can review the latest details from here.')
     } catch (nextError) {
       setError(
         nextError instanceof Error
@@ -69,71 +73,103 @@ export function EmployerProfilePage() {
 
   const reviewStatus =
     profile?.review_status ?? auth.authMe?.employer_review_status ?? 'pending'
-  const reviewTone =
-    reviewStatus === 'approved'
-      ? 'success'
-      : reviewStatus === 'rejected'
-        ? 'danger'
-        : 'warning'
 
   return (
-    <div className="page-frame stack-md employer-shell-page">
+    <div className="min-h-screen bg-[#f7f1e5]">
       <EmployerHeader />
-      <Card strong>
-        <CardBody className="stack-md">
-          <div
-            className="cluster"
-            style={{ justifyContent: 'space-between', alignItems: 'center' }}
-          >
-            <div className="stack-sm">
-              <p className="portal-eyebrow">Employer Profile</p>
-              <h2 className="card-title">
-                Keep the organization record ready for staff review.
-              </h2>
-              <p className="card-copy">
-                This profile is the source of truth for employer approval and
-                future reassessment.
-              </p>
+      <main className="mx-auto max-w-[1180px] space-y-8 px-4 py-8 lg:px-8">
+        {isLoading ? <LoadingState title="Loading employer profile..." /> : null}
+        {!isLoading && error && !profile ? (
+          <ErrorState title="Profile unavailable" message={error} />
+        ) : null}
+
+        {!isLoading && (!error || profile) ? (
+          <>
+            <PortalPanel>
+              <div className="space-y-6 px-6 py-6">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                  <div>
+                    <PortalBadge tone={getStatusTone(reviewStatus)}>
+                      {reviewStatus === 'approved'
+                        ? 'Approved profile'
+                        : reviewStatus === 'rejected'
+                          ? 'Not approved'
+                          : 'Pending review'}
+                    </PortalBadge>
+                    <h1 className="employer-display mt-4 text-[2.4rem] leading-[1.02] font-semibold text-slate-950">
+                      Employer profile
+                    </h1>
+                    <p className="mt-3 max-w-[760px] text-base leading-8 text-slate-500">
+                      Keep the organization record current so TWA staff can review,
+                      approve, or reassess the employer account from the same source
+                      of truth.
+                    </p>
+                  </div>
+                </div>
+
+                {success ? <InlineNotice tone="success">{success}</InlineNotice> : null}
+                {error ? <InlineNotice tone="danger">{error}</InlineNotice> : null}
+                {profile?.review_note ? (
+                  <InlineNotice tone={reviewStatus === 'rejected' ? 'danger' : 'info'}>
+                    {profile.review_note}
+                  </InlineNotice>
+                ) : null}
+              </div>
+            </PortalPanel>
+
+            <div className="grid gap-6 xl:grid-cols-[minmax(0,1.3fr)_360px]">
+              <Surface>
+                <EmployerProfileForm
+                  isSubmitting={isSaving}
+                  onSubmit={handleSubmit}
+                  profile={profile}
+                />
+              </Surface>
+
+              <div className="space-y-6">
+                <Surface>
+                  <h2 className="employer-display text-[1.5rem] font-semibold text-slate-950">
+                    Account review
+                  </h2>
+                  <DefinitionList
+                    className="mt-5 md:grid-cols-1"
+                    items={[
+                      {
+                        label: 'Current status',
+                        value:
+                          reviewStatus === 'approved'
+                            ? 'Approved and able to submit listings'
+                            : reviewStatus === 'rejected'
+                              ? 'Not approved by TWA staff'
+                              : 'Pending review by TWA staff',
+                      },
+                      {
+                        label: 'Last reviewed',
+                        value: formatDateTime(profile?.reviewed_at),
+                      },
+                      {
+                        label: 'Profile updated',
+                        value: formatDateTime(profile?.updated_at),
+                      },
+                    ]}
+                  />
+                </Surface>
+
+                <Surface>
+                  <h2 className="employer-display text-[1.5rem] font-semibold text-slate-950">
+                    Portal placeholders
+                  </h2>
+                  <p className="mt-3 text-sm leading-7 text-slate-500">
+                    The richer organization metadata in this screen is intentionally
+                    frontend-only for now. It mirrors the planned employer experience
+                    without inventing unsupported backend behavior.
+                  </p>
+                </Surface>
+              </div>
             </div>
-            <Badge tone={reviewTone}>{reviewStatus}</Badge>
-          </div>
-
-          {success ? (
-            <Alert tone="success">
-              <p>{success}</p>
-            </Alert>
-          ) : null}
-          {profile?.review_note ? (
-            <Alert tone={reviewStatus === 'rejected' ? 'danger' : 'info'}>
-              <p>{profile.review_note}</p>
-            </Alert>
-          ) : null}
-          {profile?.reviewed_at ? (
-            <p className="card-copy">
-              Last reviewed: {formatDateTime(profile.reviewed_at)}
-            </p>
-          ) : null}
-          {error ? (
-            <Alert tone="danger">
-              <p>{error}</p>
-            </Alert>
-          ) : null}
-
-          {isLoading ? (
-            <LoadingState title="Loading employer profile..." />
-          ) : null}
-          {!isLoading && error && !profile ? (
-            <ErrorState title="Profile unavailable" message={error} />
-          ) : null}
-          {!isLoading && (!error || profile) ? (
-            <EmployerProfileForm
-              isSubmitting={isSaving}
-              onSubmit={handleSubmit}
-              profile={profile}
-            />
-          ) : null}
-        </CardBody>
-      </Card>
+          </>
+        ) : null}
+      </main>
     </div>
   )
 }
