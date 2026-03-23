@@ -6,12 +6,13 @@ import type {
   JobseekerProfile,
   ApplicationListItem,
   ApplicationPayload,
+  JobListFilters,
 } from '../types/jobseeker'
 
 type RequestTwa = <T>(path: string, init?: RequestInit) => Promise<T>
 
 function buildQuery(
-  params: Record<string, string | number | undefined | null>
+  params: Record<string, string | number | boolean | undefined | null>
 ): string {
   const search = new URLSearchParams()
   Object.entries(params).forEach(([key, value]) => {
@@ -50,9 +51,28 @@ export function updateMyJobseekerProfile(
   })
 }
 
-export function listVisibleJobs(requestTwa: RequestTwa, page = 1) {
+export function listVisibleJobs(
+  requestTwa: RequestTwa,
+  filters: JobListFilters = {}
+) {
+  const {
+    page = 1,
+    search,
+    city,
+    transit_required,
+    is_eligible,
+  } = filters
   return requestTwa<PaginatedResponse<JobListItem>>(
-    `/api/v1/jobs${buildQuery({ page, page_size: 6, sort: 'created_at', order: 'desc' })}`
+    `/api/v1/jobs${buildQuery({
+      page,
+      page_size: 6,
+      sort: 'created_at',
+      order: 'desc',
+      search,
+      city,
+      transit_required,
+      is_eligible,
+    })}`
   )
 }
 

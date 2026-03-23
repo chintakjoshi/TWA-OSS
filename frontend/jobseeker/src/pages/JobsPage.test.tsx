@@ -105,7 +105,7 @@ test('job board renders eligible and ineligible listings with their status label
   expect(await screen.findByText('Warehouse Associate')).toBeInTheDocument()
   expect(screen.getByText('Eligible')).toBeInTheDocument()
   expect(screen.getByText('Transit mismatch')).toBeInTheDocument()
-  expect(screen.getByText('Own car required')).toBeInTheDocument()
+  expect(screen.getAllByText('Own car required').length).toBeGreaterThan(0)
   expect(spies.requestTwa).toHaveBeenCalledWith(
     expect.stringContaining('/api/v1/jobs?page=1'),
     expect.any(Object),
