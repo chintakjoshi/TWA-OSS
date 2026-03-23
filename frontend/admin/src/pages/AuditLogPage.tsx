@@ -1,29 +1,63 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { useAuth } from '@shared/auth/AuthProvider'
-import {
-  Alert,
-  Button,
-  Card,
-  CardBody,
-  DataTable,
-  Field,
-} from '@shared/ui/primitives'
 
 import { listAuditLog } from '../api/adminApi'
-import { AdminHeader } from '../components/AdminHeader'
+import { AdminWorkspaceLayout } from '../components/layout/AdminWorkspaceLayout'
+import {
+  AdminButton,
+  AdminPanel,
+  InlineNotice,
+  PanelBody,
+  PanelHeader,
+  StatusBadge,
+  TableCell,
+  TableHeadRow,
+  TableWrap,
+  DataTable,
+  inputClassName,
+} from '../components/ui/AdminUi'
 import { EmptyState, ErrorState, LoadingState } from '../components/PageState'
-import { formatDateTime } from '../lib/formatting'
+import {
+  describeAuditAction,
+  formatDateTime,
+  formatStatusLabel,
+} from '../lib/formatting'
 import type { AuditLogEntry } from '../types/admin'
+
+function describeAuditDetails(entry: AuditLogEntry) {
+  if (entry.entity_type === 'system') {
+    return entry.action === 'gtfs_feed_refreshed'
+      ? 'Metro STL transit feed refreshed'
+      : 'Background system event'
+  }
+
+  if (
+    entry.new_value &&
+    typeof entry.new_value === 'object' &&
+    'review_status' in entry.new_value
+  ) {
+    return `Review status changed to ${String(entry.new_value.review_status)}`
+  }
+
+  if (
+    entry.new_value &&
+    typeof entry.new_value === 'object' &&
+    'status' in entry.new_value
+  ) {
+    return `Status changed to ${String(entry.new_value.status)}`
+  }
+
+  return `${formatStatusLabel(entry.entity_type)} ${entry.entity_id ? entry.entity_id.slice(0, 8) : ''}`.trim()
+}
 
 export function AdminAuditLogPage() {
   const auth = useAuth()
   const [page, setPage] = useState(1)
-  const [actorId, setActorId] = useState('')
-  const [entityType, setEntityType] = useState('')
-  const [action, setAction] = useState('')
+  const [search, setSearch] = useState('')
+  const [actionFilter, setActionFilter] = useState('')
+  const [actorFilter, setActorFilter] = useState('')
   const [dateFrom, setDateFrom] = useState('')
-  const [dateTo, setDateTo] = useState('')
   const [items, setItems] = useState<AuditLogEntry[]>([])
   const [totalPages, setTotalPages] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
@@ -35,11 +69,10 @@ export function AdminAuditLogPage() {
     try {
       const response = await listAuditLog(auth.requestTwa, {
         page,
-        actorId,
-        entityType,
-        action,
-        dateFrom,
-        dateTo,
+        pageSize: 15,
+        action: actionFilter,
+        actorId: actorFilter,
+        dateFrom: dateFrom ? new Date(dateFrom).toISOString() : '',
       })
       setItems(response.items)
       setTotalPages(response.meta.total_pages)
@@ -52,156 +85,158 @@ export function AdminAuditLogPage() {
     } finally {
       setIsLoading(false)
     }
-  }, [auth.requestTwa, page, actorId, entityType, action, dateFrom, dateTo])
+  }, [actionFilter, actorFilter, auth.requestTwa, dateFrom, page])
 
   useEffect(() => {
     void loadData()
   }, [loadData])
 
-  const rows = useMemo(
-    () =>
-      items.map((item) => [
+  const visibleItems = useMemo(() => {
+    const query = search.trim().toLowerCase()
+    if (!query) return items
+    return items.filter((item) =>
+      [
         item.action,
         item.entity_type,
-        item.entity_id ?? 'None',
         item.actor_id ?? 'system',
-        formatDateTime(item.timestamp),
-      ]),
-    [items]
-  )
+        describeAuditAction(item.action),
+        describeAuditDetails(item),
+      ].some((value) => value.toLowerCase().includes(query))
+    )
+  }, [items, search])
+
+  const actionOptions = [
+    { value: '', label: 'All Actions' },
+    { value: 'employer.approved', label: 'Employer approved' },
+    { value: 'employer.rejected', label: 'Employer rejected' },
+    { value: 'listing.approved', label: 'Listing approved' },
+    { value: 'listing.rejected', label: 'Listing rejected' },
+    { value: 'application.submitted', label: 'Application submitted' },
+    { value: 'application.hired', label: 'Application hired' },
+    { value: 'admin.jobseeker_updated', label: 'Jobseeker updated' },
+    { value: 'gtfs_feed_refreshed', label: 'GTFS refreshed' },
+  ]
 
   return (
-    <div className="page-frame stack-md admin-shell-page">
-      <AdminHeader />
-      <Card strong>
-        <CardBody className="stack-md">
-          <div className="stack-sm">
-            <p className="portal-eyebrow">Audit Log</p>
-            <h2 className="card-title">
-              Inspect every important write action.
-            </h2>
-            <p className="card-copy">
-              System-generated actions intentionally appear with a null actor
-              id.
-            </p>
-          </div>
-          <div className="filter-grid">
-            <Field label="Actor id">
-              <input
-                value={actorId}
-                onChange={(event) => {
-                  setPage(1)
-                  setActorId(event.target.value)
-                }}
-              />
-            </Field>
-            <Field label="Entity type">
-              <input
-                value={entityType}
-                onChange={(event) => {
-                  setPage(1)
-                  setEntityType(event.target.value)
-                }}
-                placeholder="employer, job_listing"
-              />
-            </Field>
-            <Field label="Action">
-              <input
-                value={action}
-                onChange={(event) => {
-                  setPage(1)
-                  setAction(event.target.value)
-                }}
-                placeholder="admin.listing_reviewed"
-              />
-            </Field>
-            <Field label="Date from">
-              <input
-                type="datetime-local"
-                value={dateFrom}
-                onChange={(event) => {
-                  setPage(1)
-                  setDateFrom(event.target.value)
-                }}
-              />
-            </Field>
-            <Field label="Date to">
-              <input
-                type="datetime-local"
-                value={dateTo}
-                onChange={(event) => {
-                  setPage(1)
-                  setDateTo(event.target.value)
-                }}
-              />
-            </Field>
-          </div>
-          <div className="inline-actions">
-            <Button
-              tone="secondary"
-              onClick={() => {
-                setPage(1)
-                setActorId('')
-                setEntityType('')
-                setAction('')
-                setDateFrom('')
-                setDateTo('')
-              }}
-            >
-              Clear filters
-            </Button>
-          </div>
-          {error ? (
-            <Alert tone="danger">
-              <p>{error}</p>
-            </Alert>
-          ) : null}
-        </CardBody>
-      </Card>
+    <AdminWorkspaceLayout title="Audit Log">
+      <div className="space-y-6">
+        {error ? <InlineNotice tone="danger">{error}</InlineNotice> : null}
 
-      {isLoading ? <LoadingState title="Loading audit entries..." /> : null}
-      {!isLoading && error && items.length === 0 ? (
-        <ErrorState title="Audit log unavailable" message={error} />
-      ) : null}
-      {!isLoading && items.length === 0 ? (
-        <EmptyState
-          title="No audit entries found"
-          message="Try adjusting the current filters."
-        />
-      ) : null}
-      {!isLoading && items.length > 0 ? (
-        <Card strong>
-          <CardBody className="stack-md">
-            <DataTable
-              columns={[
-                'Action',
-                'Entity type',
-                'Entity id',
-                'Actor',
-                'Timestamp',
-              ]}
-              rows={rows}
+        {isLoading ? <LoadingState title="Loading audit log..." /> : null}
+        {!isLoading && error && items.length === 0 ? (
+          <ErrorState title="Audit log unavailable" message={error} />
+        ) : null}
+
+        {!isLoading ? (
+          <AdminPanel>
+            <PanelHeader
+              action={
+                <div className="grid gap-3 xl:grid-cols-[200px_180px_220px_180px]">
+                  <input
+                    className={inputClassName}
+                    placeholder="Search actions, ids..."
+                    value={search}
+                    onChange={(event) => setSearch(event.target.value)}
+                  />
+                  <select
+                    className={inputClassName}
+                    value={actionFilter}
+                    onChange={(event) => {
+                      setPage(1)
+                      setActionFilter(event.target.value)
+                    }}
+                  >
+                    {actionOptions.map((option) => (
+                      <option key={option.value || 'all'} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                  <input
+                    className={inputClassName}
+                    placeholder="Actor id or blank for all"
+                    value={actorFilter}
+                    onChange={(event) => {
+                      setPage(1)
+                      setActorFilter(event.target.value)
+                    }}
+                  />
+                  <input
+                    className={inputClassName}
+                    type="date"
+                    value={dateFrom}
+                    onChange={(event) => {
+                      setPage(1)
+                      setDateFrom(event.target.value)
+                    }}
+                  />
+                </div>
+              }
+              title="Audit Log"
             />
-            {totalPages > 1 ? (
-              <div className="inline-actions">
-                <Button
-                  disabled={page <= 1}
-                  tone="secondary"
-                  onClick={() => setPage((current) => current - 1)}
-                >
-                  Previous
-                </Button>
-                <Button
-                  disabled={page >= totalPages}
-                  onClick={() => setPage((current) => current + 1)}
-                >
-                  Next
-                </Button>
-              </div>
-            ) : null}
-          </CardBody>
-        </Card>
-      ) : null}
-    </div>
+            <PanelBody className="p-0">
+              {visibleItems.length === 0 ? (
+                <div className="px-6 py-8">
+                  <EmptyState
+                    title="No audit entries found"
+                    message="Try broadening the current filters."
+                  />
+                </div>
+              ) : (
+                <>
+                  <TableWrap>
+                    <DataTable>
+                      <thead>
+                        <TableHeadRow>
+                          <TableCell header>Timestamp</TableCell>
+                          <TableCell header>Actor</TableCell>
+                          <TableCell header>Action</TableCell>
+                          <TableCell header>Entity Type</TableCell>
+                          <TableCell header>Description</TableCell>
+                        </TableHeadRow>
+                      </thead>
+                      <tbody>
+                        {visibleItems.map((item) => (
+                          <tr key={item.id}>
+                            <TableCell>{formatDateTime(item.timestamp)}</TableCell>
+                            <TableCell>{item.actor_id ?? 'system'}</TableCell>
+                            <TableCell>
+                              <StatusBadge tone="info">
+                                {describeAuditAction(item.action)}
+                              </StatusBadge>
+                            </TableCell>
+                            <TableCell>{formatStatusLabel(item.entity_type)}</TableCell>
+                            <TableCell>{describeAuditDetails(item)}</TableCell>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </DataTable>
+                  </TableWrap>
+
+                  {totalPages > 1 ? (
+                    <div className="flex flex-wrap gap-3 px-6 py-5">
+                      <AdminButton
+                        disabled={page <= 1}
+                        variant="secondary"
+                        onClick={() => setPage((current) => current - 1)}
+                      >
+                        Previous
+                      </AdminButton>
+                      <AdminButton
+                        disabled={page >= totalPages}
+                        variant="secondary"
+                        onClick={() => setPage((current) => current + 1)}
+                      >
+                        Next
+                      </AdminButton>
+                    </div>
+                  ) : null}
+                </>
+              )}
+            </PanelBody>
+          </AdminPanel>
+        ) : null}
+      </div>
+    </AdminWorkspaceLayout>
   )
 }

@@ -6,6 +6,7 @@ import { expect, test } from 'vitest'
 import { AuthProvider } from '@shared/auth/AuthProvider'
 
 import { buildAuthMe, createMockAuthClient } from '../../../tests/utils/auth'
+import { AdminShellProvider } from '../components/layout/AdminShellProvider'
 import type { EmployerProfile } from '../types/admin'
 import { AdminEmployersPage } from './EmployersPage'
 
@@ -61,7 +62,9 @@ test('staff can review an employer from the queue and persist the review action'
   render(
     <MemoryRouter>
       <AuthProvider client={client}>
-        <AdminEmployersPage />
+        <AdminShellProvider>
+          <AdminEmployersPage />
+        </AdminShellProvider>
       </AuthProvider>
     </MemoryRouter>
   )

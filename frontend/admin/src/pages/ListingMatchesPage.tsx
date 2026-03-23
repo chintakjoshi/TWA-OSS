@@ -3,8 +3,8 @@ import { useEffect, useMemo, useState } from 'react'
 import { useAuth } from '@shared/auth/AuthProvider'
 
 import {
-  getMatchesForJobseeker,
-  listJobseekers,
+  getMatchesForListing,
+  listListings,
 } from '../api/adminApi'
 import { AdminWorkspaceLayout } from '../components/layout/AdminWorkspaceLayout'
 import {
@@ -21,13 +21,13 @@ import {
 } from '../components/ui/AdminUi'
 import { EmptyState, ErrorState, LoadingState } from '../components/PageState'
 import { describeMatchReason } from '../lib/formatting'
-import type { JobseekerListItem, ListingMatchItem } from '../types/admin'
+import type { JobListing, JobseekerMatchItem } from '../types/admin'
 
-export function AdminMatchesPage() {
+export function AdminListingMatchesPage() {
   const auth = useAuth()
-  const [jobseekers, setJobseekers] = useState<JobseekerListItem[]>([])
-  const [selectedJobseekerId, setSelectedJobseekerId] = useState('')
-  const [matches, setMatches] = useState<ListingMatchItem[]>([])
+  const [listings, setListings] = useState<JobListing[]>([])
+  const [selectedListingId, setSelectedListingId] = useState('')
+  const [matches, setMatches] = useState<JobseekerMatchItem[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isMatchesLoading, setIsMatchesLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -36,11 +36,11 @@ export function AdminMatchesPage() {
     let active = true
     setIsLoading(true)
     setError(null)
-    void listJobseekers(auth.requestTwa, { page: 1, pageSize: 100 })
+    void listListings(auth.requestTwa, { page: 1, pageSize: 100 })
       .then((response) => {
         if (!active) return
-        setJobseekers(response.items)
-        if (response.items[0]) setSelectedJobseekerId(response.items[0].id)
+        setListings(response.items)
+        if (response.items[0]) setSelectedListingId(response.items[0].id)
       })
       .catch((nextError: Error) => {
         if (!active) return
@@ -56,10 +56,10 @@ export function AdminMatchesPage() {
   }, [auth.requestTwa])
 
   useEffect(() => {
-    if (!selectedJobseekerId) return
+    if (!selectedListingId) return
     let active = true
     setIsMatchesLoading(true)
-    void getMatchesForJobseeker(auth.requestTwa, selectedJobseekerId)
+    void getMatchesForListing(auth.requestTwa, selectedListingId)
       .then((response) => {
         if (!active) return
         setMatches(response.items)
@@ -75,37 +75,36 @@ export function AdminMatchesPage() {
     return () => {
       active = false
     }
-  }, [auth.requestTwa, selectedJobseekerId])
+  }, [auth.requestTwa, selectedListingId])
 
-  const selectedJobseeker = useMemo(
-    () => jobseekers.find((jobseeker) => jobseeker.id === selectedJobseekerId) ?? null,
-    [jobseekers, selectedJobseekerId]
+  const selectedListing = useMemo(
+    () => listings.find((listing) => listing.id === selectedListingId) ?? null,
+    [listings, selectedListingId]
   )
 
   return (
-    <AdminWorkspaceLayout title="Match by Jobseeker">
+    <AdminWorkspaceLayout title="Match by Listing">
       <div className="space-y-6">
         {error ? <InlineNotice tone="danger">{error}</InlineNotice> : null}
 
-        {isLoading ? <LoadingState title="Loading jobseekers..." /> : null}
-        {!isLoading && error && jobseekers.length === 0 ? (
+        {isLoading ? <LoadingState title="Loading listings..." /> : null}
+        {!isLoading && error && listings.length === 0 ? (
           <ErrorState title="Match inputs unavailable" message={error} />
         ) : null}
 
         {!isLoading ? (
           <>
             <AdminPanel>
-              <PanelHeader title="Select Jobseeker" />
+              <PanelHeader title="Select Job Listing" />
               <PanelBody>
                 <select
                   className={inputClassName}
-                  value={selectedJobseekerId}
-                  onChange={(event) => setSelectedJobseekerId(event.target.value)}
+                  value={selectedListingId}
+                  onChange={(event) => setSelectedListingId(event.target.value)}
                 >
-                  {jobseekers.map((jobseeker) => (
-                    <option key={jobseeker.id} value={jobseeker.id}>
-                      {jobseeker.full_name ?? jobseeker.id}
-                      {jobseeker.city ? ` (${jobseeker.city})` : ''}
+                  {listings.map((listing) => (
+                    <option key={listing.id} value={listing.id}>
+                      {listing.title} - {listing.employer?.org_name ?? 'Employer'}
                     </option>
                   ))}
                 </select>
@@ -114,19 +113,19 @@ export function AdminMatchesPage() {
 
             <AdminPanel>
               <PanelHeader
-                subtitle="Eligibility is based on the current matching engine results."
-                title={`Matching Results for ${selectedJobseeker?.full_name ?? 'Selected Jobseeker'}`}
+                subtitle="Candidate rows reflect the backend eligibility response."
+                title={`Candidate Matches for ${selectedListing?.title ?? 'Selected Listing'}`}
               />
               <PanelBody className="p-0">
                 {isMatchesLoading ? (
                   <div className="px-6 py-8">
-                    <LoadingState title="Running job match..." />
+                    <LoadingState title="Running listing match..." />
                   </div>
                 ) : matches.length === 0 ? (
                   <div className="px-6 py-8">
                     <EmptyState
                       title="No results yet"
-                      message="Choose a jobseeker to load matching job listings."
+                      message="Choose a listing to load matching candidates."
                     />
                   </div>
                 ) : (
@@ -134,19 +133,19 @@ export function AdminMatchesPage() {
                     <DataTable>
                       <thead>
                         <TableHeadRow>
-                          <TableCell header>Title</TableCell>
-                          <TableCell header>Location</TableCell>
+                          <TableCell header>Jobseeker</TableCell>
+                          <TableCell header>City</TableCell>
                           <TableCell header>Eligibility</TableCell>
-                          <TableCell header>Notes</TableCell>
+                          <TableCell header>Reasons</TableCell>
                         </TableHeadRow>
                       </thead>
                       <tbody>
                         {matches.map((item) => (
-                          <tr key={item.job.id}>
+                          <tr key={item.jobseeker.id}>
                             <TableCell className="font-semibold text-slate-950">
-                              {item.job.title}
+                              {item.jobseeker.full_name ?? item.jobseeker.id}
                             </TableCell>
-                            <TableCell>{item.job.city ?? 'Unknown'}</TableCell>
+                            <TableCell>{item.jobseeker.city ?? 'Unknown'}</TableCell>
                             <TableCell>
                               <StatusBadge tone={item.is_eligible ? 'success' : 'danger'}>
                                 {item.is_eligible ? 'Eligible' : 'Ineligible'}
@@ -157,7 +156,6 @@ export function AdminMatchesPage() {
                                 ? 'Matches current criteria.'
                                 : item.ineligibility_reasons
                                     .map(describeMatchReason)
-                                    .concat(item.ineligibility_tag ? [item.ineligibility_tag] : [])
                                     .join(' · ')}
                             </TableCell>
                           </tr>

@@ -8,12 +8,16 @@ import { AdminApplicationsPage } from '../pages/ApplicationsPage'
 import { AdminAuditLogPage } from '../pages/AuditLogPage'
 import { AdminAuthPage } from '../pages/AuthPage'
 import { AdminDashboardPage } from '../pages/DashboardPage'
+import { AdminEmployersDirectoryPage } from '../pages/EmployersDirectoryPage'
 import { AdminEmployersPage } from '../pages/EmployersPage'
 import { AdminJobseekersPage } from '../pages/JobseekersPage'
 import { AdminLandingPage } from '../pages/LandingPage'
+import { AdminListingMatchesPage } from '../pages/ListingMatchesPage'
+import { AdminListingQueuePage } from '../pages/ListingQueuePage'
 import { AdminListingsPage } from '../pages/ListingsPage'
 import { AdminMatchesPage } from '../pages/MatchesPage'
 import { AdminNotificationsPage } from '../pages/NotificationsPage'
+import { AdminShellProvider } from '../components/layout/AdminShellProvider'
 
 function AdminRoutes() {
   const auth = useAuth()
@@ -41,7 +45,7 @@ function AdminRoutes() {
         }
       />
       <Route
-        path="/employers"
+        path="/employers/queue"
         element={
           <RequireRole role="staff">
             <AdminEmployersPage />
@@ -57,6 +61,22 @@ function AdminRoutes() {
         }
       />
       <Route
+        path="/employers"
+        element={
+          <RequireRole role="staff">
+            <AdminEmployersDirectoryPage />
+          </RequireRole>
+        }
+      />
+      <Route
+        path="/listings/queue"
+        element={
+          <RequireRole role="staff">
+            <AdminListingQueuePage />
+          </RequireRole>
+        }
+      />
+      <Route
         path="/jobseekers"
         element={
           <RequireRole role="staff">
@@ -65,10 +85,18 @@ function AdminRoutes() {
         }
       />
       <Route
-        path="/matches"
+        path="/matches/jobseekers"
         element={
           <RequireRole role="staff">
             <AdminMatchesPage />
+          </RequireRole>
+        }
+      />
+      <Route
+        path="/matches/listings"
+        element={
+          <RequireRole role="staff">
+            <AdminListingMatchesPage />
           </RequireRole>
         }
       />
@@ -96,6 +124,7 @@ function AdminRoutes() {
           </RequireRole>
         }
       />
+      <Route path="/matches" element={<Navigate replace to="/matches/jobseekers" />} />
       <Route path="/workspace" element={<Navigate replace to="/dashboard" />} />
       <Route path="*" element={<Navigate replace to="/" />} />
     </Routes>
@@ -105,7 +134,9 @@ function AdminRoutes() {
 export function AdminPortalApp() {
   return (
     <AuthProvider client={adminAuthClient}>
-      <AdminRoutes />
+      <AdminShellProvider>
+        <AdminRoutes />
+      </AdminShellProvider>
     </AuthProvider>
   )
 }

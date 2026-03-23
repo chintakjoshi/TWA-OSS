@@ -1,5 +1,6 @@
 import path from 'node:path'
 
+import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
 import { defineConfig, loadEnv, searchForWorkspaceRoot } from 'vite'
 
@@ -9,7 +10,7 @@ export default defineConfig(({ mode }) => {
   const appNodeModules = path.resolve(__dirname, 'node_modules')
 
   return {
-    plugins: [react()],
+    plugins: [tailwindcss(), react()],
     resolve: {
       alias: {
         '@shared': path.resolve(__dirname, '../../shared/frontend'),
