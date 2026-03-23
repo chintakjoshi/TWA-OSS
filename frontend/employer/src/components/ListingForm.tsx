@@ -207,9 +207,7 @@ export function ListingForm({
               className="sr-only"
               name="transit_required"
               type="radio"
-              onChange={() =>
-                setValues({ ...values, transit_required: 'any' })
-              }
+              onChange={() => setValues({ ...values, transit_required: 'any' })}
             />
             <p className="font-semibold text-slate-950">Transit accessible</p>
             <p className="mt-1 text-sm text-slate-500">

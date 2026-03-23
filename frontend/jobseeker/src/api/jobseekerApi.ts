@@ -55,13 +55,7 @@ export function listVisibleJobs(
   requestTwa: RequestTwa,
   filters: JobListFilters = {}
 ) {
-  const {
-    page = 1,
-    search,
-    city,
-    transit_required,
-    is_eligible,
-  } = filters
+  const { page = 1, search, city, transit_required, is_eligible } = filters
   return requestTwa<PaginatedResponse<JobListItem>>(
     `/api/v1/jobs${buildQuery({
       page,

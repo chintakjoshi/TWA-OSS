@@ -17,7 +17,13 @@ export type AdminNavItem = {
   label: string
   href: string
   icon: LucideIcon
-  section: 'overview' | 'people' | 'employers' | 'listings' | 'tracking' | 'settings'
+  section:
+    | 'overview'
+    | 'people'
+    | 'employers'
+    | 'listings'
+    | 'tracking'
+    | 'settings'
   badgeKey?: 'pending_employers' | 'pending_listings' | 'open_applications'
   activePrefixes?: string[]
 }

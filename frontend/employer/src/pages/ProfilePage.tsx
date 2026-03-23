@@ -59,7 +59,9 @@ export function EmployerProfilePage() {
       const response = await updateMyEmployerProfile(auth.requestTwa, values)
       setProfile(response.employer)
       await auth.reload()
-      setSuccess('Employer profile saved. Staff can review the latest details from here.')
+      setSuccess(
+        'Employer profile saved. Staff can review the latest details from here.'
+      )
     } catch (nextError) {
       setError(
         nextError instanceof Error
@@ -78,7 +80,9 @@ export function EmployerProfilePage() {
     <div className="min-h-screen bg-[#f7f1e5]">
       <EmployerHeader />
       <main className="mx-auto max-w-[1180px] space-y-8 px-4 py-8 lg:px-8">
-        {isLoading ? <LoadingState title="Loading employer profile..." /> : null}
+        {isLoading ? (
+          <LoadingState title="Loading employer profile..." />
+        ) : null}
         {!isLoading && error && !profile ? (
           <ErrorState title="Profile unavailable" message={error} />
         ) : null}
@@ -100,17 +104,23 @@ export function EmployerProfilePage() {
                       Employer profile
                     </h1>
                     <p className="mt-3 max-w-[760px] text-base leading-8 text-slate-500">
-                      Keep the organization record current so TWA staff can review,
-                      approve, or reassess the employer account from the same source
-                      of truth.
+                      Keep the organization record current so TWA staff can
+                      review, approve, or reassess the employer account from the
+                      same source of truth.
                     </p>
                   </div>
                 </div>
 
-                {success ? <InlineNotice tone="success">{success}</InlineNotice> : null}
-                {error ? <InlineNotice tone="danger">{error}</InlineNotice> : null}
+                {success ? (
+                  <InlineNotice tone="success">{success}</InlineNotice>
+                ) : null}
+                {error ? (
+                  <InlineNotice tone="danger">{error}</InlineNotice>
+                ) : null}
                 {profile?.review_note ? (
-                  <InlineNotice tone={reviewStatus === 'rejected' ? 'danger' : 'info'}>
+                  <InlineNotice
+                    tone={reviewStatus === 'rejected' ? 'danger' : 'info'}
+                  >
                     {profile.review_note}
                   </InlineNotice>
                 ) : null}
@@ -160,9 +170,10 @@ export function EmployerProfilePage() {
                     Portal placeholders
                   </h2>
                   <p className="mt-3 text-sm leading-7 text-slate-500">
-                    The richer organization metadata in this screen is intentionally
-                    frontend-only for now. It mirrors the planned employer experience
-                    without inventing unsupported backend behavior.
+                    The richer organization metadata in this screen is
+                    intentionally frontend-only for now. It mirrors the planned
+                    employer experience without inventing unsupported backend
+                    behavior.
                   </p>
                 </Surface>
               </div>

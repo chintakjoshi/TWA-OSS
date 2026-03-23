@@ -38,7 +38,11 @@ import {
   formatRelativeTime,
 } from '../lib/formatting'
 import { loadAllPages } from '../lib/pagination'
-import type { AdminApplication, AuditLogEntry, JobListing } from '../types/admin'
+import type {
+  AdminApplication,
+  AuditLogEntry,
+  JobListing,
+} from '../types/admin'
 
 type PlacementRow = {
   month: string
@@ -64,7 +68,11 @@ function buildPlacementSummary(
 
   applications.forEach((application) => {
     const appliedDate = new Date(application.applied_at)
-    const bucket = new Date(appliedDate.getFullYear(), appliedDate.getMonth(), 1)
+    const bucket = new Date(
+      appliedDate.getFullYear(),
+      appliedDate.getMonth(),
+      1
+    )
     const key = bucket.toISOString()
     const existing = monthMap.get(key) ?? {
       month: key,
@@ -326,7 +334,9 @@ export function AdminDashboardPage() {
                             Number(value ?? 0),
                             name === 'applications' ? 'Applications' : 'Hires',
                           ]}
-                          labelFormatter={(label) => formatMonthLabel(String(label))}
+                          labelFormatter={(label) =>
+                            formatMonthLabel(String(label))
+                          }
                         />
                         <Bar
                           dataKey="applications"
@@ -375,8 +385,8 @@ export function AdminDashboardPage() {
                       </StatusBadge>
                     </div>
                     <p className="mt-2 text-sm text-slate-500">
-                      Across {placementSummary.ytdEmployers} employers represented
-                      in hired applications this year.
+                      Across {placementSummary.ytdEmployers} employers
+                      represented in hired applications this year.
                     </p>
                   </div>
                 </>

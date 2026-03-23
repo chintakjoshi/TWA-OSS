@@ -19,7 +19,9 @@ export function EmployerNewListingPage() {
   const navigate = useNavigate()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [pendingValues, setPendingValues] = useState<ListingFormValues | null>(null)
+  const [pendingValues, setPendingValues] = useState<ListingFormValues | null>(
+    null
+  )
 
   const reviewStatus = auth.authMe?.employer_review_status ?? 'pending'
   const blocked = reviewStatus !== 'approved'
@@ -59,16 +61,18 @@ export function EmployerNewListingPage() {
             </div>
 
             {blocked ? (
-              <InlineNotice tone={reviewStatus === 'rejected' ? 'danger' : 'info'}>
+              <InlineNotice
+                tone={reviewStatus === 'rejected' ? 'danger' : 'info'}
+              >
                 {reviewStatus === 'rejected'
                   ? 'Your employer account is not approved right now, so listing submission stays locked until staff reassesses the account.'
                   : 'Your employer account is still pending review. Finish your profile and wait for staff approval before posting listings.'}
               </InlineNotice>
             ) : (
               <InlineNotice tone="info">
-                Listing submission uses the live employer API fields today. Extra
-                controls shown in the form are visual placeholders for planned
-                enhancements.
+                Listing submission uses the live employer API fields today.
+                Extra controls shown in the form are visual placeholders for
+                planned enhancements.
               </InlineNotice>
             )}
 
@@ -77,10 +81,14 @@ export function EmployerNewListingPage() {
             {blocked ? (
               <div className="flex flex-wrap gap-3">
                 <Link to="/dashboard">
-                  <PortalButton variant="secondary">Back to dashboard</PortalButton>
+                  <PortalButton variant="secondary">
+                    Back to dashboard
+                  </PortalButton>
                 </Link>
                 <Link to="/profile">
-                  <PortalButton variant="ghost">Review employer profile</PortalButton>
+                  <PortalButton variant="ghost">
+                    Review employer profile
+                  </PortalButton>
                 </Link>
               </div>
             ) : (
@@ -102,9 +110,9 @@ export function EmployerNewListingPage() {
       >
         <div className="space-y-6">
           <p className="text-sm leading-7 text-slate-600">
-            Your listing will be sent to TWA staff for review. You will receive an
-            email notification when it is approved or if changes are needed. Most
-            reviews are completed within one business day.
+            Your listing will be sent to TWA staff for review. You will receive
+            an email notification when it is approved or if changes are needed.
+            Most reviews are completed within one business day.
           </p>
           <div className="rounded-2xl border border-[#eadfce] bg-[#fcfaf6] px-4 py-3 font-medium text-slate-700">
             {pendingValues?.title || 'New listing'}

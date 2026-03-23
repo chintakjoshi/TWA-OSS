@@ -84,7 +84,9 @@ export function AdminJobseekersPage() {
   const [applications, setApplications] = useState<
     Array<{ id: string; status: string; job_listing_id: string }>
   >([])
-  const [values, setValues] = useState<JobseekerUpdateInput>(() => toValues(null))
+  const [values, setValues] = useState<JobseekerUpdateInput>(() =>
+    toValues(null)
+  )
   const [isLoading, setIsLoading] = useState(true)
   const [isDetailLoading, setIsDetailLoading] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
@@ -281,7 +283,9 @@ export function AdminJobseekersPage() {
                             </TableCell>
                             <TableCell>
                               <StatusBadge
-                                tone={item.status === 'hired' ? 'success' : 'active'}
+                                tone={
+                                  item.status === 'hired' ? 'success' : 'active'
+                                }
                               >
                                 {item.status}
                               </StatusBadge>
@@ -448,7 +452,8 @@ export function AdminJobseekersPage() {
                   onChange={(event) =>
                     setValues({
                       ...values,
-                      status: event.target.value as JobseekerUpdateInput['status'],
+                      status: event.target
+                        .value as JobseekerUpdateInput['status'],
                     })
                   }
                 >
@@ -523,10 +528,16 @@ export function AdminJobseekersPage() {
             </div>
 
             <div className="flex flex-wrap gap-3">
-              <AdminButton disabled={isSaving} onClick={() => void handleSave()}>
+              <AdminButton
+                disabled={isSaving}
+                onClick={() => void handleSave()}
+              >
                 {isSaving ? 'Saving...' : 'Save profile'}
               </AdminButton>
-              <AdminButton variant="secondary" onClick={() => setSelectedId(null)}>
+              <AdminButton
+                variant="secondary"
+                onClick={() => setSelectedId(null)}
+              >
                 Close
               </AdminButton>
             </div>

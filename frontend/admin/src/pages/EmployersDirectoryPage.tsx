@@ -37,9 +37,9 @@ export function AdminEmployersDirectoryPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [selected, setSelected] = useState<EmployerProfile | null>(null)
-  const [reviewStatus, setReviewStatus] = useState<'pending' | 'approved' | 'rejected'>(
-    'approved'
-  )
+  const [reviewStatus, setReviewStatus] = useState<
+    'pending' | 'approved' | 'rejected'
+  >('approved')
   const [reviewNote, setReviewNote] = useState('')
   const [isSaving, setIsSaving] = useState(false)
 
@@ -179,11 +179,15 @@ export function AdminEmployersDirectoryPage() {
                               {employer.contact_name ?? 'No contact'}
                             </TableCell>
                             <TableCell>
-                              <StatusBadge tone={reviewTone(employer.review_status)}>
+                              <StatusBadge
+                                tone={reviewTone(employer.review_status)}
+                              >
                                 {employer.review_status}
                               </StatusBadge>
                             </TableCell>
-                            <TableCell>{formatDate(employer.created_at)}</TableCell>
+                            <TableCell>
+                              {formatDate(employer.created_at)}
+                            </TableCell>
                             <TableCell>
                               <AdminButton
                                 variant="secondary"
@@ -241,7 +245,10 @@ export function AdminEmployersDirectoryPage() {
                   label: 'Contact',
                   value: selected.contact_name ?? 'No contact provided',
                 },
-                { label: 'Phone', value: selected.phone ?? 'No phone provided' },
+                {
+                  label: 'Phone',
+                  value: selected.phone ?? 'No phone provided',
+                },
                 {
                   label: 'Address',
                   value:
@@ -273,9 +280,7 @@ export function AdminEmployersDirectoryPage() {
                   id="directory-review-status"
                   value={reviewStatus}
                   onChange={(event) =>
-                    setReviewStatus(
-                      event.target.value as typeof reviewStatus
-                    )
+                    setReviewStatus(event.target.value as typeof reviewStatus)
                   }
                 >
                   <option value="pending">Pending</option>
@@ -314,7 +319,10 @@ export function AdminEmployersDirectoryPage() {
               >
                 {isSaving ? 'Saving...' : 'Save review'}
               </AdminButton>
-              <AdminButton variant="secondary" onClick={() => setSelected(null)}>
+              <AdminButton
+                variant="secondary"
+                onClick={() => setSelected(null)}
+              >
                 Cancel
               </AdminButton>
             </div>

@@ -124,7 +124,10 @@ function AdminRoutes() {
           </RequireRole>
         }
       />
-      <Route path="/matches" element={<Navigate replace to="/matches/jobseekers" />} />
+      <Route
+        path="/matches"
+        element={<Navigate replace to="/matches/jobseekers" />}
+      />
       <Route path="/workspace" element={<Navigate replace to="/dashboard" />} />
       <Route path="*" element={<Navigate replace to="/" />} />
     </Routes>

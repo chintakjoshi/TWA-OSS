@@ -82,9 +82,14 @@ export function AdminNotificationsPage() {
   return (
     <AdminWorkspaceLayout title="Notification Config">
       <div className="space-y-6">
-        {isLoading ? <LoadingState title="Loading notification settings..." /> : null}
+        {isLoading ? (
+          <LoadingState title="Loading notification settings..." />
+        ) : null}
         {!isLoading && error && !config ? (
-          <ErrorState title="Notification settings unavailable" message={error} />
+          <ErrorState
+            title="Notification settings unavailable"
+            message={error}
+          />
         ) : null}
 
         {!isLoading && config ? (
@@ -126,7 +131,10 @@ export function AdminNotificationsPage() {
                     description="Forward application alerts to the employer contact on file."
                     title="Application Received"
                     onChange={(checked) =>
-                      setConfig({ ...config, notify_employer_on_apply: checked })
+                      setConfig({
+                        ...config,
+                        notify_employer_on_apply: checked,
+                      })
                     }
                   />
                   <ToggleRow
@@ -152,20 +160,26 @@ export function AdminNotificationsPage() {
                   <ToggleRow
                     checked={previewToggles.jobseeker_profile_updates}
                     description="Notify the assigned case manager when a jobseeker profile changes."
-                    preview={<StatusBadge tone="warning">Coming soon</StatusBadge>}
+                    preview={
+                      <StatusBadge tone="warning">Coming soon</StatusBadge>
+                    }
                     title="Jobseeker Profile Updates"
                     onChange={(checked) => {
                       setPreviewToggles((current) => ({
                         ...current,
                         jobseeker_profile_updates: checked,
                       }))
-                      announceComingSoon('Jobseeker profile update notifications')
+                      announceComingSoon(
+                        'Jobseeker profile update notifications'
+                      )
                     }}
                   />
                   <ToggleRow
                     checked={previewToggles.listing_review_complete}
                     description="Notify employers when a listing review decision is completed."
-                    preview={<StatusBadge tone="warning">Coming soon</StatusBadge>}
+                    preview={
+                      <StatusBadge tone="warning">Coming soon</StatusBadge>
+                    }
                     title="Listing Approved Or Rejected"
                     onChange={(checked) => {
                       setPreviewToggles((current) => ({
@@ -178,14 +192,18 @@ export function AdminNotificationsPage() {
                   <ToggleRow
                     checked={previewToggles.account_status_updates}
                     description="Notify employers when their account registration status changes."
-                    preview={<StatusBadge tone="warning">Coming soon</StatusBadge>}
+                    preview={
+                      <StatusBadge tone="warning">Coming soon</StatusBadge>
+                    }
                     title="Account Approval Status"
                     onChange={(checked) => {
                       setPreviewToggles((current) => ({
                         ...current,
                         account_status_updates: checked,
                       }))
-                      announceComingSoon('Employer account status notifications')
+                      announceComingSoon(
+                        'Employer account status notifications'
+                      )
                     }}
                   />
                 </div>
@@ -194,7 +212,10 @@ export function AdminNotificationsPage() {
                   <p className="text-sm text-slate-500">
                     Last updated {formatDateTime(config.updated_at)}
                   </p>
-                  <AdminButton disabled={isSaving} onClick={() => void handleSave()}>
+                  <AdminButton
+                    disabled={isSaving}
+                    onClick={() => void handleSave()}
+                  >
                     {isSaving ? 'Saving...' : 'Save settings'}
                   </AdminButton>
                 </div>

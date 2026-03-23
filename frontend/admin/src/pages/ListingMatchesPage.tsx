@@ -2,10 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 
 import { useAuth } from '@shared/auth/AuthProvider'
 
-import {
-  getMatchesForListing,
-  listListings,
-} from '../api/adminApi'
+import { getMatchesForListing, listListings } from '../api/adminApi'
 import { AdminWorkspaceLayout } from '../components/layout/AdminWorkspaceLayout'
 import {
   AdminPanel,
@@ -104,7 +101,8 @@ export function AdminListingMatchesPage() {
                 >
                   {listings.map((listing) => (
                     <option key={listing.id} value={listing.id}>
-                      {listing.title} - {listing.employer?.org_name ?? 'Employer'}
+                      {listing.title} -{' '}
+                      {listing.employer?.org_name ?? 'Employer'}
                     </option>
                   ))}
                 </select>
@@ -145,9 +143,13 @@ export function AdminListingMatchesPage() {
                             <TableCell className="font-semibold text-slate-950">
                               {item.jobseeker.full_name ?? item.jobseeker.id}
                             </TableCell>
-                            <TableCell>{item.jobseeker.city ?? 'Unknown'}</TableCell>
                             <TableCell>
-                              <StatusBadge tone={item.is_eligible ? 'success' : 'danger'}>
+                              {item.jobseeker.city ?? 'Unknown'}
+                            </TableCell>
+                            <TableCell>
+                              <StatusBadge
+                                tone={item.is_eligible ? 'success' : 'danger'}
+                              >
                                 {item.is_eligible ? 'Eligible' : 'Ineligible'}
                               </StatusBadge>
                             </TableCell>

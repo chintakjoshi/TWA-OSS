@@ -113,7 +113,9 @@ export function JobseekerApplicationsPage() {
                   <option value="reviewed">Reviewed</option>
                   <option value="hired">Hired</option>
                 </select>
-                <PortalBadge tone="info">{totalItems} applications found</PortalBadge>
+                <PortalBadge tone="info">
+                  {totalItems} applications found
+                </PortalBadge>
               </PanelBody>
             </PortalPanel>
           </section>

@@ -44,9 +44,7 @@ export function PanelHeader({
         <h2 className="admin-display text-[1.15rem] font-semibold text-slate-950">
           {title}
         </h2>
-        {subtitle ? (
-          <p className="text-sm text-slate-500">{subtitle}</p>
-        ) : null}
+        {subtitle ? <p className="text-sm text-slate-500">{subtitle}</p> : null}
       </div>
       {action}
     </div>
@@ -78,14 +76,10 @@ export function AdminButton({
       'border-[#d0922c] bg-[#d0922c] text-white hover:bg-[#b67a1b] hover:border-[#b67a1b]',
     secondary:
       'border-[#ddd1be] bg-white text-slate-700 hover:border-[#cfbeaa] hover:bg-[#faf7f1]',
-    ghost:
-      'border-transparent bg-transparent text-slate-600 hover:bg-white/70',
-    success:
-      'border-[#2f7d4b] bg-[#2f7d4b] text-white hover:bg-[#25643c]',
-    danger:
-      'border-[#c62f2f] bg-[#c62f2f] text-white hover:bg-[#a82323]',
-    warning:
-      'border-[#f0c95e] bg-[#fff6da] text-[#ac7012] hover:bg-[#fff0bf]',
+    ghost: 'border-transparent bg-transparent text-slate-600 hover:bg-white/70',
+    success: 'border-[#2f7d4b] bg-[#2f7d4b] text-white hover:bg-[#25643c]',
+    danger: 'border-[#c62f2f] bg-[#c62f2f] text-white hover:bg-[#a82323]',
+    warning: 'border-[#f0c95e] bg-[#fff6da] text-[#ac7012] hover:bg-[#fff0bf]',
   } satisfies Record<ButtonVariant, string>
 
   return (
@@ -277,7 +271,12 @@ export function TableHeadRow({
   className?: string
 }) {
   return (
-    <tr className={cn('bg-[#faf7f1] text-xs uppercase tracking-[0.14em] text-[#89a0c4]', className)}>
+    <tr
+      className={cn(
+        'bg-[#faf7f1] text-xs uppercase tracking-[0.14em] text-[#89a0c4]',
+        className
+      )}
+    >
       {children}
     </tr>
   )

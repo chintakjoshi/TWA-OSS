@@ -35,7 +35,9 @@ export function AdminApplicationsPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [selected, setSelected] = useState<AdminApplication | null>(null)
-  const [status, setStatus] = useState<'submitted' | 'reviewed' | 'hired'>('reviewed')
+  const [status, setStatus] = useState<'submitted' | 'reviewed' | 'hired'>(
+    'reviewed'
+  )
   const [closeAfterHire, setCloseAfterHire] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
 
@@ -277,7 +279,9 @@ export function AdminApplicationsPage() {
                 type="checkbox"
                 onChange={(event) => setCloseAfterHire(event.target.checked)}
               />
-              <span>Close the listing after marking this application hired</span>
+              <span>
+                Close the listing after marking this application hired
+              </span>
             </label>
 
             <div className="flex flex-wrap gap-3">
@@ -289,7 +293,10 @@ export function AdminApplicationsPage() {
               >
                 {isSaving ? 'Saving...' : 'Save application'}
               </AdminButton>
-              <AdminButton variant="secondary" onClick={() => setSelected(null)}>
+              <AdminButton
+                variant="secondary"
+                onClick={() => setSelected(null)}
+              >
                 Cancel
               </AdminButton>
             </div>

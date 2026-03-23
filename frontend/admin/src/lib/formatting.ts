@@ -40,7 +40,9 @@ export function formatDateTime(value: string | null | undefined) {
 }
 
 export function formatStatusLabel(value: string) {
-  return value.replaceAll('_', ' ').replace(/\b\w/g, (match) => match.toUpperCase())
+  return value
+    .replaceAll('_', ' ')
+    .replace(/\b\w/g, (match) => match.toUpperCase())
 }
 
 export function formatMonthLabel(value: string | null | undefined) {
@@ -72,7 +74,8 @@ export function describeMatchReason(reason: string) {
     charge_sex_offense_disqualified: 'Disqualified by sex offense restriction',
     charge_violent_disqualified: 'Disqualified by violent offense restriction',
     charge_armed_disqualified: 'Disqualified by armed offense restriction',
-    charge_children_disqualified: 'Disqualified by children-related restriction',
+    charge_children_disqualified:
+      'Disqualified by children-related restriction',
     charge_drug_disqualified: 'Disqualified by drug offense restriction',
     charge_theft_disqualified: 'Disqualified by theft restriction',
     transit_unreachable: 'Transit route unavailable',

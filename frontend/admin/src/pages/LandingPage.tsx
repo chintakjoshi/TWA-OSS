@@ -42,7 +42,9 @@ export function AdminLandingPage() {
               {adminFocus.map((item) => (
                 <li key={item} className="flex gap-4">
                   <span className="mt-2 h-2.5 w-2.5 rounded-full bg-[#d99a2b]" />
-                  <span className="text-lg leading-8 text-[#dce6f2]">{item}</span>
+                  <span className="text-lg leading-8 text-[#dce6f2]">
+                    {item}
+                  </span>
                 </li>
               ))}
             </ul>

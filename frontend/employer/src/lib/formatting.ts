@@ -1,4 +1,8 @@
-import type { ChargeFlags, EmployerApplicant, JobListing } from '../types/employer'
+import type {
+  ChargeFlags,
+  EmployerApplicant,
+  JobListing,
+} from '../types/employer'
 
 const chargeLabels: Array<{ key: keyof ChargeFlags; label: string }> = [
   { key: 'sex_offense', label: 'Sex offense' },
@@ -73,9 +77,7 @@ export function getStatusTone(
   return 'warning' as const
 }
 
-export function getApplicationTone(
-  status: EmployerApplicant['status']
-) {
+export function getApplicationTone(status: EmployerApplicant['status']) {
   if (status === 'hired') return 'success' as const
   if (status === 'reviewed') return 'info' as const
   return 'warning' as const
@@ -92,5 +94,7 @@ export function getInitials(label: string | null | undefined) {
 }
 
 export function isListingVisible(listing: JobListing) {
-  return listing.review_status === 'approved' && listing.lifecycle_status === 'open'
+  return (
+    listing.review_status === 'approved' && listing.lifecycle_status === 'open'
+  )
 }

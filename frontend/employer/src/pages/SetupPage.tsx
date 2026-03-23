@@ -27,7 +27,9 @@ export function EmployerSetupPage() {
             T
           </div>
           <div>
-            <p className="text-lg font-semibold text-slate-950">TWA Employer Portal</p>
+            <p className="text-lg font-semibold text-slate-950">
+              TWA Employer Portal
+            </p>
             <p className="text-[11px] uppercase tracking-[0.16em] text-[#8ea3c4]">
               Transformative Workforce Academy
             </p>
@@ -84,7 +86,9 @@ export function EmployerSetupPage() {
                     },
                   })
                   await updateMyEmployerProfile(auth.requestTwa, values)
-                  setNotice('Employer profile created and submitted for staff review.')
+                  setNotice(
+                    'Employer profile created and submitted for staff review.'
+                  )
                   navigate('/dashboard')
                 } catch (nextError) {
                   setError(

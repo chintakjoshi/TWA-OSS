@@ -94,7 +94,9 @@ export function AdminAuthPage() {
               {supportPoints.map((point) => (
                 <li key={point} className="flex gap-4">
                   <span className="mt-2 h-2.5 w-2.5 rounded-full bg-[#d99a2b]" />
-                  <span className="text-lg leading-8 text-[#dce6f2]">{point}</span>
+                  <span className="text-lg leading-8 text-[#dce6f2]">
+                    {point}
+                  </span>
                 </li>
               ))}
             </ul>
@@ -121,18 +123,24 @@ export function AdminAuthPage() {
           </p>
 
           <div className="mt-8 space-y-4">
-            {notice ? <InlineNotice tone="success">{notice}</InlineNotice> : null}
+            {notice ? (
+              <InlineNotice tone="success">{notice}</InlineNotice>
+            ) : null}
             {error ? <InlineNotice tone="danger">{error}</InlineNotice> : null}
 
-            {!authenticatedStaff && auth.authMe?.app_user && auth.authMe.app_user.app_role !== 'staff' ? (
+            {!authenticatedStaff &&
+            auth.authMe?.app_user &&
+            auth.authMe.app_user.app_role !== 'staff' ? (
               <InlineNotice tone="danger">
                 This account is linked to the{' '}
-                <strong>{auth.authMe.app_user.app_role}</strong> portal, so staff
-                routes stay locked.
+                <strong>{auth.authMe.app_user.app_role}</strong> portal, so
+                staff routes stay locked.
               </InlineNotice>
             ) : null}
 
-            {!authenticatedStaff && auth.state === 'authenticated' && !auth.authMe?.app_user ? (
+            {!authenticatedStaff &&
+            auth.state === 'authenticated' &&
+            !auth.authMe?.app_user ? (
               <InlineNotice tone="info">
                 You authenticated successfully, but this identity is not yet
                 provisioned as a local TWA staff account.
@@ -162,14 +170,18 @@ export function AdminAuthPage() {
                 <Link className="inline-flex" to="/dashboard">
                   <AdminButton>Open dashboard</AdminButton>
                 </Link>
-                <AdminButton variant="secondary" onClick={() => void auth.logout()}>
+                <AdminButton
+                  variant="secondary"
+                  onClick={() => void auth.logout()}
+                >
                   Sign out
                 </AdminButton>
               </div>
             </div>
           ) : null}
 
-          {!authenticatedStaff && (mode === 'login' || auth.state !== 'otp_required') ? (
+          {!authenticatedStaff &&
+          (mode === 'login' || auth.state !== 'otp_required') ? (
             <form
               className="mt-8 space-y-5"
               onSubmit={(event) => {
@@ -269,7 +281,9 @@ export function AdminAuthPage() {
                     challenge_token: auth.otpChallenge!.challenge_token,
                     code: String(form.get('code') ?? ''),
                   })
-                  setNotice('OTP verified. You can continue into the staff portal.')
+                  setNotice(
+                    'OTP verified. You can continue into the staff portal.'
+                  )
                 })
               }}
             >
@@ -340,7 +354,10 @@ export function AdminAuthPage() {
                 <AdminButton disabled={busy} type="submit">
                   {busy ? 'Sending...' : 'Send reset email'}
                 </AdminButton>
-                <AdminButton variant="secondary" onClick={() => setMode('login')}>
+                <AdminButton
+                  variant="secondary"
+                  onClick={() => setMode('login')}
+                >
                   Back to sign in
                 </AdminButton>
               </div>
@@ -367,7 +384,12 @@ export function AdminAuthPage() {
                 <label className="block text-xs font-semibold uppercase tracking-[0.18em] text-slate-700">
                   Reset Token
                 </label>
-                <input className={inputClassName} minLength={16} name="token" required />
+                <input
+                  className={inputClassName}
+                  minLength={16}
+                  name="token"
+                  required
+                />
               </div>
               <div>
                 <label className="block text-xs font-semibold uppercase tracking-[0.18em] text-slate-700">
@@ -385,7 +407,10 @@ export function AdminAuthPage() {
                 <AdminButton disabled={busy} type="submit">
                   {busy ? 'Resetting...' : 'Reset password'}
                 </AdminButton>
-                <AdminButton variant="secondary" onClick={() => setMode('login')}>
+                <AdminButton
+                  variant="secondary"
+                  onClick={() => setMode('login')}
+                >
                   Back to sign in
                 </AdminButton>
               </div>
@@ -438,11 +463,17 @@ export function AdminAuthPage() {
 
               <p className="mt-8 text-center text-sm text-slate-400">
                 Not a staff member? Visit the{' '}
-                <a className="font-semibold text-[#d0922c]" href="http://localhost:5173">
+                <a
+                  className="font-semibold text-[#d0922c]"
+                  href="http://localhost:5173"
+                >
                   Jobseeker Portal
                 </a>{' '}
                 or{' '}
-                <a className="font-semibold text-[#d0922c]" href="http://localhost:5174">
+                <a
+                  className="font-semibold text-[#d0922c]"
+                  href="http://localhost:5174"
+                >
                   Employer Portal
                 </a>
                 .
@@ -462,7 +493,9 @@ export function AdminAuthPage() {
 
               <div className="mt-6 flex items-center gap-2 text-sm text-[#8ea3c4]">
                 <ShieldCheck className="h-4 w-4" />
-                <span>Shared auth foundation with TWA role-based access checks.</span>
+                <span>
+                  Shared auth foundation with TWA role-based access checks.
+                </span>
               </div>
             </>
           ) : null}

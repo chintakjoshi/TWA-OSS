@@ -198,14 +198,18 @@ export function AdminAuditLogPage() {
                       <tbody>
                         {visibleItems.map((item) => (
                           <tr key={item.id}>
-                            <TableCell>{formatDateTime(item.timestamp)}</TableCell>
+                            <TableCell>
+                              {formatDateTime(item.timestamp)}
+                            </TableCell>
                             <TableCell>{item.actor_id ?? 'system'}</TableCell>
                             <TableCell>
                               <StatusBadge tone="info">
                                 {describeAuditAction(item.action)}
                               </StatusBadge>
                             </TableCell>
-                            <TableCell>{formatStatusLabel(item.entity_type)}</TableCell>
+                            <TableCell>
+                              {formatStatusLabel(item.entity_type)}
+                            </TableCell>
                             <TableCell>{describeAuditDetails(item)}</TableCell>
                           </tr>
                         ))}
