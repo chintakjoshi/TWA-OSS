@@ -62,6 +62,14 @@ export interface JobListItem {
   ineligibility_tag: string | null
 }
 
+export interface JobListFilters {
+  page?: number
+  search?: string
+  city?: string
+  transit_required?: 'own_car' | 'any' | ''
+  is_eligible?: boolean
+}
+
 export interface JobDetailPayload {
   job: JobListing
   eligibility: {

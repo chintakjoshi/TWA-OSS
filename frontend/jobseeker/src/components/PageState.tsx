@@ -1,13 +1,13 @@
-import { Alert, Card, CardBody } from '@shared/ui/primitives'
+import {
+  EmptyPanel,
+  ErrorPanel,
+  LoadingPanel,
+  PanelBody,
+  PortalPanel,
+} from './ui/JobseekerUi'
 
 export function LoadingState({ title }: { title: string }) {
-  return (
-    <Card strong>
-      <CardBody>
-        <p>{title}</p>
-      </CardBody>
-    </Card>
-  )
+  return <LoadingPanel title={title} />
 }
 
 export function EmptyState({
@@ -18,12 +18,11 @@ export function EmptyState({
   message: string
 }) {
   return (
-    <Card strong>
-      <CardBody className="stack-sm">
-        <h2 className="card-title">{title}</h2>
-        <p className="card-copy">{message}</p>
-      </CardBody>
-    </Card>
+    <PortalPanel>
+      <PanelBody>
+        <EmptyPanel title={title} message={message} />
+      </PanelBody>
+    </PortalPanel>
   )
 }
 
@@ -34,14 +33,5 @@ export function ErrorState({
   title: string
   message: string
 }) {
-  return (
-    <Card strong>
-      <CardBody className="stack-md">
-        <h2 className="card-title">{title}</h2>
-        <Alert tone="danger">
-          <p>{message}</p>
-        </Alert>
-      </CardBody>
-    </Card>
-  )
+  return <ErrorPanel title={title} message={message} />
 }

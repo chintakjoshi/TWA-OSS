@@ -1,7 +1,8 @@
 import { Navigate } from 'react-router-dom'
 
 import { useAuth } from '@shared/auth/AuthProvider'
-import { Card, CardBody } from '@shared/ui/primitives'
+
+import { LoadingPanel } from '../components/ui/JobseekerUi'
 
 export function RequireCompleteProfile({
   children,
@@ -12,12 +13,11 @@ export function RequireCompleteProfile({
 
   if (auth.state === 'loading') {
     return (
-      <div className="page-frame">
-        <Card strong>
-          <CardBody>
-            <p>Checking your profile status...</p>
-          </CardBody>
-        </Card>
+      <div className="mx-auto w-full max-w-[1260px] px-4 py-8 sm:px-6">
+        <LoadingPanel
+          message="Confirming that your TWA profile is ready for the jobseeker routes."
+          title="Checking your profile status..."
+        />
       </div>
     )
   }
