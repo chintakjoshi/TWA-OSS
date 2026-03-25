@@ -31,7 +31,7 @@ from app.services.auth import AuthProviderIdentity, get_auth_provider_identity
 @pytest.fixture()
 def sqlite_url() -> Generator[str, None, None]:
     with tempfile.TemporaryDirectory() as temp_dir:
-        yield f"sqlite+pysqlite:///{Path(temp_dir) / 'phase12.db'}"
+        yield f"sqlite+pysqlite:///{Path(temp_dir) / 'admin-audit.db'}"
 
 
 @pytest.fixture()
@@ -48,7 +48,7 @@ def session_factory(sqlite_url: str):
 
 
 @pytest.fixture()
-def phase12_env(monkeypatch: pytest.MonkeyPatch, session_factory):
+def admin_audit_env(monkeypatch: pytest.MonkeyPatch, session_factory):
     monkeypatch.setenv("TWA_AUTH_ENABLED", "false")
     monkeypatch.setenv("TWA_DEBUG", "false")
     get_settings.cache_clear()
@@ -79,7 +79,7 @@ def phase12_env(monkeypatch: pytest.MonkeyPatch, session_factory):
     get_settings.cache_clear()
 
 
-def seed_phase12_data(session_factory):
+def seed_admin_audit_data(session_factory):
     with session_factory() as session:
         staff = AppUser(
             auth_user_id=uuid.UUID("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"),
@@ -253,9 +253,9 @@ def seed_phase12_data(session_factory):
         }
 
 
-def test_admin_dashboard_returns_expected_summary(phase12_env) -> None:
-    client, _, session_factory = phase12_env
-    seed_phase12_data(session_factory)
+def test_admin_dashboard_returns_expected_summary(admin_audit_env) -> None:
+    client, _, session_factory = admin_audit_env
+    seed_admin_audit_data(session_factory)
 
     response = client.get("/api/v1/admin/dashboard")
 
@@ -269,9 +269,9 @@ def test_admin_dashboard_returns_expected_summary(phase12_env) -> None:
     }
 
 
-def test_admin_audit_log_supports_filters_and_system_events(phase12_env) -> None:
-    client, _, session_factory = phase12_env
-    seeded = seed_phase12_data(session_factory)
+def test_admin_audit_log_supports_filters_and_system_events(admin_audit_env) -> None:
+    client, _, session_factory = admin_audit_env
+    seeded = seed_admin_audit_data(session_factory)
 
     unfiltered = client.get("/api/v1/admin/audit-log")
     assert unfiltered.status_code == 200
@@ -321,9 +321,11 @@ def test_admin_audit_log_supports_filters_and_system_events(phase12_env) -> None
     ]
 
 
-def test_admin_listing_filters_support_city_search_and_employer(phase12_env) -> None:
-    client, _, session_factory = phase12_env
-    seeded = seed_phase12_data(session_factory)
+def test_admin_listing_filters_support_city_search_and_employer(
+    admin_audit_env,
+) -> None:
+    client, _, session_factory = admin_audit_env
+    seeded = seed_admin_audit_data(session_factory)
 
     by_employer = client.get(
         "/api/v1/admin/listings",

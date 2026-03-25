@@ -28,7 +28,7 @@ from app.services.auth import AuthProviderIdentity, get_auth_provider_identity
 @pytest.fixture()
 def sqlite_url() -> Generator[str, None, None]:
     with tempfile.TemporaryDirectory() as temp_dir:
-        yield f"sqlite+pysqlite:///{Path(temp_dir) / 'phase10.db'}"
+        yield f"sqlite+pysqlite:///{Path(temp_dir) / 'applications-workflow.db'}"
 
 
 @pytest.fixture()
@@ -45,7 +45,7 @@ def session_factory(sqlite_url: str):
 
 
 @pytest.fixture()
-def phase10_env(monkeypatch: pytest.MonkeyPatch, session_factory):
+def applications_env(monkeypatch: pytest.MonkeyPatch, session_factory):
     monkeypatch.setenv("TWA_AUTH_ENABLED", "false")
     monkeypatch.setenv("TWA_DEBUG", "false")
     get_settings.cache_clear()
@@ -206,8 +206,8 @@ def seed_employer_and_listings(session_factory) -> dict[str, uuid.UUID]:
         }
 
 
-def test_jobseeker_can_browse_jobs_and_apply(phase10_env) -> None:
-    client, state, session_factory = phase10_env
+def test_jobseeker_can_browse_jobs_and_apply(applications_env) -> None:
+    client, state, session_factory = applications_env
     bootstrap_completed_jobseeker(client)
     listing_ids = seed_employer_and_listings(session_factory)
 
@@ -256,9 +256,9 @@ def test_jobseeker_can_browse_jobs_and_apply(phase10_env) -> None:
 
 
 def test_incomplete_jobseeker_is_blocked_from_jobs_and_applications(
-    phase10_env,
+    applications_env,
 ) -> None:
-    client, _, session_factory = phase10_env
+    client, _, session_factory = applications_env
     bootstrap = client.post("/api/v1/auth/bootstrap", json={"role": "jobseeker"})
     assert bootstrap.status_code == 200
     listing_ids = seed_employer_and_listings(session_factory)
@@ -274,8 +274,8 @@ def test_incomplete_jobseeker_is_blocked_from_jobs_and_applications(
     assert create.json()["error"]["code"] == "PROFILE_INCOMPLETE"
 
 
-def test_job_list_supports_documented_filters(phase10_env) -> None:
-    client, _, session_factory = phase10_env
+def test_job_list_supports_documented_filters(applications_env) -> None:
+    client, _, session_factory = applications_env
     bootstrap_completed_jobseeker(client)
     seed_employer_and_listings(session_factory)
 
@@ -310,8 +310,10 @@ def test_job_list_supports_documented_filters(phase10_env) -> None:
     assert ineligible_only.json()["items"][0]["job"]["title"] == "Cash Office Clerk"
 
 
-def test_admin_can_review_hire_and_close_listing_from_application(phase10_env) -> None:
-    client, state, session_factory = phase10_env
+def test_admin_can_review_hire_and_close_listing_from_application(
+    applications_env,
+) -> None:
+    client, state, session_factory = applications_env
     bootstrap_completed_jobseeker(client)
     listing_ids = seed_employer_and_listings(session_factory)
 
@@ -367,8 +369,8 @@ def test_admin_can_review_hire_and_close_listing_from_application(phase10_env) -
         assert stored_listing.lifecycle_status == ListingLifecycleStatus.CLOSED
 
 
-def test_admin_application_list_supports_employer_filter(phase10_env) -> None:
-    client, state, session_factory = phase10_env
+def test_admin_application_list_supports_employer_filter(applications_env) -> None:
+    client, state, session_factory = applications_env
     bootstrap_completed_jobseeker(client)
     listing_ids = seed_employer_and_listings(session_factory)
     create = client.post(
@@ -400,8 +402,10 @@ def test_admin_application_list_supports_employer_filter(phase10_env) -> None:
     assert filtered.json()["items"][0]["job"]["title"] == "Warehouse Associate"
 
 
-def test_hired_application_does_not_block_additional_applications(phase10_env) -> None:
-    client, state, session_factory = phase10_env
+def test_hired_application_does_not_block_additional_applications(
+    applications_env,
+) -> None:
+    client, state, session_factory = applications_env
     bootstrap_completed_jobseeker(client)
     listing_ids = seed_employer_and_listings(session_factory)
 

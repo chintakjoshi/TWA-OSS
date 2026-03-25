@@ -19,7 +19,7 @@ from app.main import create_app
 @pytest.fixture()
 def sqlite_url() -> Generator[str, None, None]:
     with tempfile.TemporaryDirectory() as temp_dir:
-        yield f"sqlite+pysqlite:///{Path(temp_dir) / 'phase15-auth.db'}"
+        yield f"sqlite+pysqlite:///{Path(temp_dir) / 'auth-middleware.db'}"
 
 
 @pytest.fixture()

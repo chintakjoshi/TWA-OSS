@@ -33,7 +33,7 @@ from app.services.matching import (
 @pytest.fixture()
 def sqlite_url() -> Generator[str, None, None]:
     with tempfile.TemporaryDirectory() as temp_dir:
-        yield f"sqlite+pysqlite:///{Path(temp_dir) / 'phase9.db'}"
+        yield f"sqlite+pysqlite:///{Path(temp_dir) / 'matching.db'}"
 
 
 @pytest.fixture()
@@ -50,7 +50,7 @@ def session_factory(sqlite_url: str):
 
 
 @pytest.fixture()
-def phase9_env(monkeypatch: pytest.MonkeyPatch, session_factory):
+def matching_env(monkeypatch: pytest.MonkeyPatch, session_factory):
     monkeypatch.setenv("TWA_AUTH_ENABLED", "false")
     monkeypatch.setenv("TWA_DEBUG", "false")
     get_settings.cache_clear()
@@ -341,8 +341,8 @@ def test_get_eligible_jobseekers_for_job_returns_expected_reason_sets(
     ]
 
 
-def test_admin_matching_endpoints_return_expected_payloads(phase9_env) -> None:
-    client, session_factory, staff_identity = phase9_env
+def test_admin_matching_endpoints_return_expected_payloads(matching_env) -> None:
+    client, session_factory, staff_identity = matching_env
     with session_factory() as session:
         seed_staff(session, staff_identity)
         jobseeker, listing = seed_employer_and_listing_set(session)

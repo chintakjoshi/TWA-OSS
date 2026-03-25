@@ -1,23 +1,20 @@
 # Transformative Workforce Academy [![CI Tests](https://github.com/chintakjoshi/TWA-OSS/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/chintakjoshi/TWA-OSS/actions/workflows/ci.yml)
 
-TWA is a web application for Saint Louis University's Transformative Workforce Academy. It connects justice-involved jobseekers with fair-chance employers and gives TWA staff tools to manage approvals, matching, applications, placements, notifications, and audit history.
+TWA is a multi-portal workforce platform for Saint Louis University's Transformative Workforce Academy. It connects justice-involved jobseekers with fair-chance employers and gives staff a single system for onboarding, review, matching, applications, notifications, and audit history.
 
-## Architecture
+## Repo At A Glance
 
-- `frontend/jobseeker`: jobseeker-facing React app
-- `frontend/employer`: employer-facing React app
-- `frontend/admin`: staff admin React app
-- `shared/frontend`: shared design tokens, UI primitives, auth client helpers, and route guards used by all three apps
-- `backend`: FastAPI service for all TWA business logic
-- `authSDK`: external authentication service used by this app
-- `docker-compose.yml`: local stack for TWA, `authSDK`, PostgreSQL, Adminer, and MailHog
+- `backend/`: FastAPI application, SQLAlchemy models, Alembic migrations, and backend tests
+- `frontend/jobseeker/`: jobseeker React app
+- `frontend/employer/`: employer React app
+- `frontend/admin/`: staff admin React app
+- `shared/frontend/`: shared UI primitives, tokens, auth helpers, and route guards
+- `docs/`: setup guides, architecture notes, QA docs, and long-form reference material
+- `docker-compose.yml`: full local stack for TWA, authSDK, PostgreSQL, Adminer, and MailHog
 
-The TWA backend uses `auth-service-sdk` middleware to trust `authSDK` bearer tokens. TWA-specific roles such as `jobseeker`, `employer`, and `staff` are stored locally in the TWA database.
-The frontend apps talk to `authSDK` through a same-origin `/_auth` proxy during local development, which avoids browser CORS issues without colliding with the apps' public `/auth` route and matches the production expectation of a reverse-proxied auth surface.
+The TWA backend trusts `authSDK` bearer tokens through `auth-service-sdk`, but application roles such as `jobseeker`, `employer`, and `staff` stay local to the TWA database. In local development, the frontend apps use a same-origin `/_auth` proxy to avoid browser CORS issues and keep `/auth` free for the SPAs themselves.
 
-## Local Development Options
-
-### Option 1: Run The Full Docker Stack
+## Quick Start
 
 1. Copy the environment template:
 
@@ -25,27 +22,13 @@ The frontend apps talk to `authSDK` through a same-origin `/_auth` proxy during 
 Copy-Item .env.example .env
 ```
 
-2. By default, the auth service containers pull
-   `ghcr.io/chintakjoshi/auth-service:v1.2.1` via `AUTH_SERVICE_IMAGE`, so a
-   local `authSDK` checkout is not required.
-
-3. Start the full stack:
+2. Start the full local stack:
 
 ```powershell
 docker compose up
 ```
 
-4. If you want to build authSDK from a local checkout instead, keep
-   `AUTHSDK_PATH` pointed at your clone and use the local override file:
-
-```powershell
-docker compose -f docker-compose.yml -f docker-compose.authsdk.local.yml up --build
-```
-
-5. Re-run the same command when you want Docker to pick up authSDK source
-   changes from your local checkout.
-
-6. Open the local services:
+3. Open the local services:
 
 - TWA backend API: `http://localhost:9000`
 - Swagger UI: `http://localhost:9000/docs`
@@ -57,105 +40,36 @@ docker compose -f docker-compose.yml -f docker-compose.authsdk.local.yml up --bu
 - Adminer: `http://localhost:8080`
 - MailHog UI: `http://localhost:8025`
 
-Adminer can connect to:
+For host-based development, authSDK local-build overrides, seeding, and environment details, use [docs/local-development.md](docs/local-development.md).
 
-- TWA app database:
-  - System: `PostgreSQL`
-  - Server: `twa-postgres`
-  - Username: `twa`
-  - Password: `twa`
-  - Database: `twa`
-- authSDK database:
-  - System: `PostgreSQL`
-  - Server: `auth-postgres`
-  - Username: `postgres`
-  - Password: any value works because the local auth Postgres container uses trust auth
-  - Database: `auth_service`
+## Common Commands
 
-### Option 2: Run TWA Locally And Reuse Docker For Infrastructure
-
-1. Start the infrastructure services:
-
-```powershell
-docker compose up -d twa-postgres auth-postgres auth-redis adminer mailhog auth-service auth-webhook-worker auth-webhook-scheduler
-```
-
-If you want those authSDK containers to come from a local checkout instead of
-GHCR, add `-f docker-compose.authsdk.local.yml --build`.
-
-2. Install backend dependencies and frontend dependencies:
+Install backend dependencies:
 
 ```powershell
 cd backend
 uv sync --group dev
-cd ..
+```
+
+Install shared frontend dependencies:
+
+```powershell
 npm install
 cd frontend\jobseeker; npm install
 cd ..\employer; npm install
 cd ..\admin; npm install
 ```
 
-3. Run the backend:
-
-```powershell
-cd ..\..\backend
-uv run alembic upgrade head
-uv run uvicorn app.main:app --reload --port 9000
-```
-
-4. Copy the frontend env templates if you want to override defaults:
-
-```powershell
-Copy-Item frontend\jobseeker\.env.example frontend\jobseeker\.env.local
-Copy-Item frontend\employer\.env.example frontend\employer\.env.local
-Copy-Item frontend\admin\.env.example frontend\admin\.env.local
-```
-
-The default frontend setup points `VITE_AUTH_BASE_URL` at `/_auth` and proxies that internal path to `VITE_AUTH_PROXY_TARGET`. Keep that pattern unless your deployed auth service already handles browser CORS.
-
-5. Run the frontends:
-
-```powershell
-cd ..\frontend\jobseeker; npm run dev
-cd ..\employer; npm run dev
-cd ..\admin; npm run dev
-```
-
-## Transit Data
-
-Transit accessibility uses the official Metro St. Louis GTFS feed at `https://www.metrostlouis.org/Transit/google_transit.zip` and stores the local copy at `backend/data/metro_stl_gtfs.zip`.
-
-If the feed is missing or geocoding fails, listing creation still succeeds, but `job_lat`, `job_lon`, and `transit_accessible` may remain `null` until a later recompute.
-
-## Database Migrations
-
-Alembic is configured in `backend/alembic.ini` and `backend/migrations/`.
-
-Common commands:
-
-```powershell
-cd backend
-uv run alembic upgrade head
-uv run alembic revision -m "describe-change"
-uv run alembic revision --autogenerate -m "describe-change"
-uv run python -m app.db.seed
-```
-
-The bootstrap migration and the first real schema migration are both included, so the migration pipeline is ready for local database setup now.
-
-Set `TWA_SEED_STAFF_AUTH_USER_ID` and `TWA_SEED_STAFF_EMAIL` in `.env` if you want the seed command to create or refresh a local staff app user in addition to the default notification config row.
-
-## Code Quality
-
-Backend quality tools are configured in `backend/pyproject.toml`:
+Run backend checks:
 
 ```powershell
 cd backend
 uv run ruff check .
 uv run black --check .
+uv run pytest
 ```
 
-Frontend quality tools are configured at the repo root:
+Run frontend checks:
 
 ```powershell
 npm run lint:frontend
@@ -163,51 +77,23 @@ npm run test:frontend
 npm run format:check
 ```
 
-## API Docs
+## Documentation
 
-FastAPI serves OpenAPI docs out of the box:
+Start with the docs index at [docs/README.md](docs/README.md).
 
-- Swagger UI: `http://localhost:9000/docs`
-- ReDoc: `http://localhost:9000/redoc`
-- OpenAPI JSON: `http://localhost:9000/openapi.json`
+- Setup and workflow: [docs/local-development.md](docs/local-development.md)
+- Architecture and boundaries: [docs/architecture.md](docs/architecture.md)
+- Testing and QA: [docs/testing-and-qa.md](docs/testing-and-qa.md)
+- API reference: [docs/reference/api-contract.md](docs/reference/api-contract.md)
+- Product reference: [docs/reference/project-specification.md](docs/reference/project-specification.md)
+- Engineering standards: [docs/reference/engineering-rules.md](docs/reference/engineering-rules.md)
 
-## Email Testing
+## Community Docs
 
-MailHog is included for local notification testing, and the TWA backend now uses it for Phase 11 email notifications.
-
-- SMTP host: `localhost`
-- SMTP port: `1025`
-- Default sender: `notifications@localhost`
-- Web UI: `http://localhost:8025`
-- Override with `TWA_SMTP_HOST`, `TWA_SMTP_PORT`, `TWA_SMTP_TIMEOUT_SECONDS`, `TWA_EMAIL_FROM`, and `TWA_NOTIFICATION_EMAIL_ENABLED` when needed
-
-## SDK Integration Note
-
-The backend now installs `auth-service-sdk` from the official `authSDK` GitHub repository pinned to the `v1.1.0` source revision in `backend/pyproject.toml`. The default Docker auth service flow also uses the published container image, while `AUTHSDK_PATH` is only needed if you opt into the local-build override file.
-
-## Frontend Foundation
-
-Phase 13A added a shared frontend layer in `shared/frontend/`:
-
-- shared design tokens and primitive components
-- shared authSDK client utilities with token storage, refresh, OTP, logout, and password reset helpers
-- shared TWA auth bootstrap handling via `/api/v1/auth/me` and `/api/v1/auth/bootstrap`
-- shared route guards that enforce the local TWA app role
-
-A small root `package.json` now owns the React dependencies used by shared code outside the individual Vite app folders.
-
-## Key Docs
-
-- [project.md](project.md)
-- [implementation-guide.md](implementation-guide.md)
-- [api-contract.md](api-contract.md)
-- [RULES.md](RULES.md)
-- [docs/local-development.md](docs/local-development.md)
-- [docs/testing-qa.md](docs/testing-qa.md)
 - [CONTRIBUTING.md](CONTRIBUTING.md)
 - [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)
 - [LICENSE](LICENSE)
 
 ## CI
 
-GitHub Actions CI lives in `.github/workflows/ci.yml` and now runs backend tests, frontend lint/format/test checks, and builds all three frontend apps on every push, pull request, and manual dispatch.
+GitHub Actions CI lives in `.github/workflows/ci.yml` and runs backend lint/tests, frontend lint/format/tests, and builds for all three frontend apps on pushes, pull requests, and manual dispatches.

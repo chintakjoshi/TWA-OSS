@@ -1,4 +1,4 @@
-# RULES
+# Engineering Rules
 
 This document defines the baseline engineering and design rules for TWA. These are not optional preferences. They are the default standards for production-quality work in this repository.
 

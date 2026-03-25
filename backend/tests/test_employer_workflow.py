@@ -28,7 +28,7 @@ from app.services.transit import TransitComputationResult
 @pytest.fixture()
 def sqlite_url() -> Generator[str, None, None]:
     with tempfile.TemporaryDirectory() as temp_dir:
-        yield f"sqlite+pysqlite:///{Path(temp_dir) / 'phase6.db'}"
+        yield f"sqlite+pysqlite:///{Path(temp_dir) / 'employer-workflow.db'}"
 
 
 @pytest.fixture()
@@ -45,7 +45,7 @@ def session_factory(sqlite_url: str):
 
 
 @pytest.fixture()
-def phase6_env(monkeypatch: pytest.MonkeyPatch, session_factory):
+def employer_workflow_env(monkeypatch: pytest.MonkeyPatch, session_factory):
     monkeypatch.setenv("TWA_AUTH_ENABLED", "false")
     monkeypatch.setenv("TWA_DEBUG", "false")
     get_settings.cache_clear()
@@ -96,8 +96,8 @@ def seed_staff(session_factory, *, auth_user_id: uuid.UUID | None = None) -> App
         return staff
 
 
-def test_employer_review_and_listing_workflow(phase6_env) -> None:
-    client, state, session_factory = phase6_env
+def test_employer_review_and_listing_workflow(employer_workflow_env) -> None:
+    client, state, session_factory = employer_workflow_env
 
     bootstrap = client.post(
         "/api/v1/auth/bootstrap",
@@ -219,8 +219,10 @@ def test_employer_review_and_listing_workflow(phase6_env) -> None:
     assert len(audits) >= 3
 
 
-def test_staff_can_reassess_rejected_employer_and_listing(phase6_env) -> None:
-    client, state, session_factory = phase6_env
+def test_staff_can_reassess_rejected_employer_and_listing(
+    employer_workflow_env,
+) -> None:
+    client, state, session_factory = employer_workflow_env
 
     bootstrap = client.post(
         "/api/v1/auth/bootstrap",
@@ -291,8 +293,10 @@ def test_staff_can_reassess_rejected_employer_and_listing(phase6_env) -> None:
     assert approved_listing.json()["listing"]["review_status"] == "approved"
 
 
-def test_staff_cannot_move_employer_from_approved_back_to_pending(phase6_env) -> None:
-    client, state, session_factory = phase6_env
+def test_staff_cannot_move_employer_from_approved_back_to_pending(
+    employer_workflow_env,
+) -> None:
+    client, state, session_factory = employer_workflow_env
 
     bootstrap = client.post(
         "/api/v1/auth/bootstrap",
@@ -328,8 +332,8 @@ def test_staff_cannot_move_employer_from_approved_back_to_pending(phase6_env) ->
     assert invalid.json()["error"]["code"] == "STATE_TRANSITION_NOT_ALLOWED"
 
 
-def test_staff_cannot_reopen_closed_listing(phase6_env) -> None:
-    client, state, session_factory = phase6_env
+def test_staff_cannot_reopen_closed_listing(employer_workflow_env) -> None:
+    client, state, session_factory = employer_workflow_env
 
     bootstrap = client.post(
         "/api/v1/auth/bootstrap",
@@ -394,10 +398,10 @@ def test_staff_cannot_reopen_closed_listing(phase6_env) -> None:
 
 
 def test_employer_can_view_listing_applicants_when_sharing_is_enabled(
-    phase6_env,
+    employer_workflow_env,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    client, state, session_factory = phase6_env
+    client, state, session_factory = employer_workflow_env
     monkeypatch.setattr(
         "app.services.employer.geocode_address",
         lambda **_: GeocodeResult(38.6270, -90.1994, "St. Louis"),
