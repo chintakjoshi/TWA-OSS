@@ -36,6 +36,8 @@ x-auth-service-env: &auth-service-env
   SIGNING_KEYS__ENCRYPTION_KEY: ${AUTH_SIGNING_KEYS_ENCRYPTION_KEY:-local-dev-signing-keys-encryption-key}
   WEBHOOK__SECRET_ENCRYPTION_KEY: ${AUTH_WEBHOOK_SECRET_ENCRYPTION_KEY:-local-dev-webhook-secret-encryption-key}
 
+x-auth-service-image: &auth-service-image ${AUTH_SERVICE_IMAGE}
+
 services:
   twa-postgres:
     image: postgres:17
@@ -116,10 +118,8 @@ services:
       - twa-network
 
   auth-service:
-    build:
-      context: ${AUTHSDK_PATH:-../authSDK-1.1.0}
-      dockerfile: docker/Dockerfile
-    image: auth-service:local
+    image: *auth-service-image
+    pull_policy: missing
     container_name: auth-service
     depends_on:
       auth-postgres:
@@ -153,7 +153,8 @@ services:
       - twa-network
 
   auth-webhook-worker:
-    image: auth-service:local
+    image: *auth-service-image
+    pull_policy: missing
     container_name: auth-webhook-worker
     depends_on:
       auth-postgres:
@@ -182,7 +183,8 @@ services:
       - twa-network
 
   auth-webhook-scheduler:
-    image: auth-service:local
+    image: *auth-service-image
+    pull_policy: missing
     container_name: auth-webhook-scheduler
     depends_on:
       auth-postgres:
