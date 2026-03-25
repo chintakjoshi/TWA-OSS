@@ -25,17 +25,27 @@ The frontend apps talk to `authSDK` through a same-origin `/_auth` proxy during 
 Copy-Item .env.example .env
 ```
 
-2. Make sure the local auth checkout exists at `C:\Users\srava\Desktop\authSDK-1.1.0` or update `AUTHSDK_PATH` in `.env`. This is only needed for the local Docker auth service build.
+2. By default, the auth service containers pull
+   `ghcr.io/chintakjoshi/auth-service:v1.2.1` via `AUTH_SERVICE_IMAGE`, so a
+   local `authSDK` checkout is not required.
 
 3. Start the full stack:
 
 ```powershell
-docker compose up --build
+docker compose up
 ```
 
-4. Rebuild with `docker compose up --build` after source changes so the Docker images pick up your latest code.
+4. If you want to build authSDK from a local checkout instead, keep
+   `AUTHSDK_PATH` pointed at your clone and use the local override file:
 
-5. Open the local services:
+```powershell
+docker compose -f docker-compose.yml -f docker-compose.authsdk.local.yml up --build
+```
+
+5. Re-run the same command when you want Docker to pick up authSDK source
+   changes from your local checkout.
+
+6. Open the local services:
 
 - TWA backend API: `http://localhost:9000`
 - Swagger UI: `http://localhost:9000/docs`
@@ -59,6 +69,9 @@ Adminer can connect to:
 ```powershell
 docker compose up -d twa-postgres auth-postgres auth-redis adminer mailhog auth-service auth-webhook-worker auth-webhook-scheduler
 ```
+
+If you want those authSDK containers to come from a local checkout instead of
+GHCR, add `-f docker-compose.authsdk.local.yml --build`.
 
 2. Install backend dependencies and frontend dependencies:
 
@@ -160,7 +173,7 @@ MailHog is included for local notification testing, and the TWA backend now uses
 
 ## SDK Integration Note
 
-The backend now installs `auth-service-sdk` from the official `authSDK` GitHub repository pinned to the `v1.1.0` source revision in `backend/pyproject.toml`. The local `AUTHSDK_PATH` setting is still used for the Dockerized auth service, but backend dependency installation and GitHub CI no longer depend on a sibling SDK checkout.
+The backend now installs `auth-service-sdk` from the official `authSDK` GitHub repository pinned to the `v1.1.0` source revision in `backend/pyproject.toml`. The default Docker auth service flow also uses the published container image, while `AUTHSDK_PATH` is only needed if you opt into the local-build override file.
 
 ## Frontend Foundation
 
