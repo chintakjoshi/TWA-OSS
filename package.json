@@ -7,8 +7,8 @@
     "lint:frontend": "eslint \"frontend/**/*.{ts,tsx}\" \"shared/frontend/**/*.{ts,tsx}\"",
     "test:frontend": "vitest run",
     "test:frontend:watch": "vitest",
-    "format": "prettier --write \"frontend/**/*.{ts,tsx,css,html}\" \"shared/frontend/**/*.{ts,tsx,css}\" \"*.{json,md}\"",
-    "format:check": "prettier --check \"frontend/**/*.{ts,tsx,css,html}\" \"shared/frontend/**/*.{ts,tsx,css}\" \"*.{json,md}\""
+    "format": "prettier --write \"frontend/**/*.{ts,tsx,css,html}\" \"shared/frontend/**/*.{ts,tsx,css}\" \"docs/**/*.md\" \"*.{json,md}\"",
+    "format:check": "prettier --check \"frontend/**/*.{ts,tsx,css,html}\" \"shared/frontend/**/*.{ts,tsx,css}\" \"docs/**/*.md\" \"*.{json,md}\""
   },
   "dependencies": {
     "@fontsource/inter": "^5.2.8",

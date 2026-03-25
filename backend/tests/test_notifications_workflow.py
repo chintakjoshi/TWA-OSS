@@ -41,7 +41,7 @@ from app.services.auth import AuthProviderIdentity, get_auth_provider_identity
 @pytest.fixture()
 def sqlite_url() -> Generator[str, None, None]:
     with tempfile.TemporaryDirectory() as temp_dir:
-        yield f"sqlite+pysqlite:///{Path(temp_dir) / 'phase11.db'}"
+        yield f"sqlite+pysqlite:///{Path(temp_dir) / 'notifications-workflow.db'}"
 
 
 @pytest.fixture()
@@ -58,7 +58,7 @@ def session_factory(sqlite_url: str):
 
 
 @pytest.fixture()
-def phase11_env(monkeypatch: pytest.MonkeyPatch, session_factory):
+def notifications_env(monkeypatch: pytest.MonkeyPatch, session_factory):
     monkeypatch.setenv("TWA_AUTH_ENABLED", "false")
     monkeypatch.setenv("TWA_DEBUG", "false")
     monkeypatch.setenv("TWA_NOTIFICATION_EMAIL_ENABLED", "true")
@@ -239,8 +239,8 @@ def seed_application(
         return application
 
 
-def test_staff_can_get_and_update_notification_config(phase11_env) -> None:
-    client, state, session_factory, _ = phase11_env
+def test_staff_can_get_and_update_notification_config(notifications_env) -> None:
+    client, state, session_factory, _ = notifications_env
     staff = seed_staff(
         session_factory, auth_user_id=uuid.UUID("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb")
     )
@@ -286,8 +286,8 @@ def test_staff_can_get_and_update_notification_config(phase11_env) -> None:
     assert audit_entry.actor_id == staff.id
 
 
-def test_application_submission_notifies_staff_by_default(phase11_env) -> None:
-    client, state, session_factory, sent_emails = phase11_env
+def test_application_submission_notifies_staff_by_default(notifications_env) -> None:
+    client, state, session_factory, sent_emails = notifications_env
     staff = seed_staff(
         session_factory, auth_user_id=uuid.UUID("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb")
     )
@@ -324,9 +324,9 @@ def test_application_submission_notifies_staff_by_default(phase11_env) -> None:
 
 
 def test_application_submission_can_notify_employer_when_toggle_enabled(
-    phase11_env,
+    notifications_env,
 ) -> None:
-    client, state, session_factory, sent_emails = phase11_env
+    client, state, session_factory, sent_emails = notifications_env
     staff = seed_staff(
         session_factory, auth_user_id=uuid.UUID("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb")
     )
@@ -381,9 +381,9 @@ def test_application_submission_can_notify_employer_when_toggle_enabled(
 
 
 def test_employer_review_and_listing_review_notifications_are_readable(
-    phase11_env,
+    notifications_env,
 ) -> None:
-    client, state, session_factory, sent_emails = phase11_env
+    client, state, session_factory, sent_emails = notifications_env
     staff = seed_staff(
         session_factory, auth_user_id=uuid.UUID("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb")
     )
@@ -438,8 +438,8 @@ def test_employer_review_and_listing_review_notifications_are_readable(
     assert {email["recipient"] for email in sent_emails} == {employer_user.email}
 
 
-def test_application_status_updates_notify_jobseeker(phase11_env) -> None:
-    client, state, session_factory, sent_emails = phase11_env
+def test_application_status_updates_notify_jobseeker(notifications_env) -> None:
+    client, state, session_factory, sent_emails = notifications_env
     staff = seed_staff(
         session_factory, auth_user_id=uuid.UUID("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb")
     )

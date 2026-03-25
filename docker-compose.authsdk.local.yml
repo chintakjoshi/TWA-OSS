@@ -1,7 +1,7 @@
 services:
   auth-service:
     build:
-      context: ${AUTHSDK_PATH:-../authSDK-1.1.0}
+      context: ${AUTHSDK_PATH:-../authSDK-1.2.1}
       dockerfile: docker/Dockerfile
     image: auth-service:local
     pull_policy: never

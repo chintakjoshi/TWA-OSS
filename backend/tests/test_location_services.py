@@ -90,7 +90,7 @@ def test_geocode_address_parses_nominatim_response() -> None:
 @pytest.fixture()
 def sqlite_url() -> Generator[str, None, None]:
     with tempfile.TemporaryDirectory() as temp_dir:
-        yield f"sqlite+pysqlite:///{Path(temp_dir) / 'phase8.db'}"
+        yield f"sqlite+pysqlite:///{Path(temp_dir) / 'location-services.db'}"
 
 
 @pytest.fixture()
@@ -107,7 +107,7 @@ def session_factory(sqlite_url: str):
 
 
 @pytest.fixture()
-def phase8_env(monkeypatch: pytest.MonkeyPatch, session_factory):
+def location_services_env(monkeypatch: pytest.MonkeyPatch, session_factory):
     monkeypatch.setenv("TWA_AUTH_ENABLED", "false")
     monkeypatch.setenv("TWA_DEBUG", "false")
     get_settings.cache_clear()
@@ -170,8 +170,8 @@ def approve_employer(client: TestClient, state: dict, session_factory) -> None:
     )
 
 
-def test_listing_creation_computes_location_fields(phase8_env) -> None:
-    client, state, session_factory, monkeypatch = phase8_env
+def test_listing_creation_computes_location_fields(location_services_env) -> None:
+    client, state, session_factory, monkeypatch = location_services_env
     monkeypatch.setattr(
         "app.services.employer.geocode_address",
         lambda **_: GeocodeResult(38.6270, -90.1994, "St. Louis"),
@@ -214,8 +214,8 @@ def test_listing_creation_computes_location_fields(phase8_env) -> None:
     assert stored.transit_accessible is True
 
 
-def test_listing_creation_survives_geocoding_failure(phase8_env) -> None:
-    client, state, session_factory, monkeypatch = phase8_env
+def test_listing_creation_survives_geocoding_failure(location_services_env) -> None:
+    client, state, session_factory, monkeypatch = location_services_env
     monkeypatch.setattr("app.services.employer.geocode_address", lambda **_: None)
 
     bootstrap = client.post(

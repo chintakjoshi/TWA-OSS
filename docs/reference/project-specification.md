@@ -1,5 +1,7 @@
 # TWA App - Project Specification
 
+This document captures the product and business-rule reference for TWA. Use it as the high-level product spec; use `api-contract.md` for endpoint details and the docs index for current setup guidance.
+
 ## Overview
 
 A web application for Saint Louis University's Transformative Workforce Academy (TWA) that connects justice-involved jobseekers with fair-chance employers. The app supports two-way matching between jobseekers and job listings, manages employer and jobseeker onboarding, and provides TWA staff with tools to review, approve, and track placements.

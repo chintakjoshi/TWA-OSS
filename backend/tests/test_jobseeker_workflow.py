@@ -31,7 +31,7 @@ from app.services.auth import AuthProviderIdentity, get_auth_provider_identity
 @pytest.fixture()
 def sqlite_url() -> Generator[str, None, None]:
     with tempfile.TemporaryDirectory() as temp_dir:
-        yield f"sqlite+pysqlite:///{Path(temp_dir) / 'phase7.db'}"
+        yield f"sqlite+pysqlite:///{Path(temp_dir) / 'jobseeker-workflow.db'}"
 
 
 @pytest.fixture()
@@ -48,7 +48,7 @@ def session_factory(sqlite_url: str):
 
 
 @pytest.fixture()
-def phase7_env(monkeypatch: pytest.MonkeyPatch, session_factory):
+def jobseeker_workflow_env(monkeypatch: pytest.MonkeyPatch, session_factory):
     monkeypatch.setenv("TWA_AUTH_ENABLED", "false")
     monkeypatch.setenv("TWA_DEBUG", "false")
     get_settings.cache_clear()
@@ -151,8 +151,8 @@ def seed_application_for_jobseeker(
         return jobseeker
 
 
-def test_jobseeker_profile_completion_flow(phase7_env) -> None:
-    client, state, _ = phase7_env
+def test_jobseeker_profile_completion_flow(jobseeker_workflow_env) -> None:
+    client, state, _ = jobseeker_workflow_env
 
     bootstrap = client.post("/api/v1/auth/bootstrap", json={"role": "jobseeker"})
     assert bootstrap.status_code == 200
@@ -197,8 +197,8 @@ def test_jobseeker_profile_completion_flow(phase7_env) -> None:
     assert payload["charges"]["drug"] is True
 
 
-def test_staff_can_list_view_and_update_jobseekers(phase7_env) -> None:
-    client, state, session_factory = phase7_env
+def test_staff_can_list_view_and_update_jobseekers(jobseeker_workflow_env) -> None:
+    client, state, session_factory = jobseeker_workflow_env
 
     bootstrap = client.post("/api/v1/auth/bootstrap", json={"role": "jobseeker"})
     assert bootstrap.status_code == 200

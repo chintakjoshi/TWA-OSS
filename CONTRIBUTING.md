@@ -1,70 +1,78 @@
-# Contributing to TWA
+# Contributing To TWA
 
-First off, thank you for considering contributing to TWA. It's people like you that make TWA such a great tool.
+Thanks for helping improve TWA. This repo includes a FastAPI backend, three React frontends, and shared frontend code, so good contributions usually touch code, tests, and docs together.
 
-## Where to Start?
+## Before You Start
 
-1. Beginner: If you're new to the project and want to help, start by checking out the issues labeled good first issue. These are typically simpler tasks that are great for first-timers.
-2. Experienced: If you're familiar with the project and are looking for a challenge, look for issues labeled help wanted.
+- Read the root [README.md](README.md) for quick orientation.
+- Use [docs/README.md](docs/README.md) to find the right setup or reference guide.
+- Follow the standards in [docs/reference/engineering-rules.md](docs/reference/engineering-rules.md).
+- Review the [Code of Conduct](CODE_OF_CONDUCT.md).
 
-## Ways to Contribute
+## Local Setup
 
-- Reporting Bugs: If you find a bug, please search the issues to see if it has already been reported. If not, open a new issue with a descriptive title and clear description.
-- Suggesting Enhancements: If you have an idea to improve the project, open a new issue. Be as clear and descriptive as possible.
-- Code Contributions: If you'd like to contribute code (whether to fix a bug, add a new feature, or otherwise), fork the repository, make your changes, and submit a pull request.
+Use the setup guide in [docs/local-development.md](docs/local-development.md). The short version is:
 
-## Pull Request Process
+```powershell
+Copy-Item .env.example .env
+docker compose up
+```
 
-1. Fork the Repository: If you're not sure how to do this, there's a button in the top right corner of the GitHub page that says "Fork".
-2. Clone Your Fork: Once you've forked the repository, you can clone it to your local machine and begin making changes.
-3. Commit Your Changes: Make sure to write clear, concise commit messages that explain the purpose and context of your changes.
-4. Push to Your Fork: Once you're ready, push your changes to your fork on GitHub.
-5. Submit a Pull Request: Go to the main repository's page, and you should see a button that says "New pull request". Click it, compare your fork, and submit the request.
+If you prefer running code on the host, the local development guide includes the backend, frontend, and authSDK workflow as well.
 
-## Code Style and Linters
+## Development Expectations
 
-- **Comments:** Comment your code where necessary. This helps others understand the purpose and functionality of your code.
-- **Variable Naming:** Use descriptive variable names that convey the purpose of the variable.
+- Keep route handlers thin and put business logic in services.
+- Ship schema changes with Alembic migrations.
+- Update docs when setup, behavior, API contracts, or workflows change.
+- Avoid unrelated cleanup in the same change unless it is directly needed.
+- Do not commit secrets, local credentials, or environment-specific artifacts.
 
-Please adhere to the coding conventions used throughout the project. If the project uses a linter or has a style guide, make sure your contributions respect them.
+## Quality Checks
 
-## Testing
+Run backend checks:
 
-- **Regression Tests:** Ensure that your changes don't break existing functionality.
-- **Add Test Cases:** For new features, add test cases to cover the new functionality.
+```powershell
+cd backend
+uv run ruff check .
+uv run black --check .
+uv run pytest
+```
 
-Ensure that your code includes adequate tests if applicable and that all tests pass before submitting a pull request.
+Run frontend checks from the repo root:
 
-## Documentation
+```powershell
+npm run lint:frontend
+npm run test:frontend
+npm run format:check
+```
 
-- **Inline Documentation:** For complex code snippets, provide inline documentation.
-- **User Guide Updates:** If your changes affect how users interact with the project, update the user guide accordingly.
+Verify each frontend app builds when your change affects UI behavior:
 
-## Engage with the Community
+```powershell
+cd frontend\jobseeker; npm run build
+cd ..\employer; npm run build
+cd ..\admin; npm run build
+```
 
-- **Join Meetings:** Participate in regular community meetings to stay updated and share your insights.
-- **Mentorship:** Consider mentoring new contributors. Sharing your expertise can help grow and strengthen the community.
+## Pull Requests
 
-## Feedback Loop
+When opening a PR:
 
-- **Act on Review Feedback:** When your pull request is reviewed, there might be feedback or changes requested. Act on this feedback promptly.
-- **Review Others' PRs:** Reviewing others' pull requests can give you a new perspective and help you understand the project better.
+- describe what changed and why
+- call out user-facing behavior changes
+- mention any follow-up work or known gaps
+- include test coverage or manual verification notes
+- include doc updates when the change affects usage, setup, or architecture
 
-## Respect and Recognition
+Small, focused PRs are easier to review and safer to merge.
 
-- **Acknowledge Others:** If you used someone's code or idea, give them credit.
-- **Celebrate Success:** Celebrate when your pull request gets merged or when you achieve a significant contribution milestone.
+## Reporting Bugs Or Ideas
 
-## Stay Updated
+- Search existing issues first.
+- Open a new issue with clear reproduction steps or a clear enhancement proposal.
+- Include logs, screenshots, API responses, or environment notes when they help narrow the problem quickly.
 
-Make sure to regularly pull from the main repository to keep your fork up-to-date with the latest changes. This will help avoid merge conflicts.
+## Questions And Collaboration
 
-## Seeking Help
-
-If you're unsure about something or need assistance, don't hesitate to ask. Reach out on our community chat or discussion forums.
-
-## Community and Behavioral Expectations
-
-Please read and follow our [Code Of Conduct](CODE_OF_CONDUCT.md) to ensure our community remains welcoming and respectful to all contributors.
-
-## Thank you for your interest in contributing to TWA! We look forward to reviewing your contribution and, hopefully, merging it into the project.
+If something is unclear, open an issue or ask in the project discussion channel that your team uses. Clear questions early are better than avoidable churn later.

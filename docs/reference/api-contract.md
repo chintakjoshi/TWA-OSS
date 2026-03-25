@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This document defines the backend API contract for the TWA app. It is the shared agreement between frontend and backend implementation and supersedes the rough endpoint notes in `project.md` where the two differ.
+This document defines the backend API contract for the TWA app. It is the shared agreement between frontend and backend implementation and supersedes the rough endpoint notes in `project-specification.md` where the two differ.
 
 Key decisions reflected here:
 
