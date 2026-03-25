@@ -39,6 +39,10 @@ The repo supports two local workflows:
 - `docker-compose.yml` pulls authSDK from `AUTH_SERVICE_IMAGE` by default and pins to `ghcr.io/chintakjoshi/auth-service:v1.2.1`, so a local authSDK checkout is optional.
 - Use `docker compose -f docker-compose.yml -f docker-compose.authsdk.local.yml up --build` when you want to build authSDK from `AUTHSDK_PATH` instead of pulling from GHCR.
 - `AUTHSDK_PATH` defaults to `../authSDK-1.1.0` and is only used by `docker-compose.authsdk.local.yml`.
+- Adminer connection values:
+  - TWA app DB -> System `PostgreSQL`, Server `twa-postgres`, Username `twa`, Password `twa`, Database `twa`
+  - authSDK DB -> System `PostgreSQL`, Server `auth-postgres`, Username `postgres`, Password any value, Database `auth_service`
+  - The authSDK Postgres container uses trust auth locally, so Adminer may still require text in the password box even though Postgres does not validate it.
 - `twa-backend` runs `alembic upgrade head` on container startup so migrations stay applied.
 - `shared/frontend/` contains the shared frontend design tokens, primitives, auth client, and route-guard layer used by all three apps.
 - Frontend auth requests should use the same-origin `/_auth` path and rely on the Vite proxy target instead of calling `http://localhost:8000` directly from the browser. This keeps the public `/auth` SPA route free for the app itself.
