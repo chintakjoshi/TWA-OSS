@@ -59,8 +59,18 @@ docker compose -f docker-compose.yml -f docker-compose.authsdk.local.yml up --bu
 
 Adminer can connect to:
 
-- TWA Postgres host: `twa-postgres`, database: `twa`, username: `twa`, password: `twa`
-- authSDK Postgres host: `auth-postgres`, database: `auth_service`, username: `postgres`, password: empty
+- TWA app database:
+  - System: `PostgreSQL`
+  - Server: `twa-postgres`
+  - Username: `twa`
+  - Password: `twa`
+  - Database: `twa`
+- authSDK database:
+  - System: `PostgreSQL`
+  - Server: `auth-postgres`
+  - Username: `postgres`
+  - Password: any value works because the local auth Postgres container uses trust auth
+  - Database: `auth_service`
 
 ### Option 2: Run TWA Locally And Reuse Docker For Infrastructure
 
