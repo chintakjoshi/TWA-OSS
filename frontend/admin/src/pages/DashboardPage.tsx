@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import {
   Activity,
   CheckCheck,
@@ -125,6 +126,7 @@ function describeActivity(entry: AuditLogEntry) {
 
 export function AdminDashboardPage() {
   const auth = useAuth()
+  const navigate = useNavigate()
   const { summary, summaryLoading, refreshSummary } = useAdminShell()
   const [activity, setActivity] = useState<AuditLogEntry[]>([])
   const [applications, setApplications] = useState<AdminApplication[]>([])
@@ -211,6 +213,7 @@ export function AdminDashboardPage() {
               hint="Accounts waiting for review."
               icon={FileClock}
               label="Pending Employer Approvals"
+              onClick={() => navigate('/employers/queue')}
               value={summary.pending_employers}
             />
             <StatCard
@@ -218,6 +221,7 @@ export function AdminDashboardPage() {
               hint="Listings still awaiting staff decisions."
               icon={ClipboardList}
               label="Pending Listing Reviews"
+              onClick={() => navigate('/listings/queue')}
               value={summary.pending_listings}
             />
             <StatCard
@@ -225,6 +229,7 @@ export function AdminDashboardPage() {
               hint="Active profiles in the current TWA system."
               icon={Users}
               label="Active Jobseekers"
+              onClick={() => navigate('/jobseekers')}
               value={summary.active_jobseekers}
             />
             <StatCard
@@ -232,6 +237,7 @@ export function AdminDashboardPage() {
               hint="Applications not yet resolved into hires."
               icon={CheckCheck}
               label="Open Applications"
+              onClick={() => navigate('/applications')}
               value={summary.open_applications}
             />
           </div>

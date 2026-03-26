@@ -20,6 +20,7 @@ import {
   TableWrap,
   DataTable,
   inputClassName,
+  tableActionButtonClassName,
 } from '../components/ui/AdminUi'
 import { EmptyState, ErrorState, LoadingState } from '../components/PageState'
 import { announceComingSoon } from '../lib/comingSoon'
@@ -194,6 +195,7 @@ export function AdminListingQueuePage() {
                             <TableCell>
                               <div className="flex flex-wrap gap-2">
                                 <AdminButton
+                                  className={tableActionButtonClassName}
                                   variant="success"
                                   onClick={() =>
                                     void submitReview(
@@ -207,6 +209,7 @@ export function AdminListingQueuePage() {
                                   Approve
                                 </AdminButton>
                                 <AdminButton
+                                  className={tableActionButtonClassName}
                                   variant="warning"
                                   onClick={() =>
                                     announceComingSoon('Request changes')
@@ -215,6 +218,7 @@ export function AdminListingQueuePage() {
                                   Request Changes
                                 </AdminButton>
                                 <AdminButton
+                                  className={tableActionButtonClassName}
                                   variant="danger"
                                   onClick={() =>
                                     void submitReview(
@@ -228,6 +232,7 @@ export function AdminListingQueuePage() {
                                   Reject
                                 </AdminButton>
                                 <AdminButton
+                                  className={tableActionButtonClassName}
                                   variant="secondary"
                                   onClick={() => {
                                     setSelected(listing)

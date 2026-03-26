@@ -19,6 +19,8 @@ import {
   TableWrap,
   DataTable,
   inputClassName,
+  tableActionButtonClassName,
+  toolbarInputClassName,
 } from '../components/ui/AdminUi'
 import { EmptyState, ErrorState, LoadingState } from '../components/PageState'
 import { applicationTone, formatDate } from '../lib/formatting'
@@ -118,13 +120,13 @@ export function AdminApplicationsPage() {
               action={
                 <div className="grid gap-3 md:grid-cols-[180px_160px]">
                   <input
-                    className={inputClassName}
+                    className={toolbarInputClassName}
                     placeholder="Search..."
                     value={search}
                     onChange={(event) => setSearch(event.target.value)}
                   />
                   <select
-                    className={inputClassName}
+                    className={toolbarInputClassName}
                     value={statusFilter}
                     onChange={(event) => {
                       setPage(1)
@@ -178,6 +180,7 @@ export function AdminApplicationsPage() {
                               <div className="flex flex-wrap gap-2">
                                 {item.status !== 'hired' ? (
                                   <AdminButton
+                                    className={tableActionButtonClassName}
                                     variant="success"
                                     onClick={() =>
                                       void handleSave(item, 'hired', false)
@@ -186,11 +189,15 @@ export function AdminApplicationsPage() {
                                     Mark Hired
                                   </AdminButton>
                                 ) : (
-                                  <span className="text-sm text-slate-400">
+                                  <StatusBadge
+                                    className="min-w-[112px]"
+                                    tone="success"
+                                  >
                                     Hired
-                                  </span>
+                                  </StatusBadge>
                                 )}
                                 <AdminButton
+                                  className={tableActionButtonClassName}
                                   variant="secondary"
                                   onClick={() => {
                                     setSelected(item)

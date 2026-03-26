@@ -1,6 +1,7 @@
 import type {
   AdminApplication,
   AdminDashboard,
+  AdminNotification,
   AdminJobseekerDetailResponse,
   ApplicationUpdateInput,
   AuditLogEntry,
@@ -221,6 +222,26 @@ export function updateApplication(
 
 export function getNotificationConfig(requestTwa: RequestTwa) {
   return requestTwa<NotificationConfig>('/api/v1/admin/config/notifications')
+}
+
+export function listMyNotifications(
+  requestTwa: RequestTwa,
+  options: { page?: number; pageSize?: number; unreadOnly?: boolean } = {}
+) {
+  const { page = 1, pageSize = 8, unreadOnly = false } = options
+  return requestTwa<PaginatedResponse<AdminNotification>>(
+    `/api/v1/notifications/me${buildQuery({ page, page_size: pageSize, unread_only: unreadOnly || undefined })}`
+  )
+}
+
+export function markMyNotificationRead(
+  requestTwa: RequestTwa,
+  notificationId: string
+) {
+  return requestTwa<{ notification: { id: string; read_at: string | null } }>(
+    `/api/v1/notifications/me/${notificationId}/read`,
+    { method: 'PATCH' }
+  )
 }
 
 export function updateNotificationConfig(

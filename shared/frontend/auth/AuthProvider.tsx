@@ -40,6 +40,7 @@ interface AuthContextValue {
   bootstrapRole: (payload: AuthBootstrapRequest) => Promise<void>
   logout: () => Promise<void>
   requestTwa: <T>(path: string, init?: RequestInit) => Promise<T>
+  streamTwa: (path: string, init?: RequestInit) => Promise<Response>
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null)
@@ -164,6 +165,12 @@ export function AuthProvider({
         if (!activeSession)
           throw new Error('You must sign in before making this request.')
         return client.requestTwa<T>(path, activeSession, init)
+      },
+      async streamTwa(path: string, init?: RequestInit) {
+        const activeSession = client.loadStoredSession()
+        if (!activeSession)
+          throw new Error('You must sign in before making this request.')
+        return client.streamTwa(path, activeSession, init)
       },
     }),
     [authMe, client, hydrate, otpChallenge, session, state]

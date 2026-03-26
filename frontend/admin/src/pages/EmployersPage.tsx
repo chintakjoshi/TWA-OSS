@@ -20,6 +20,7 @@ import {
   DataTable,
   inputClassName,
   InlineNotice,
+  tableActionButtonClassName,
 } from '../components/ui/AdminUi'
 import { EmptyState, ErrorState, LoadingState } from '../components/PageState'
 import { announceComingSoon } from '../lib/comingSoon'
@@ -165,6 +166,7 @@ export function AdminEmployersPage() {
                             <TableCell>
                               <div className="flex flex-wrap gap-2">
                                 <AdminButton
+                                  className={tableActionButtonClassName}
                                   variant="success"
                                   onClick={() =>
                                     void submitReview(employer, 'approved', '')
@@ -173,6 +175,7 @@ export function AdminEmployersPage() {
                                   Approve
                                 </AdminButton>
                                 <AdminButton
+                                  className={tableActionButtonClassName}
                                   variant="danger"
                                   onClick={() =>
                                     void submitReview(employer, 'rejected', '')
@@ -181,6 +184,7 @@ export function AdminEmployersPage() {
                                   Reject
                                 </AdminButton>
                                 <AdminButton
+                                  className={tableActionButtonClassName}
                                   variant="secondary"
                                   onClick={() => {
                                     setSelected(employer)

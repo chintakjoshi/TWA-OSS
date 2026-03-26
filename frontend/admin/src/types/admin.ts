@@ -120,6 +120,26 @@ export interface NotificationConfig {
   updated_at: string | null
 }
 
+export interface AdminNotification {
+  id: string
+  type: string
+  channel: string
+  title: string
+  body: string
+  read_at: string | null
+  created_at: string
+}
+
+export interface AdminNotificationSnapshot {
+  notifications: AdminNotification[]
+  unread_count: number
+}
+
+export interface AdminNotificationReadResult {
+  id: string
+  read_at: string | null
+}
+
 export interface AuditLogEntry {
   id: string
   actor_id: string | null

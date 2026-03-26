@@ -56,6 +56,11 @@ export interface AuthClient {
     session: StoredSession,
     init?: RequestInit
   ): Promise<T>
+  streamTwa(
+    path: string,
+    session: StoredSession,
+    init?: RequestInit
+  ): Promise<Response>
 }
 
 export function createAuthClient(config: AuthClientConfig): AuthClient {
@@ -70,6 +75,39 @@ export function createAuthClient(config: AuthClientConfig): AuthClient {
     const headers = new Headers(init.headers)
     headers.set('Authorization', `Bearer ${token}`)
     return requestJson<T>(joinUrl(baseUrl, path), { ...init, headers })
+  }
+
+  async function fetchWithBearer(
+    baseUrl: string,
+    path: string,
+    token: string,
+    init: RequestInit = {}
+  ) {
+    const headers = new Headers(init.headers)
+    headers.set('Authorization', `Bearer ${token}`)
+    return fetch(joinUrl(baseUrl, path), { ...init, headers })
+  }
+
+  async function throwResponseError(response: Response): Promise<never> {
+    const isJson =
+      response.headers.get('content-type')?.includes('application/json') ?? false
+    const payload = isJson
+      ? ((await response.json()) as {
+          detail?: string
+          message?: string
+          code?: string
+          error?: { detail?: string; message?: string; code?: string }
+        })
+      : undefined
+    const errorPayload =
+      payload && typeof payload === 'object' && payload.error
+        ? payload.error
+        : payload
+    const message =
+      errorPayload?.message ||
+      errorPayload?.detail ||
+      `Request failed with status ${response.status}`
+    throw new HttpError(response.status, message, errorPayload)
   }
 
   async function refresh(refreshToken?: string): Promise<StoredSession> {
@@ -213,6 +251,31 @@ export function createAuthClient(config: AuthClientConfig): AuthClient {
         }
         throw error
       }
+    },
+    async streamTwa(
+      path: string,
+      session: StoredSession,
+      init: RequestInit = {}
+    ) {
+      let response = await fetchWithBearer(
+        config.twaApiUrl,
+        path,
+        session.accessToken,
+        init
+      )
+      if (response.status === 401) {
+        const nextSession = await refresh(session.refreshToken)
+        response = await fetchWithBearer(
+          config.twaApiUrl,
+          path,
+          nextSession.accessToken,
+          init
+        )
+      }
+      if (!response.ok) {
+        await throwResponseError(response)
+      }
+      return response
     },
     refresh,
   }

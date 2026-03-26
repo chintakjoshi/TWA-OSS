@@ -12,6 +12,7 @@ from app.core.exceptions import AppError
 from app.models import AppUser, Employer, Jobseeker
 from app.models.enums import AppRole, EmployerReviewStatus
 from app.services.jobseeker import is_jobseeker_profile_complete
+from app.services.notifications import notify_staff_employer_pending_review
 
 
 @dataclass(slots=True)
@@ -136,6 +137,8 @@ def bootstrap_user(
         session.add(app_user)
         session.flush()
 
+    created_employer_profile = False
+
     if requested_role == "jobseeker":
         profile = session.execute(
             select(Jobseeker).where(Jobseeker.app_user_id == app_user.id)
@@ -148,19 +151,21 @@ def bootstrap_user(
             select(Employer).where(Employer.app_user_id == app_user.id)
         ).scalar_one_or_none()
         if profile is None:
-            session.add(
-                Employer(
-                    app_user_id=app_user.id,
-                    org_name=employer_profile.org_name,
-                    contact_name=employer_profile.contact_name,
-                    phone=employer_profile.phone,
-                    review_status=EmployerReviewStatus.PENDING,
-                )
+            profile = Employer(
+                app_user_id=app_user.id,
+                org_name=employer_profile.org_name,
+                contact_name=employer_profile.contact_name,
+                phone=employer_profile.phone,
+                review_status=EmployerReviewStatus.PENDING,
             )
+            session.add(profile)
+            created_employer_profile = True
         next_step = "await_staff_approval"
 
     session.commit()
     session.refresh(app_user)
+    if created_employer_profile and isinstance(profile, Employer):
+        notify_staff_employer_pending_review(session, employer=profile)
     return app_user, next_step
 
 

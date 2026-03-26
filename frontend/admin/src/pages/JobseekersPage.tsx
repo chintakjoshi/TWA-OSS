@@ -23,6 +23,8 @@ import {
   TableWrap,
   DataTable,
   inputClassName,
+  tableActionButtonClassName,
+  toolbarInputClassName,
 } from '../components/ui/AdminUi'
 import { EmptyState, ErrorState, LoadingState } from '../components/PageState'
 import { announceComingSoon } from '../lib/comingSoon'
@@ -189,7 +191,7 @@ export function AdminJobseekersPage() {
               action={
                 <div className="grid gap-3 xl:grid-cols-[180px_170px_170px_200px]">
                   <input
-                    className={inputClassName}
+                    className={toolbarInputClassName}
                     placeholder="Search by name..."
                     value={search}
                     onChange={(event) => {
@@ -198,7 +200,7 @@ export function AdminJobseekersPage() {
                     }}
                   />
                   <select
-                    className={inputClassName}
+                    className={toolbarInputClassName}
                     value={statusFilter}
                     onChange={(event) => {
                       setPage(1)
@@ -210,7 +212,7 @@ export function AdminJobseekersPage() {
                     <option value="hired">Hired</option>
                   </select>
                   <select
-                    className={inputClassName}
+                    className={toolbarInputClassName}
                     value={transitFilter}
                     onChange={(event) => {
                       setPage(1)
@@ -223,7 +225,7 @@ export function AdminJobseekersPage() {
                     <option value="both">Both</option>
                   </select>
                   <select
-                    className={inputClassName}
+                    className={toolbarInputClassName}
                     value={chargeFilter}
                     onChange={(event) => {
                       setPage(1)
@@ -292,6 +294,7 @@ export function AdminJobseekersPage() {
                             </TableCell>
                             <TableCell>
                               <AdminButton
+                                className={tableActionButtonClassName}
                                 variant="secondary"
                                 onClick={() => setSelectedId(item.id)}
                               >

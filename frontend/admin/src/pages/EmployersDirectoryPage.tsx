@@ -20,6 +20,8 @@ import {
   TableWrap,
   DataTable,
   inputClassName,
+  tableActionButtonClassName,
+  toolbarInputClassName,
 } from '../components/ui/AdminUi'
 import { EmptyState, ErrorState, LoadingState } from '../components/PageState'
 import { announceComingSoon } from '../lib/comingSoon'
@@ -124,13 +126,13 @@ export function AdminEmployersDirectoryPage() {
               action={
                 <div className="grid gap-3 md:grid-cols-[220px_180px]">
                   <input
-                    className={inputClassName}
+                    className={toolbarInputClassName}
                     placeholder="Search employers..."
                     value={search}
                     onChange={(event) => setSearch(event.target.value)}
                   />
                   <select
-                    className={inputClassName}
+                    className={toolbarInputClassName}
                     value={statusFilter}
                     onChange={(event) => {
                       setPage(1)
@@ -190,6 +192,7 @@ export function AdminEmployersDirectoryPage() {
                             </TableCell>
                             <TableCell>
                               <AdminButton
+                                className={tableActionButtonClassName}
                                 variant="secondary"
                                 onClick={() => {
                                   setSelected(employer)

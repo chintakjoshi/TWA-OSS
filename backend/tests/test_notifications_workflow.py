@@ -1,5 +1,4 @@
 from __future__ import annotations
-
 import tempfile
 import uuid
 from collections.abc import Generator
@@ -237,8 +236,6 @@ def seed_application(
         session.commit()
         session.refresh(application)
         return application
-
-
 def test_staff_can_get_and_update_notification_config(notifications_env) -> None:
     client, state, session_factory, _ = notifications_env
     staff = seed_staff(
@@ -380,6 +377,92 @@ def test_application_submission_can_notify_employer_when_toggle_enabled(
     }
 
 
+def test_employer_bootstrap_notifies_staff_of_pending_review(notifications_env) -> None:
+    client, state, session_factory, sent_emails = notifications_env
+    staff = seed_staff(
+        session_factory, auth_user_id=uuid.UUID("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb")
+    )
+
+    switch_identity(
+        state,
+        auth_user_id=uuid.UUID("dddddddd-dddd-dddd-dddd-dddddddddddd"),
+        email="new-employer@example.com",
+        auth_provider_role="user",
+    )
+    response = client.post(
+        "/api/v1/auth/bootstrap",
+        json={
+            "role": "employer",
+            "employer_profile": {
+                "org_name": "Fresh Start Staffing",
+                "contact_name": "Taylor Reed",
+                "phone": "3145550123",
+            },
+        },
+    )
+    assert response.status_code == 200
+
+    with session_factory() as session:
+        notifications = (
+            session.execute(
+                select(Notification).where(
+                    Notification.type == "employer_review_requested"
+                )
+            )
+            .scalars()
+            .all()
+        )
+
+    assert len(notifications) == 1
+    assert notifications[0].app_user_id == staff.id
+    assert notifications[0].channel == NotificationChannel.IN_APP
+    assert notifications[0].title == "Employer awaiting review"
+    assert {email["recipient"] for email in sent_emails} == {staff.email}
+
+
+def test_listing_submission_notifies_staff_of_pending_review(notifications_env) -> None:
+    client, state, session_factory, sent_emails = notifications_env
+    staff = seed_staff(
+        session_factory, auth_user_id=uuid.UUID("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb")
+    )
+    employer_user, _ = seed_employer(
+        session_factory, auth_user_id=uuid.UUID("cccccccc-cccc-cccc-cccc-cccccccccccc")
+    )
+
+    switch_identity(
+        state,
+        auth_user_id=employer_user.auth_user_id,
+        email=employer_user.email,
+        auth_provider_role="user",
+    )
+    response = client.post(
+        "/api/v1/employer/listings",
+        json={
+            "title": "Warehouse Coordinator",
+            "description": "Coordinate incoming and outgoing shipments.",
+            "transit_required": "any",
+        },
+    )
+    assert response.status_code == 200
+
+    with session_factory() as session:
+        notifications = (
+            session.execute(
+                select(Notification).where(
+                    Notification.type == "listing_review_requested"
+                )
+            )
+            .scalars()
+            .all()
+        )
+
+    assert len(notifications) == 1
+    assert notifications[0].app_user_id == staff.id
+    assert notifications[0].channel == NotificationChannel.IN_APP
+    assert notifications[0].title == "Job listing awaiting review"
+    assert {email["recipient"] for email in sent_emails} == {staff.email}
+
+
 def test_employer_review_and_listing_review_notifications_are_readable(
     notifications_env,
 ) -> None:
@@ -487,3 +570,39 @@ def test_application_status_updates_notify_jobseeker(notifications_env) -> None:
         "application_hired",
     }
     assert {email["recipient"] for email in sent_emails} == {jobseeker_user.email}
+
+
+def test_notification_broker_publishes_new_events(notifications_env) -> None:
+    _, _, session_factory, _ = notifications_env
+    staff = seed_staff(
+        session_factory, auth_user_id=uuid.UUID("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb")
+    )
+    subscriber_id = "test-stream-subscriber"
+    subscriber_queue = notifications_service.notification_stream_broker.subscribe(
+        app_user_id=staff.id,
+        subscriber_id=subscriber_id,
+    )
+
+    try:
+        with session_factory() as session:
+            notifications_service.safe_dispatch_notification(
+                session,
+                event_type="staff_test_event",
+                recipients=[
+                    notifications_service.NotificationRecipient(
+                        app_user_id=staff.id, email=staff.email
+                    )
+                ],
+                title="Stream test",
+                body="A live notification arrived.",
+                send_email=False,
+            )
+        created_event = subscriber_queue.get(timeout=1)
+        assert created_event.event == "notification.created"
+        assert created_event.payload["notification"]["type"] == "staff_test_event"
+        assert created_event.payload["notification"]["title"] == "Stream test"
+    finally:
+        notifications_service.notification_stream_broker.unsubscribe(
+            app_user_id=staff.id,
+            subscriber_id=subscriber_id,
+        )
