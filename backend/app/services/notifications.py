@@ -47,7 +47,9 @@ class NotificationStreamBroker:
         self._lock = Lock()
         self._subscriptions: dict[UUID, dict[str, Queue[NotificationStreamEvent]]] = {}
 
-    def subscribe(self, *, app_user_id: UUID, subscriber_id: str) -> Queue[NotificationStreamEvent]:
+    def subscribe(
+        self, *, app_user_id: UUID, subscriber_id: str
+    ) -> Queue[NotificationStreamEvent]:
         queue: Queue[NotificationStreamEvent] = Queue(maxsize=100)
         with self._lock:
             user_subscriptions = self._subscriptions.setdefault(app_user_id, {})
@@ -211,10 +213,14 @@ def get_recent_notifications_for_user(
 
 
 def count_unread_notifications_for_user(session: Session, *, app_user_id: UUID) -> int:
-    statement = select(func.count()).select_from(Notification).where(
-        Notification.app_user_id == app_user_id,
-        Notification.channel == NotificationChannel.IN_APP,
-        Notification.read_at.is_(None),
+    statement = (
+        select(func.count())
+        .select_from(Notification)
+        .where(
+            Notification.app_user_id == app_user_id,
+            Notification.channel == NotificationChannel.IN_APP,
+            Notification.read_at.is_(None),
+        )
     )
     return session.execute(statement).scalar_one()
 
