@@ -20,6 +20,8 @@ import {
   TableWrap,
   DataTable,
   inputClassName,
+  tableActionButtonClassName,
+  toolbarInputClassName,
 } from '../components/ui/AdminUi'
 import { EmptyState, ErrorState, LoadingState } from '../components/PageState'
 import { announceComingSoon } from '../lib/comingSoon'
@@ -153,7 +155,7 @@ export function AdminListingsPage() {
               action={
                 <div className="grid gap-3 lg:grid-cols-[220px_160px_160px]">
                   <input
-                    className={inputClassName}
+                    className={toolbarInputClassName}
                     placeholder="Search listings..."
                     value={search}
                     onChange={(event) => {
@@ -162,7 +164,7 @@ export function AdminListingsPage() {
                     }}
                   />
                   <select
-                    className={inputClassName}
+                    className={toolbarInputClassName}
                     value={employerFilter}
                     onChange={(event) => {
                       setPage(1)
@@ -177,7 +179,7 @@ export function AdminListingsPage() {
                     ))}
                   </select>
                   <select
-                    className={inputClassName}
+                    className={toolbarInputClassName}
                     value={statusFilter}
                     onChange={(event) => {
                       setPage(1)
@@ -250,6 +252,7 @@ export function AdminListingsPage() {
                             </TableCell>
                             <TableCell>
                               <AdminButton
+                                className={tableActionButtonClassName}
                                 variant="secondary"
                                 onClick={() => {
                                   setSelected(listing)

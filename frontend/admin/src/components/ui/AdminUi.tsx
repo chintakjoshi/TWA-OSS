@@ -63,12 +63,14 @@ export function AdminButton({
   children,
   className,
   icon: Icon,
+  iconClassName,
   variant = 'primary',
   ...props
 }: {
   children: ReactNode
   className?: string
   icon?: LucideIcon
+  iconClassName?: string
   variant?: ButtonVariant
 } & ButtonHTMLAttributes<HTMLButtonElement>) {
   const variantClassName = {
@@ -85,14 +87,16 @@ export function AdminButton({
   return (
     <button
       className={cn(
-        'inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border px-4 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d0922c]/60 disabled:cursor-not-allowed disabled:opacity-60',
+        'inline-flex h-11 items-center justify-center gap-2 rounded-[14px] border px-4 text-sm font-semibold leading-none whitespace-nowrap transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d0922c]/60 disabled:cursor-not-allowed disabled:opacity-60',
         variantClassName[variant],
         className
       )}
       type="button"
       {...props}
     >
-      {Icon ? <Icon className="h-4 w-4" strokeWidth={2} /> : null}
+      {Icon ? (
+        <Icon className={cn('h-4 w-4', iconClassName)} strokeWidth={2} />
+      ) : null}
       <span>{children}</span>
     </button>
   )
@@ -127,7 +131,7 @@ export function StatusBadge({
   return (
     <span
       className={cn(
-        'inline-flex min-h-7 items-center rounded-full px-3 text-xs font-semibold',
+        'inline-flex min-h-8 min-w-[88px] items-center justify-center rounded-full px-3.5 text-xs font-semibold leading-none whitespace-nowrap',
         toneClassName[tone],
         className
       )}
@@ -158,6 +162,11 @@ export function FieldLabel({
 
 export const inputClassName =
   'mt-2 min-h-12 w-full rounded-xl border border-[#ddcfba] bg-white px-4 text-[0.95rem] text-slate-800 shadow-[inset_0_1px_0_rgba(255,255,255,0.6)] outline-none transition placeholder:text-slate-400 focus:border-[#d0922c] focus:ring-4 focus:ring-[#d0922c]/10'
+
+export const toolbarInputClassName = `${inputClassName} mt-0`
+
+export const tableActionButtonClassName =
+  'min-w-[112px] rounded-[14px] px-4'
 
 export function EmptyPanel({
   title,
@@ -311,15 +320,24 @@ export function StatCard({
   hint,
   accent,
   icon: Icon,
+  onClick,
 }: {
   label: string
   value: number
   hint: string
   accent: string
   icon: LucideIcon
+  onClick?: () => void
 }) {
-  return (
-    <AdminPanel className="relative min-h-[138px] overflow-hidden">
+  const cardClassName = cn(
+    'relative min-h-[138px] overflow-hidden rounded-[24px] border border-[#dbcdb8] bg-white/95 shadow-[0_18px_45px_rgba(15,23,42,0.06)]',
+    onClick
+      ? 'cursor-pointer text-left transition hover:-translate-y-0.5 hover:border-[#d4c3ac] hover:shadow-[0_22px_50px_rgba(15,23,42,0.09)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d0922c]/60'
+      : ''
+  )
+
+  const cardContent = (
+    <>
       <div
         className="absolute inset-x-0 bottom-0 h-1"
         style={{ backgroundColor: accent }}
@@ -338,6 +356,20 @@ export function StatCard({
         </div>
         <Icon className="mt-2 h-9 w-9 text-slate-200" strokeWidth={1.7} />
       </div>
+    </>
+  )
+
+  if (onClick) {
+    return (
+      <button className={cardClassName} type="button" onClick={onClick}>
+        {cardContent}
+      </button>
+    )
+  }
+
+  return (
+    <AdminPanel className="relative min-h-[138px] overflow-hidden">
+      {cardContent}
     </AdminPanel>
   )
 }

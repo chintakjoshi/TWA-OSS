@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Home, LockKeyhole, Mail, ShieldCheck } from 'lucide-react'
+import { Eye, EyeOff, Home, LockKeyhole, Mail } from 'lucide-react'
 
 import { useAuth } from '@shared/auth/AuthProvider'
 import { getAuthStateLabel } from '@shared/lib/auth-client'
@@ -14,20 +14,16 @@ import {
   inputClassName,
 } from '../components/ui/AdminUi'
 
-type AuthMode = 'login' | 'forgot' | 'reset' | 'otp'
+type AuthMode = 'login' | 'forgot' | 'otp'
+
+const authIconFieldClassName =
+  'h-full w-full rounded-xl border border-[#ddcfba] bg-white px-4 py-0 text-[0.95rem] leading-[46px] text-slate-800 shadow-[inset_0_1px_0_rgba(255,255,255,0.6)] outline-none transition placeholder:text-slate-400 focus:border-[#d0922c] focus:ring-4 focus:ring-[#d0922c]/10'
 
 function getErrorMessage(error: unknown) {
   if (error instanceof HttpError) return error.message
   if (error instanceof Error) return error.message
   return 'Something went wrong. Please try again.'
 }
-
-const supportPoints = [
-  'Employer and listing review queues for approvals and change requests',
-  'Two-way matching between jobseekers and listings',
-  'Application tracker with hired status and placement follow-through',
-  'Full audit visibility across sensitive staff actions',
-]
 
 export function AdminAuthPage() {
   const auth = useAuth()
@@ -42,13 +38,23 @@ export function AdminAuthPage() {
     null
   )
   const [staySignedIn, setStaySignedIn] = useState(true)
+  const [showPassword, setShowPassword] = useState(false)
 
   const authenticatedStaff = auth.authMe?.app_user?.app_role === 'staff'
   const title = useMemo(() => {
     if (mode === 'forgot') return 'Reset your password'
-    if (mode === 'reset') return 'Complete password reset'
     if (mode === 'otp') return 'Verify sign-in'
     return 'Welcome back'
+  }, [mode])
+
+  const subtitle = useMemo(() => {
+    if (mode === 'forgot') {
+      return "Enter your staff email and we'll send reset instructions if the account exists."
+    }
+    if (mode === 'otp') {
+      return 'Enter the verification code to continue into the staff portal.'
+    }
+    return 'Sign in with your TWA staff credentials.'
   }, [mode])
 
   async function run(task: () => Promise<void>) {
@@ -65,8 +71,8 @@ export function AdminAuthPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f7f1e5] lg:grid lg:grid-cols-[520px_minmax(0,1fr)]">
-      <aside className="admin-grid-surface bg-[#132130] px-10 py-12 text-white">
+    <div className="min-h-screen bg-[#f7f1e5] lg:grid lg:h-screen lg:grid-cols-[520px_minmax(0,1fr)] lg:overflow-hidden">
+      <aside className="admin-grid-surface bg-[#132130] px-8 py-8 text-white lg:h-screen lg:overflow-hidden xl:px-10 xl:py-10">
         <div className="flex h-full flex-col">
           <div className="flex items-center gap-3">
             <div className="grid h-11 w-11 place-items-center rounded-xl bg-[#d99a2b] text-lg font-semibold text-white">
@@ -80,36 +86,20 @@ export function AdminAuthPage() {
             </div>
           </div>
 
-          <div className="mt-20 max-w-[360px]">
-            <h1 className="admin-display text-[clamp(3rem,5vw,4.5rem)] leading-[0.96] font-semibold">
+          <div className="mt-12 max-w-[330px] xl:mt-16">
+            <h1 className="admin-display text-[clamp(2.8rem,4vw,4rem)] leading-[0.96] font-semibold">
               Staff <span className="text-[#f3ac34] italic">Admin</span> Portal
             </h1>
-            <p className="mt-8 text-xl leading-9 text-[#aebfd6]">
+            <p className="mt-6 text-lg leading-8 text-[#aebfd6]">
               Secure access for TWA case managers and administrators. Manage
               employer approvals, jobseeker profiles, listing reviews, and
               placement tracking from one place.
             </p>
-
-            <ul className="mt-12 space-y-6">
-              {supportPoints.map((point) => (
-                <li key={point} className="flex gap-4">
-                  <span className="mt-2 h-2.5 w-2.5 rounded-full bg-[#d99a2b]" />
-                  <span className="text-lg leading-8 text-[#dce6f2]">
-                    {point}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          <div className="mt-auto rounded-2xl border border-white/10 bg-white/5 px-5 py-4 text-sm text-[#8ea3c4]">
-            Internal use only. Unauthorized access to this system is prohibited
-            and subject to applicable law.
           </div>
         </div>
       </aside>
 
-      <main className="admin-auth-pattern flex min-h-screen items-center justify-center px-6 py-10 sm:px-10">
+      <main className="admin-auth-pattern flex min-h-screen items-center justify-center px-6 py-10 sm:px-10 lg:h-screen lg:overflow-y-auto">
         <div className="w-full max-w-[560px] rounded-[32px] border border-[#e4d8c6] bg-white/80 p-8 shadow-[0_24px_80px_rgba(15,23,42,0.08)] backdrop-blur md:p-10">
           <StatusBadge tone="warning" className="mb-8">
             Staff Access
@@ -119,7 +109,7 @@ export function AdminAuthPage() {
             {title}
           </h2>
           <p className="mt-4 text-lg text-slate-500">
-            Sign in with your TWA staff credentials.
+            {subtitle}
           </p>
 
           <div className="mt-8 space-y-4">
@@ -181,7 +171,8 @@ export function AdminAuthPage() {
           ) : null}
 
           {!authenticatedStaff &&
-          (mode === 'login' || auth.state !== 'otp_required') ? (
+          mode === 'login' &&
+          auth.state !== 'otp_required' ? (
             <form
               className="mt-8 space-y-5"
               onSubmit={(event) => {
@@ -207,9 +198,7 @@ export function AdminAuthPage() {
                     }
                     throw nextError
                   }
-                  if (staySignedIn) {
-                    setNotice('Signed in through the shared auth service.')
-                  }
+                  if (staySignedIn) setNotice('Signed in successfully.')
                 })
               }}
             >
@@ -217,10 +206,12 @@ export function AdminAuthPage() {
                 <label className="block text-xs font-semibold uppercase tracking-[0.18em] text-slate-700">
                   Staff Email
                 </label>
-                <div className="relative mt-2">
-                  <Mail className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[#8ea3c4]" />
+                <div className="relative mt-2 h-12">
+                  <div className="pointer-events-none absolute inset-y-0 left-0 flex w-12 items-center justify-center">
+                    <Mail className="h-5 w-5 text-[#8ea3c4]" />
+                  </div>
                   <input
-                    className={`${inputClassName} pl-12`}
+                    className={`${authIconFieldClassName} pl-12`}
                     defaultValue=""
                     name="email"
                     placeholder="you@twa.slu.edu"
@@ -233,14 +224,28 @@ export function AdminAuthPage() {
                 <label className="block text-xs font-semibold uppercase tracking-[0.18em] text-slate-700">
                   Password
                 </label>
-                <div className="relative mt-2">
-                  <LockKeyhole className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[#8ea3c4]" />
+                <div className="relative mt-2 h-12">
+                  <div className="pointer-events-none absolute inset-y-0 left-0 flex w-12 items-center justify-center">
+                    <LockKeyhole className="h-5 w-5 text-[#8ea3c4]" />
+                  </div>
+                  <button
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                    className="absolute inset-y-0 right-0 inline-flex w-12 items-center justify-center text-[#8ea3c4] transition hover:text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d0922c]/60"
+                    type="button"
+                    onClick={() => setShowPassword((current) => !current)}
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-[18px] w-[18px]" strokeWidth={2} />
+                    ) : (
+                      <Eye className="h-[18px] w-[18px]" strokeWidth={2} />
+                    )}
+                  </button>
                   <input
-                    className={`${inputClassName} pl-12`}
+                    className={`${authIconFieldClassName} pr-12 pl-12`}
                     name="password"
                     placeholder="Your password"
                     required
-                    type="password"
+                    type={showPassword ? 'text' : 'password'}
                   />
                 </div>
               </div>
@@ -333,9 +338,7 @@ export function AdminAuthPage() {
                   await auth.requestPasswordReset({
                     email: String(form.get('email') ?? ''),
                   })
-                  setNotice(
-                    'If that account exists, the auth service has sent a reset link.'
-                  )
+                  setNotice('If that account exists, a reset link has been sent.')
                 })
               }}
             >
@@ -353,59 +356,6 @@ export function AdminAuthPage() {
               <div className="flex flex-wrap gap-3">
                 <AdminButton disabled={busy} type="submit">
                   {busy ? 'Sending...' : 'Send reset email'}
-                </AdminButton>
-                <AdminButton
-                  variant="secondary"
-                  onClick={() => setMode('login')}
-                >
-                  Back to sign in
-                </AdminButton>
-              </div>
-            </form>
-          ) : null}
-
-          {mode === 'reset' ? (
-            <form
-              className="mt-8 space-y-5"
-              onSubmit={(event) => {
-                event.preventDefault()
-                const form = new FormData(event.currentTarget)
-                void run(async () => {
-                  await auth.resetPassword({
-                    token: String(form.get('token') ?? ''),
-                    new_password: String(form.get('new_password') ?? ''),
-                  })
-                  setMode('login')
-                  setNotice('Password updated. Sign in with the new password.')
-                })
-              }}
-            >
-              <div>
-                <label className="block text-xs font-semibold uppercase tracking-[0.18em] text-slate-700">
-                  Reset Token
-                </label>
-                <input
-                  className={inputClassName}
-                  minLength={16}
-                  name="token"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold uppercase tracking-[0.18em] text-slate-700">
-                  New Password
-                </label>
-                <input
-                  className={inputClassName}
-                  minLength={8}
-                  name="new_password"
-                  required
-                  type="password"
-                />
-              </div>
-              <div className="flex flex-wrap gap-3">
-                <AdminButton disabled={busy} type="submit">
-                  {busy ? 'Resetting...' : 'Reset password'}
                 </AdminButton>
                 <AdminButton
                   variant="secondary"
@@ -446,57 +396,42 @@ export function AdminAuthPage() {
 
           {!authenticatedStaff ? (
             <>
-              <div className="my-8 flex items-center gap-4">
-                <div className="h-px flex-1 bg-[#eadfce]" />
-                <span className="text-sm text-slate-400">or</span>
-                <div className="h-px flex-1 bg-[#eadfce]" />
-              </div>
+              {mode === 'login' ? (
+                <>
+                  <div className="my-8 flex items-center gap-4">
+                    <div className="h-px flex-1 bg-[#eadfce]" />
+                    <span className="text-sm text-slate-400">or</span>
+                    <div className="h-px flex-1 bg-[#eadfce]" />
+                  </div>
 
-              <AdminButton
-                className="w-full"
-                icon={Home}
-                variant="secondary"
-                onClick={() => announceComingSoon('SLU Single Sign-On')}
-              >
-                Sign in with SLU Single Sign-On
-              </AdminButton>
+                  <AdminButton
+                    className="w-full"
+                    icon={Home}
+                    variant="secondary"
+                    onClick={() => announceComingSoon('SLU Single Sign-On')}
+                  >
+                    Sign in with SLU Single Sign-On
+                  </AdminButton>
+                </>
+              ) : null}
 
-              <p className="mt-8 text-center text-sm text-slate-400">
+              <p className="mt-8 text-center text-sm text-slate-500">
                 Not a staff member? Visit the{' '}
                 <a
-                  className="font-semibold text-[#d0922c]"
+                  className="font-semibold text-[#b77712] underline decoration-2 underline-offset-4 transition hover:text-[#8f5b08]"
                   href="http://localhost:5173"
                 >
                   Jobseeker Portal
                 </a>{' '}
                 or{' '}
                 <a
-                  className="font-semibold text-[#d0922c]"
+                  className="font-semibold text-[#b77712] underline decoration-2 underline-offset-4 transition hover:text-[#8f5b08]"
                   href="http://localhost:5174"
                 >
                   Employer Portal
                 </a>
                 .
               </p>
-
-              <div className="mt-6 flex flex-wrap gap-3">
-                <AdminButton variant="ghost" onClick={() => setMode('login')}>
-                  Sign in
-                </AdminButton>
-                <AdminButton variant="ghost" onClick={() => setMode('forgot')}>
-                  Forgot password
-                </AdminButton>
-                <AdminButton variant="ghost" onClick={() => setMode('reset')}>
-                  Manual reset
-                </AdminButton>
-              </div>
-
-              <div className="mt-6 flex items-center gap-2 text-sm text-[#8ea3c4]">
-                <ShieldCheck className="h-4 w-4" />
-                <span>
-                  Shared auth foundation with TWA role-based access checks.
-                </span>
-              </div>
             </>
           ) : null}
         </div>

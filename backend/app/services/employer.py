@@ -31,6 +31,7 @@ from app.services.notifications import (
     get_notification_config,
     notify_employer_review_decision,
     notify_listing_review_decision,
+    notify_staff_listing_pending_review,
 )
 from app.services.transit import compute_transit_accessibility
 
@@ -347,9 +348,11 @@ def create_listing(session: Session, employer: Employer, payload) -> JobListing:
     )
     session.commit()
     session.refresh(listing)
-    return ensure_found(
+    listing = ensure_found(
         get_listing_by_id(session, listing.id), entity_name="Job listing"
     )
+    notify_staff_listing_pending_review(session, listing=listing)
+    return listing
 
 
 def list_employer_listings(

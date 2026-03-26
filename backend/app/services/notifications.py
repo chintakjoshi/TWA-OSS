@@ -3,6 +3,8 @@ from __future__ import annotations
 import logging
 from dataclasses import dataclass
 from datetime import datetime, timezone
+from queue import Empty, Full, Queue
+from threading import Lock
 from uuid import UUID
 
 from sqlalchemy import func, select
@@ -32,6 +34,54 @@ from app.services.common import (
 from app.services.email import EmailDeliveryError, send_email_message
 
 logger = logging.getLogger("twa.notifications")
+
+
+@dataclass(slots=True)
+class NotificationStreamEvent:
+    event: str
+    payload: dict[str, object]
+
+
+class NotificationStreamBroker:
+    def __init__(self) -> None:
+        self._lock = Lock()
+        self._subscriptions: dict[UUID, dict[str, Queue[NotificationStreamEvent]]] = {}
+
+    def subscribe(self, *, app_user_id: UUID, subscriber_id: str) -> Queue[NotificationStreamEvent]:
+        queue: Queue[NotificationStreamEvent] = Queue(maxsize=100)
+        with self._lock:
+            user_subscriptions = self._subscriptions.setdefault(app_user_id, {})
+            user_subscriptions[subscriber_id] = queue
+        return queue
+
+    def unsubscribe(self, *, app_user_id: UUID, subscriber_id: str) -> None:
+        with self._lock:
+            user_subscriptions = self._subscriptions.get(app_user_id)
+            if not user_subscriptions:
+                return
+            user_subscriptions.pop(subscriber_id, None)
+            if not user_subscriptions:
+                self._subscriptions.pop(app_user_id, None)
+
+    def publish(
+        self, *, app_user_id: UUID, event: str, payload: dict[str, object]
+    ) -> None:
+        with self._lock:
+            subscribers = list(self._subscriptions.get(app_user_id, {}).values())
+
+        for subscriber_queue in subscribers:
+            try:
+                subscriber_queue.put_nowait(
+                    NotificationStreamEvent(event=event, payload=payload)
+                )
+            except Full:
+                logger.warning(
+                    "notification_stream_queue_full",
+                    extra={"app_user_id": str(app_user_id), "event": event},
+                )
+
+
+notification_stream_broker = NotificationStreamBroker()
 
 
 @dataclass(slots=True)
@@ -144,6 +194,47 @@ def list_notifications_for_user(
     )
 
 
+def get_recent_notifications_for_user(
+    session: Session, *, app_user_id: UUID, limit: int = 8
+) -> list[NotificationPayload]:
+    statement = (
+        select(Notification)
+        .where(
+            Notification.app_user_id == app_user_id,
+            Notification.channel == NotificationChannel.IN_APP,
+        )
+        .order_by(Notification.created_at.desc())
+        .limit(limit)
+    )
+    items = session.execute(statement).scalars().all()
+    return [serialize_notification(item) for item in items]
+
+
+def count_unread_notifications_for_user(session: Session, *, app_user_id: UUID) -> int:
+    statement = select(func.count()).select_from(Notification).where(
+        Notification.app_user_id == app_user_id,
+        Notification.channel == NotificationChannel.IN_APP,
+        Notification.read_at.is_(None),
+    )
+    return session.execute(statement).scalar_one()
+
+
+def serialize_notification_snapshot(
+    session: Session, *, app_user_id: UUID, limit: int = 8
+) -> dict[str, object]:
+    return {
+        "notifications": [
+            item.model_dump(mode="json")
+            for item in get_recent_notifications_for_user(
+                session, app_user_id=app_user_id, limit=limit
+            )
+        ],
+        "unread_count": count_unread_notifications_for_user(
+            session, app_user_id=app_user_id
+        ),
+    }
+
+
 def get_notification_for_user(
     session: Session, *, notification_id: UUID, app_user_id: UUID
 ) -> Notification | None:
@@ -162,6 +253,15 @@ def mark_notification_read(
         notification.read_at = datetime.now(timezone.utc)
         session.commit()
         session.refresh(notification)
+        notification_stream_broker.publish(
+            app_user_id=notification.app_user_id,
+            event="notification.read",
+            payload={
+                "notification": serialize_notification_read_result(
+                    notification
+                ).model_dump(mode="json")
+            },
+        )
     return notification
 
 
@@ -197,17 +297,29 @@ def dispatch_notification(
         return
 
     if send_in_app:
+        notifications: list[Notification] = []
         for recipient in recipients:
-            session.add(
-                Notification(
-                    app_user_id=recipient.app_user_id,
-                    type=event_type,
-                    channel=NotificationChannel.IN_APP,
-                    title=title,
-                    body=body,
-                )
+            notification = Notification(
+                app_user_id=recipient.app_user_id,
+                type=event_type,
+                channel=NotificationChannel.IN_APP,
+                title=title,
+                body=body,
             )
+            notifications.append(notification)
+            session.add(notification)
         session.commit()
+        for notification in notifications:
+            session.refresh(notification)
+            notification_stream_broker.publish(
+                app_user_id=notification.app_user_id,
+                event="notification.created",
+                payload={
+                    "notification": serialize_notification(notification).model_dump(
+                        mode="json"
+                    )
+                },
+            )
 
     if send_email:
         for recipient in recipients:
@@ -273,6 +385,31 @@ def notify_application_submitted(session: Session, *, application: Application) 
                 title="New application received",
                 body=f"{jobseeker_name} applied to {listing_title}.",
             )
+
+
+def notify_staff_employer_pending_review(
+    session: Session, *, employer: Employer
+) -> None:
+    safe_dispatch_notification(
+        session,
+        event_type="employer_review_requested",
+        recipients=_get_staff_recipients(session),
+        title="Employer awaiting review",
+        body=f"{employer.org_name} registered and is awaiting staff review.",
+    )
+
+
+def notify_staff_listing_pending_review(
+    session: Session, *, listing: JobListing
+) -> None:
+    employer_name = listing.employer.org_name if listing.employer else "An employer"
+    safe_dispatch_notification(
+        session,
+        event_type="listing_review_requested",
+        recipients=_get_staff_recipients(session),
+        title="Job listing awaiting review",
+        body=f"{employer_name} submitted '{listing.title}' for staff review.",
+    )
 
 
 def notify_employer_review_decision(session: Session, *, employer: Employer) -> None:

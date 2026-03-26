@@ -26,6 +26,7 @@ export type AdminNavItem = {
     | 'settings'
   badgeKey?: 'pending_employers' | 'pending_listings' | 'open_applications'
   activePrefixes?: string[]
+  inactivePrefixes?: string[]
 }
 
 export const adminNavItems: AdminNavItem[] = [
@@ -62,6 +63,7 @@ export const adminNavItems: AdminNavItem[] = [
     icon: BriefcaseBusiness,
     section: 'employers',
     activePrefixes: ['/employers'],
+    inactivePrefixes: ['/employers/queue'],
   },
   {
     label: 'Listing Queue',
@@ -77,6 +79,7 @@ export const adminNavItems: AdminNavItem[] = [
     icon: ClipboardList,
     section: 'listings',
     activePrefixes: ['/listings'],
+    inactivePrefixes: ['/listings/queue'],
   },
   {
     label: 'Match by Listing',
