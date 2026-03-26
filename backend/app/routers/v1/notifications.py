@@ -2,8 +2,7 @@ from __future__ import annotations
 
 import json
 from queue import Empty
-from uuid import UUID
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 import anyio
 from fastapi import APIRouter, Depends, Query, Request
@@ -18,11 +17,11 @@ from app.schemas.notifications import NotificationPayload, NotificationReadRespo
 from app.services.common import PaginationParams, ensure_found, get_pagination_params
 from app.services.notifications import (
     get_notification_for_user,
-    notification_stream_broker,
     list_notifications_for_user,
     mark_notification_read,
-    serialize_notification_snapshot,
+    notification_stream_broker,
     serialize_notification_read_result,
+    serialize_notification_snapshot,
 )
 
 settings = get_settings()
