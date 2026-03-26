@@ -90,7 +90,8 @@ export function createAuthClient(config: AuthClientConfig): AuthClient {
 
   async function throwResponseError(response: Response): Promise<never> {
     const isJson =
-      response.headers.get('content-type')?.includes('application/json') ?? false
+      response.headers.get('content-type')?.includes('application/json') ??
+      false
     const payload = isJson
       ? ((await response.json()) as {
           detail?: string

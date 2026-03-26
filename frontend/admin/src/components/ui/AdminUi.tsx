@@ -165,8 +165,7 @@ export const inputClassName =
 
 export const toolbarInputClassName = `${inputClassName} mt-0`
 
-export const tableActionButtonClassName =
-  'min-w-[112px] rounded-[14px] px-4'
+export const tableActionButtonClassName = 'min-w-[112px] rounded-[14px] px-4'
 
 export function EmptyPanel({
   title,

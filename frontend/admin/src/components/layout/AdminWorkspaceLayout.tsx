@@ -1,18 +1,10 @@
-import {
-  useEffect,
-  useRef,
-  useState,
-  type ReactNode,
-} from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { BellRing, ChevronUp, Menu, Plus, Settings2, X } from 'lucide-react'
 
 import { useAuth } from '@shared/auth/AuthProvider'
 
-import {
-  listMyNotifications,
-  markMyNotificationRead,
-} from '../../api/adminApi'
+import { listMyNotifications, markMyNotificationRead } from '../../api/adminApi'
 import { announceComingSoon } from '../../lib/comingSoon'
 import { cn } from '../../lib/cn'
 import { formatRelativeTime } from '../../lib/formatting'
@@ -49,10 +41,14 @@ function upsertNotification(
   current: AdminNotification[],
   notification: AdminNotification
 ) {
-  return [notification, ...current.filter((item) => item.id !== notification.id)]
+  return [
+    notification,
+    ...current.filter((item) => item.id !== notification.id),
+  ]
     .sort(
       (left, right) =>
-        new Date(right.created_at).getTime() - new Date(left.created_at).getTime()
+        new Date(right.created_at).getTime() -
+        new Date(left.created_at).getTime()
     )
     .slice(0, 8)
 }
@@ -176,10 +172,7 @@ export function AdminWorkspaceLayout({
   }, [notificationsOpen, profileMenuOpen])
 
   useEffect(() => {
-    if (
-      authState !== 'authenticated' ||
-      authRole !== 'staff'
-    ) {
+    if (authState !== 'authenticated' || authRole !== 'staff') {
       setNotifications([])
       setUnreadCount(0)
       setNotificationsLoading(false)
@@ -213,10 +206,7 @@ export function AdminWorkspaceLayout({
   }, [authRole, authState, requestTwa])
 
   useEffect(() => {
-    if (
-      authState !== 'authenticated' ||
-      authRole !== 'staff'
-    ) {
+    if (authState !== 'authenticated' || authRole !== 'staff') {
       return
     }
 
@@ -260,7 +250,9 @@ export function AdminWorkspaceLayout({
           const { value, done } = await reader.read()
           if (done) throw new Error('Notification stream disconnected.')
 
-          buffer += decoder.decode(value, { stream: true }).replaceAll('\r\n', '\n')
+          buffer += decoder
+            .decode(value, { stream: true })
+            .replaceAll('\r\n', '\n')
           let boundaryIndex = buffer.indexOf('\n\n')
 
           while (boundaryIndex !== -1) {
@@ -269,13 +261,15 @@ export function AdminWorkspaceLayout({
             const parsed = parseSseBlock(block)
 
             if (parsed?.event === 'snapshot') {
-              const snapshot = parsed.payload as unknown as AdminNotificationSnapshot
+              const snapshot =
+                parsed.payload as unknown as AdminNotificationSnapshot
               setNotifications(snapshot.notifications)
               setUnreadCount(snapshot.unread_count)
             }
 
             if (parsed?.event === 'notification.created') {
-              const notification = parsed.payload.notification as AdminNotification
+              const notification = parsed.payload
+                .notification as AdminNotification
               setNotifications((current) =>
                 upsertNotification(current, notification)
               )
@@ -283,7 +277,8 @@ export function AdminWorkspaceLayout({
             }
 
             if (parsed?.event === 'notification.read') {
-              const result = parsed.payload.notification as AdminNotificationReadResult
+              const result = parsed.payload
+                .notification as AdminNotificationReadResult
               setNotifications((current) => applyReadResult(current, result))
               setUnreadCount((current) => Math.max(0, current - 1))
             }
@@ -312,11 +307,7 @@ export function AdminWorkspaceLayout({
       if (reconnectTimer !== null) window.clearTimeout(reconnectTimer)
       streamController?.abort()
     }
-  }, [
-    authRole,
-    authState,
-    streamTwa,
-  ])
+  }, [authRole, authState, streamTwa])
 
   async function handleMarkNotificationRead(notificationId: string) {
     try {

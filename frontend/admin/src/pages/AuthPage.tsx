@@ -108,9 +108,7 @@ export function AdminAuthPage() {
           <h2 className="admin-display text-[3rem] leading-[0.98] font-semibold text-slate-950">
             {title}
           </h2>
-          <p className="mt-4 text-lg text-slate-500">
-            {subtitle}
-          </p>
+          <p className="mt-4 text-lg text-slate-500">{subtitle}</p>
 
           <div className="mt-8 space-y-4">
             {notice ? (
@@ -229,7 +227,9 @@ export function AdminAuthPage() {
                     <LockKeyhole className="h-5 w-5 text-[#8ea3c4]" />
                   </div>
                   <button
-                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                    aria-label={
+                      showPassword ? 'Hide password' : 'Show password'
+                    }
                     className="absolute inset-y-0 right-0 inline-flex w-12 items-center justify-center text-[#8ea3c4] transition hover:text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d0922c]/60"
                     type="button"
                     onClick={() => setShowPassword((current) => !current)}
@@ -338,7 +338,9 @@ export function AdminAuthPage() {
                   await auth.requestPasswordReset({
                     email: String(form.get('email') ?? ''),
                   })
-                  setNotice('If that account exists, a reset link has been sent.')
+                  setNotice(
+                    'If that account exists, a reset link has been sent.'
+                  )
                 })
               }}
             >
