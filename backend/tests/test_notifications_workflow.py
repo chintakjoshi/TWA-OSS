@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 import tempfile
 import uuid
 from collections.abc import Generator
@@ -236,6 +237,8 @@ def seed_application(
         session.commit()
         session.refresh(application)
         return application
+
+
 def test_staff_can_get_and_update_notification_config(notifications_env) -> None:
     client, state, session_factory, _ = notifications_env
     staff = seed_staff(
