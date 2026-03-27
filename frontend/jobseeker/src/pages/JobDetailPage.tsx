@@ -26,7 +26,13 @@ import {
 import { announceComingSoon } from '../lib/comingSoon'
 import type { JobDetailPayload } from '../types/jobseeker'
 
-function buildEligibilityMessage(detail: JobDetailPayload) {
+function buildEligibilityMessage(
+  detail: JobDetailPayload,
+  alreadyApplied: boolean
+) {
+  if (alreadyApplied || detail.eligibility.has_applied) {
+    return 'You already applied to this role. You can track it in My Applications.'
+  }
   if (detail.eligibility.is_eligible) {
     return 'You appear eligible for this role based on your current profile.'
   }
@@ -48,15 +54,20 @@ export function JobseekerJobDetailPage() {
   const [notice, setNotice] = useState<string | null>(null)
   const [confirmOpen, setConfirmOpen] = useState(false)
   const [hasApplied, setHasApplied] = useState(false)
+  const alreadyApplied = hasApplied || detail?.eligibility.has_applied === true
 
   useEffect(() => {
     let active = true
     setIsLoading(true)
     setLoadError(null)
+    setActionError(null)
+    setNotice(null)
+    setHasApplied(false)
     void getVisibleJobDetail(auth.requestTwa, jobId)
       .then((response) => {
         if (!active) return
         setDetail(response)
+        setHasApplied(response.eligibility.has_applied)
       })
       .catch((nextError: Error) => {
         if (!active) return
@@ -69,7 +80,7 @@ export function JobseekerJobDetailPage() {
     return () => {
       active = false
     }
-  }, [auth, jobId])
+  }, [auth.requestTwa, jobId])
 
   async function handleApply() {
     if (!detail) return
@@ -79,12 +90,39 @@ export function JobseekerJobDetailPage() {
     try {
       await createApplication(auth.requestTwa, detail.job.id)
       setHasApplied(true)
+      setDetail((current) =>
+        current
+          ? {
+              ...current,
+              eligibility: { ...current.eligibility, has_applied: true },
+            }
+          : current
+      )
       setConfirmOpen(false)
       setNotice('Application submitted. You can track it in My Applications.')
       toast.success('Application submitted.', {
         description: 'Your TWA application tracker has been updated.',
       })
     } catch (nextError) {
+      if (
+        nextError instanceof Error &&
+        nextError.message.toLowerCase().includes('already applied')
+      ) {
+        setHasApplied(true)
+        setDetail((current) =>
+          current
+            ? {
+                ...current,
+                eligibility: { ...current.eligibility, has_applied: true },
+              }
+            : current
+        )
+        setConfirmOpen(false)
+        setActionError(
+          'You already applied to this listing. You can track it in My Applications.'
+        )
+        return
+      }
       setActionError(
         nextError instanceof Error
           ? nextError.message
@@ -140,13 +178,19 @@ export function JobseekerJobDetailPage() {
                   </div>
                   <PortalBadge
                     tone={
-                      detail.eligibility.is_eligible ? 'success' : 'warning'
+                      alreadyApplied
+                        ? 'info'
+                        : detail.eligibility.is_eligible
+                          ? 'success'
+                          : 'warning'
                     }
                   >
-                    {detail.eligibility.is_eligible
-                      ? 'Eligible'
-                      : (detail.eligibility.ineligibility_tag ??
-                        'Not eligible')}
+                    {alreadyApplied
+                      ? 'Already applied'
+                      : detail.eligibility.is_eligible
+                        ? 'Eligible'
+                        : (detail.eligibility.ineligibility_tag ??
+                          'Not eligible')}
                   </PortalBadge>
                 </div>
 
@@ -158,9 +202,15 @@ export function JobseekerJobDetailPage() {
                 ) : null}
 
                 <InlineNotice
-                  tone={detail.eligibility.is_eligible ? 'success' : 'info'}
+                  tone={
+                    alreadyApplied
+                      ? 'info'
+                      : detail.eligibility.is_eligible
+                        ? 'success'
+                        : 'info'
+                  }
                 >
-                  {buildEligibilityMessage(detail)}
+                  {buildEligibilityMessage(detail, alreadyApplied)}
                 </InlineNotice>
 
                 <div className="grid gap-6 lg:grid-cols-2">
@@ -242,12 +292,12 @@ export function JobseekerJobDetailPage() {
                       disabled={
                         !detail.eligibility.is_eligible ||
                         isApplying ||
-                        hasApplied
+                        alreadyApplied
                       }
                       onClick={() => setConfirmOpen(true)}
                     >
-                      {hasApplied
-                        ? 'Application submitted'
+                      {alreadyApplied
+                        ? 'Already applied'
                         : isApplying
                           ? 'Submitting...'
                           : 'Apply for This Job'}

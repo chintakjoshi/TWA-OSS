@@ -102,18 +102,19 @@ def serialize_application(application: Application) -> ApplicationPayload:
 
 
 def serialize_job_with_eligibility(
-    jobseeker: Jobseeker, listing: JobListing
+    jobseeker: Jobseeker, listing: JobListing, *, has_applied: bool = False
 ) -> JobWithEligibilityPayload:
     result = evaluate_jobseeker_listing_match(jobseeker, listing)
     return JobWithEligibilityPayload(
         job=serialize_listing(listing),
         is_eligible=result.is_eligible,
         ineligibility_tag=result.ineligibility_tag,
+        has_applied=has_applied,
     )
 
 
 def build_job_detail_for_jobseeker(
-    jobseeker: Jobseeker, listing: JobListing
+    jobseeker: Jobseeker, listing: JobListing, *, has_applied: bool = False
 ) -> JobDetailResponse:
     result = evaluate_jobseeker_listing_match(jobseeker, listing)
     return JobDetailResponse(
@@ -121,6 +122,7 @@ def build_job_detail_for_jobseeker(
         eligibility=JobEligibilityPayload(
             is_eligible=result.is_eligible,
             ineligibility_tag=result.ineligibility_tag,
+            has_applied=has_applied,
         ),
     )
 
@@ -217,8 +219,25 @@ def list_visible_jobs_for_jobseeker(
         base_statement, sort=sort, allowed_sorts=VISIBLE_JOB_ALLOWED_SORTS
     )
     listings = session.execute(statement).unique().scalars().all()
+    applied_listing_ids: set[UUID] = set()
+    if listings:
+        applied_listing_ids = set(
+            session.execute(
+                select(Application.job_listing_id).where(
+                    Application.jobseeker_id == jobseeker.id,
+                    Application.job_listing_id.in_([listing.id for listing in listings]),
+                )
+            )
+            .scalars()
+            .all()
+        )
     serialized_items = [
-        serialize_job_with_eligibility(jobseeker, listing) for listing in listings
+        serialize_job_with_eligibility(
+            jobseeker,
+            listing,
+            has_applied=listing.id in applied_listing_ids,
+        )
+        for listing in listings
     ]
     if is_eligible is not None:
         serialized_items = [
@@ -242,7 +261,17 @@ def get_job_detail_for_jobseeker(
         get_visible_job_listing_by_id(session, job_listing_id),
         entity_name="Job listing",
     )
-    return build_job_detail_for_jobseeker(jobseeker, listing)
+    has_applied = (
+        get_jobseeker_application_by_listing(
+            session,
+            jobseeker_id=jobseeker.id,
+            job_listing_id=job_listing_id,
+        )
+        is not None
+    )
+    return build_job_detail_for_jobseeker(
+        jobseeker, listing, has_applied=has_applied
+    )
 
 
 def create_application(

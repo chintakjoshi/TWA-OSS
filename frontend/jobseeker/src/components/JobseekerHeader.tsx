@@ -1,10 +1,10 @@
+import { Search } from 'lucide-react'
 import { NavLink } from 'react-router-dom'
 
 import { useAuth } from '@shared/auth/AuthProvider'
 
 import { cn } from '../lib/cn'
-import { getInitials } from '../lib/formatting'
-import { PortalBadge, PortalButton } from './ui/JobseekerUi'
+import { PortalBadge } from './ui/JobseekerUi'
 
 function linkClassName(isActive: boolean) {
   return cn(
@@ -15,12 +15,26 @@ function linkClassName(isActive: boolean) {
   )
 }
 
-export function JobseekerHeader() {
+function profileLinkClassName(isActive: boolean) {
+  return cn(
+    'inline-flex min-h-11 items-center rounded-xl border px-4 text-sm font-semibold transition',
+    isActive
+      ? 'border-[#d0922c] bg-[#fff8ea] text-slate-950'
+      : 'border-[#ddcfba] bg-[#fcfaf6] text-slate-600 hover:border-[#cfbeaa] hover:text-slate-900'
+  )
+}
+
+interface JobseekerHeaderProps {
+  jobsSearch?: {
+    busy?: boolean
+    onChange: (value: string) => void
+    onSubmit: () => void
+    value: string
+  }
+}
+
+export function JobseekerHeader({ jobsSearch }: JobseekerHeaderProps = {}) {
   const auth = useAuth()
-  const identity =
-    auth.authMe?.app_user?.email ??
-    auth.authMe?.app_user?.id ??
-    'Jobseeker account'
 
   return (
     <header className="sticky top-0 z-30 border-b border-[#ddcfba] bg-white/90 backdrop-blur">
@@ -41,7 +55,10 @@ export function JobseekerHeader() {
 
         <nav
           aria-label="Jobseeker workspace"
-          className="flex flex-1 flex-wrap items-center gap-2"
+          className={cn(
+            'flex flex-wrap items-center gap-2',
+            jobsSearch ? '' : 'flex-1'
+          )}
         >
           <NavLink
             className={({ isActive }) => linkClassName(isActive)}
@@ -55,36 +72,46 @@ export function JobseekerHeader() {
           >
             My Applications
           </NavLink>
+        </nav>
+
+        {jobsSearch ? (
+          <form
+            className="flex h-11 w-full items-center gap-2 rounded-2xl border border-[#ddcfba] bg-[#fcfaf6] px-3 lg:w-[520px]"
+            onSubmit={(event) => {
+              event.preventDefault()
+              jobsSearch.onSubmit()
+            }}
+          >
+            <Search className="h-4 w-4 text-[#8da2c5]" />
+            <input
+              className="h-full min-w-0 flex-1 bg-transparent text-sm text-slate-800 outline-none placeholder:text-slate-400"
+              placeholder="Search by role, city, or keyword..."
+              value={jobsSearch.value}
+              onChange={(event) => jobsSearch.onChange(event.target.value)}
+            />
+            <button
+              aria-label="Search jobs"
+              className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-0 bg-transparent text-slate-600 transition hover:bg-[#f2ebdf] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d0922c]/60"
+              disabled={jobsSearch.busy}
+              type="submit"
+            >
+              <Search className="h-4 w-4" />
+            </button>
+          </form>
+        ) : null}
+
+        <div className="ml-auto flex flex-wrap items-center gap-3">
+          {auth.authMe?.profile_complete === false ? (
+            <NavLink to="/profile">
+              <PortalBadge tone="warning">Complete profile</PortalBadge>
+            </NavLink>
+          ) : null}
           <NavLink
-            className={({ isActive }) => linkClassName(isActive)}
+            className={({ isActive }) => profileLinkClassName(isActive)}
             to="/profile"
           >
             My Profile
           </NavLink>
-        </nav>
-
-        <div className="ml-auto flex flex-wrap items-center gap-3">
-          <PortalBadge
-            tone={auth.authMe?.profile_complete ? 'success' : 'warning'}
-          >
-            {auth.authMe?.profile_complete
-              ? 'Profile complete'
-              : 'Profile setup'}
-          </PortalBadge>
-          <div className="flex items-center gap-3 rounded-full border border-[#ddcfba] bg-[#fcfaf6] px-3 py-2">
-            <div className="grid h-10 w-10 place-items-center rounded-full border border-[#bfd5e7] bg-[#eef6ff] text-sm font-semibold text-[#2458b8]">
-              {getInitials(identity)}
-            </div>
-            <div className="hidden min-w-0 sm:block">
-              <p className="max-w-[180px] truncate text-sm font-semibold text-slate-900">
-                {identity}
-              </p>
-              <p className="text-xs text-slate-500">Jobseeker workspace</p>
-            </div>
-          </div>
-          <PortalButton variant="secondary" onClick={() => void auth.logout()}>
-            Sign Out
-          </PortalButton>
         </div>
       </div>
     </header>

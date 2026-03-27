@@ -14,6 +14,7 @@ type ButtonVariant =
   | 'primary'
   | 'secondary'
   | 'ghost'
+  | 'light'
   | 'success'
   | 'danger'
   | 'warning'
@@ -87,6 +88,8 @@ export function PortalButton({
     secondary:
       'border-[#ddd1be] bg-white text-slate-700 hover:border-[#cfbeaa] hover:bg-[#faf7f1]',
     ghost: 'border-transparent bg-transparent text-slate-600 hover:bg-white/80',
+    light:
+      'border-[#ece0cc] bg-white text-[#132130] hover:border-[#e2cfad] hover:bg-[#f8ecd7]',
     success: 'border-[#2f7d4b] bg-[#2f7d4b] text-white hover:bg-[#25643c]',
     danger: 'border-[#c62f2f] bg-[#c62f2f] text-white hover:bg-[#a82323]',
     warning: 'border-[#f0c95e] bg-[#fff6da] text-[#ac7012] hover:bg-[#fff0bf]',
@@ -293,17 +296,20 @@ export function StatCard({
 export function Toggle({
   checked,
   disabled,
+  size = 'default',
   onChange,
 }: {
   checked: boolean
   disabled?: boolean
+  size?: 'default' | 'compact'
   onChange: (checked: boolean) => void
 }) {
   return (
     <button
       aria-checked={checked}
       className={cn(
-        'relative h-8 w-12 rounded-full transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d0922c]/50',
+        'relative rounded-full transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d0922c]/50',
+        size === 'compact' ? 'h-6 w-10' : 'h-8 w-12',
         checked ? 'bg-[#2f7d4b]' : 'bg-[#cad6e8]',
         disabled && 'cursor-not-allowed opacity-60'
       )}
@@ -314,8 +320,9 @@ export function Toggle({
     >
       <span
         className={cn(
-          'absolute top-1 h-6 w-6 rounded-full bg-white shadow transition',
-          checked ? 'left-5' : 'left-1'
+          'absolute rounded-full bg-white shadow transition',
+          size === 'compact' ? 'top-1 h-4 w-4' : 'top-1 h-6 w-6',
+          checked ? (size === 'compact' ? 'left-5' : 'left-5') : 'left-1'
         )}
       />
     </button>
