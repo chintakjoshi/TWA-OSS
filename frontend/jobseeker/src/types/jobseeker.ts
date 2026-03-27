@@ -60,6 +60,7 @@ export interface JobListItem {
   job: JobListing
   is_eligible: boolean
   ineligibility_tag: string | null
+  has_applied: boolean
 }
 
 export interface JobListFilters {
@@ -75,6 +76,7 @@ export interface JobDetailPayload {
   eligibility: {
     is_eligible: boolean
     ineligibility_tag: string | null
+    has_applied: boolean
   }
 }
 

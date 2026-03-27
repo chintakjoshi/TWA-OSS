@@ -40,6 +40,7 @@ const jobs: JobListItem[] = [
     },
     is_eligible: true,
     ineligibility_tag: null,
+    has_applied: true,
   },
   {
     job: {
@@ -72,6 +73,7 @@ const jobs: JobListItem[] = [
     },
     is_eligible: false,
     ineligibility_tag: 'Transit mismatch',
+    has_applied: false,
   },
 ]
 
@@ -103,9 +105,12 @@ test('job board renders eligible and ineligible listings with their status label
   )
 
   expect(await screen.findByText('Warehouse Associate')).toBeInTheDocument()
-  expect(screen.getByText('Eligible')).toBeInTheDocument()
+  const alreadyAppliedBadge = screen.getByText('Already applied')
+  expect(alreadyAppliedBadge).toBeInTheDocument()
+  expect(alreadyAppliedBadge.closest('span')).toHaveClass('whitespace-nowrap')
   expect(screen.getByText('Transit mismatch')).toBeInTheDocument()
   expect(screen.getAllByText('Own car required').length).toBeGreaterThan(0)
+  expect(screen.queryByText('Profile complete')).not.toBeInTheDocument()
   expect(spies.requestTwa).toHaveBeenCalledWith(
     expect.stringContaining('/api/v1/jobs?page=1'),
     expect.any(Object),

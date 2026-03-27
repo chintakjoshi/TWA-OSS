@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from 'react'
-import { CalendarDays, ClipboardList, Eye, Trophy } from 'lucide-react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { CalendarDays, ClipboardList, Eye } from 'lucide-react'
 import { Link } from 'react-router-dom'
 
 import { useAuth } from '@shared/auth/AuthProvider'
@@ -8,6 +8,7 @@ import { listMyApplications } from '../api/jobseekerApi'
 import { JobseekerHeader } from '../components/JobseekerHeader'
 import { EmptyState, ErrorState, LoadingState } from '../components/PageState'
 import {
+  InlineNotice,
   PanelBody,
   PortalBadge,
   PortalButton,
@@ -38,11 +39,17 @@ export function JobseekerApplicationsPage() {
   const [totalPages, setTotalPages] = useState(0)
   const [totalItems, setTotalItems] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
+  const [isRefreshing, setIsRefreshing] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const hasLoadedOnceRef = useRef(false)
 
   useEffect(() => {
     let active = true
-    setIsLoading(true)
+    if (hasLoadedOnceRef.current) {
+      setIsRefreshing(true)
+    } else {
+      setIsLoading(true)
+    }
     setError(null)
     void listMyApplications(auth.requestTwa, { page, status })
       .then((response) => {
@@ -50,26 +57,26 @@ export function JobseekerApplicationsPage() {
         setItems(response.items)
         setTotalItems(response.meta.total_items)
         setTotalPages(response.meta.total_pages)
+        hasLoadedOnceRef.current = true
       })
       .catch((nextError: Error) => {
         if (!active) return
         setError(nextError.message)
       })
       .finally(() => {
-        if (active) setIsLoading(false)
+        if (active) {
+          setIsLoading(false)
+          setIsRefreshing(false)
+        }
       })
 
     return () => {
       active = false
     }
-  }, [auth, page, status])
+  }, [auth.requestTwa, page, status])
 
-  const stats = useMemo(
-    () => ({
-      submitted: items.filter((item) => item.status === 'submitted').length,
-      reviewed: items.filter((item) => item.status === 'reviewed').length,
-      hired: items.filter((item) => item.status === 'hired').length,
-    }),
+  const reviewedCount = useMemo(
+    () => items.filter((item) => item.status === 'reviewed').length,
     [items]
   )
 
@@ -79,24 +86,23 @@ export function JobseekerApplicationsPage() {
 
       <main className="mx-auto w-full max-w-[1260px] px-4 py-8 pb-12 sm:px-6">
         <div className="space-y-8">
-          <section className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_300px]">
-            <PortalPanel className="bg-[#132130] text-white">
-              <PanelBody className="space-y-4">
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#91a8ca]">
-                  My Applications
-                </p>
-                <h1 className="jobseeker-display text-[3rem] leading-[0.98] font-semibold">
-                  Track every listing you have applied to.
-                </h1>
-                <p className="max-w-[620px] text-lg leading-8 text-[#cfdbeb]">
-                  This view reflects the real TWA workflow status values:
-                  submitted, reviewed, and hired.
-                </p>
-              </PanelBody>
-            </PortalPanel>
-
+          <section className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_320px]">
+            <StatCard
+              accent="#d0922c"
+              hint="Applications in this result set"
+              icon={ClipboardList}
+              label="Visible Applications"
+              value={String(totalItems)}
+            />
+            <StatCard
+              accent="#3569c7"
+              hint="Applications currently reviewed"
+              icon={Eye}
+              label="Reviewed"
+              value={String(reviewedCount)}
+            />
             <PortalPanel>
-              <PanelBody className="space-y-4">
+              <PanelBody className="flex h-full flex-col justify-between gap-4">
                 <label className="block text-xs font-semibold uppercase tracking-[0.16em] text-[#8da2c5]">
                   Filter by status
                 </label>
@@ -113,40 +119,27 @@ export function JobseekerApplicationsPage() {
                   <option value="reviewed">Reviewed</option>
                   <option value="hired">Hired</option>
                 </select>
-                <PortalBadge tone="info">
-                  {totalItems} applications found
-                </PortalBadge>
+                <div className="flex flex-wrap items-center gap-2">
+                  <PortalBadge tone="info">
+                    {totalItems} applications found
+                  </PortalBadge>
+                  {isRefreshing ? (
+                    <PortalBadge className="gap-2" tone="info">
+                      <span className="h-3 w-3 animate-spin rounded-full border-2 border-[#aac0ea] border-t-[#3569c7]" />
+                      Updating list
+                    </PortalBadge>
+                  ) : null}
+                </div>
               </PanelBody>
             </PortalPanel>
           </section>
 
-          <section className="grid gap-4 md:grid-cols-3">
-            <StatCard
-              accent="#d0922c"
-              hint="Applications in this result set"
-              icon={ClipboardList}
-              label="Visible Applications"
-              value={String(totalItems)}
-            />
-            <StatCard
-              accent="#3569c7"
-              hint="Applications currently reviewed"
-              icon={Eye}
-              label="Reviewed"
-              value={String(stats.reviewed)}
-            />
-            <StatCard
-              accent="#2f7d4b"
-              hint="Applications marked hired"
-              icon={Trophy}
-              label="Hired"
-              value={String(stats.hired)}
-            />
-          </section>
-
           {isLoading ? <LoadingState title="Loading applications..." /> : null}
-          {!isLoading && error ? (
+          {!isLoading && error && items.length === 0 ? (
             <ErrorState title="Applications unavailable" message={error} />
+          ) : null}
+          {!isLoading && error && items.length > 0 ? (
+            <InlineNotice tone="danger">{error}</InlineNotice>
           ) : null}
           {!isLoading && !error && items.length === 0 ? (
             <EmptyState
@@ -155,7 +148,7 @@ export function JobseekerApplicationsPage() {
             />
           ) : null}
 
-          {!isLoading && !error && items.length > 0 ? (
+          {!isLoading && items.length > 0 ? (
             <div className="space-y-4">
               {items.map((item) => (
                 <PortalPanel key={item.id}>
@@ -202,7 +195,7 @@ export function JobseekerApplicationsPage() {
             </div>
           ) : null}
 
-          {!isLoading && !error && totalPages > 1 ? (
+          {!isLoading && totalPages > 1 ? (
             <PortalPanel>
               <PanelBody className="flex flex-wrap items-center justify-between gap-4">
                 <p className="text-sm text-slate-500">
@@ -210,14 +203,14 @@ export function JobseekerApplicationsPage() {
                 </p>
                 <div className="flex flex-wrap gap-3">
                   <PortalButton
-                    disabled={page <= 1}
+                    disabled={page <= 1 || isRefreshing}
                     variant="secondary"
                     onClick={() => setPage((current) => current - 1)}
                   >
                     Previous
                   </PortalButton>
                   <PortalButton
-                    disabled={page >= totalPages}
+                    disabled={page >= totalPages || isRefreshing}
                     onClick={() => setPage((current) => current + 1)}
                   >
                     Next

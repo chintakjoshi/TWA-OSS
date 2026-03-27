@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useEffectEvent, useMemo, useState } from 'react'
 import { Check, CircleAlert } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
@@ -49,6 +49,7 @@ const chargeOptions: Array<{ key: keyof ChargeFlags; label: string }> = [
 ]
 
 type WizardStep = 1 | 2 | 3 | 4
+type WizardMode = 'setup' | 'edit'
 type PreferredContact = 'Email' | 'Phone' | 'Text'
 
 interface ProfileDraft {
@@ -177,37 +178,46 @@ export function JobseekerProfilePage() {
   const [profile, setProfile] = useState<JobseekerProfile | null>(null)
   const [draft, setDraft] = useState<ProfileDraft | null>(null)
   const [step, setStep] = useState<WizardStep>(1)
+  const [wizardMode, setWizardMode] = useState<WizardMode>('setup')
   const [isEditing, setIsEditing] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
 
-  useEffect(() => {
-    let active = true
-    setIsLoading(true)
-    setError(null)
-    void getMyJobseekerProfile(auth.requestTwa)
-      .then((response) => {
-        if (!active) return
+  const hydrateProfile = useEffectEvent(
+    async (active: { current: boolean }) => {
+      setIsLoading(true)
+      setError(null)
+      try {
+        const response = await getMyJobseekerProfile(auth.requestTwa)
+        if (!active.current) return
         const preferredContact = loadPreferredContact()
         setProfile(response.profile)
         setDraft(toDraft(response.profile, preferredContact))
         setStep(inferInitialStep(response.profile))
+        setWizardMode(response.profile.profile_complete ? 'edit' : 'setup')
         setIsEditing(!response.profile.profile_complete)
-      })
-      .catch((nextError: Error) => {
-        if (!active) return
-        setError(nextError.message)
-      })
-      .finally(() => {
-        if (active) setIsLoading(false)
-      })
-
-    return () => {
-      active = false
+      } catch (nextError) {
+        if (!active.current) return
+        setError(
+          nextError instanceof Error
+            ? nextError.message
+            : 'Unable to load your profile right now.'
+        )
+      } finally {
+        if (active.current) setIsLoading(false)
+      }
     }
-  }, [auth])
+  )
+
+  useEffect(() => {
+    const active = { current: true }
+    void hydrateProfile(active)
+    return () => {
+      active.current = false
+    }
+  }, [auth.authMe?.app_user?.id, auth.state])
 
   useEffect(() => {
     if (typeof window === 'undefined' || !draft) return
@@ -222,8 +232,19 @@ export function JobseekerProfilePage() {
     return chargeOptions.filter((option) => draft.charges[option.key])
   }, [draft])
 
-  async function saveDraft(nextStep?: WizardStep) {
+  const selectedChargeSummary = useMemo(() => {
+    if (selectedCharges.length === 0) return 'No background categories selected'
+    return selectedCharges.map((option) => option.label).join(', ')
+  }, [selectedCharges])
+
+  async function saveDraft(
+    options: {
+      nextStep?: WizardStep
+      reloadAuth?: boolean
+    } = {}
+  ) {
     if (!draft) return null
+    const { nextStep, reloadAuth = false } = options
     setIsSaving(true)
     setError(null)
     setSuccess(null)
@@ -237,7 +258,9 @@ export function JobseekerProfilePage() {
           current?.preferred_contact ?? loadPreferredContact()
         )
       )
-      await auth.reload()
+      if (reloadAuth) {
+        await auth.reload()
+      }
       if (nextStep) setStep(nextStep)
       return refreshed.profile
     } catch (nextError) {
@@ -264,14 +287,14 @@ export function JobseekerProfilePage() {
       return
     }
     if (step === 2) {
-      const refreshed = await saveDraft(3)
+      const refreshed = await saveDraft({ nextStep: 3 })
       if (refreshed) {
         setSuccess('Personal information saved. Continue with your location.')
       }
       return
     }
     if (step === 3) {
-      const refreshed = await saveDraft(4)
+      const refreshed = await saveDraft({ nextStep: 4 })
       if (refreshed) {
         setSuccess(
           'Location and transit details saved. Finish with background info.'
@@ -280,7 +303,7 @@ export function JobseekerProfilePage() {
       return
     }
 
-    const refreshed = await saveDraft()
+    const refreshed = await saveDraft({ reloadAuth: true })
     if (!refreshed) return
 
     toast.success('Profile saved.', {
@@ -289,7 +312,7 @@ export function JobseekerProfilePage() {
         : 'Your profile was updated.',
     })
 
-    if (profile?.profile_complete) {
+    if (wizardMode === 'edit') {
       setIsEditing(false)
       setSuccess('Profile updated.')
       return
@@ -336,7 +359,10 @@ export function JobseekerProfilePage() {
       <main className="mx-auto w-full max-w-[1260px] px-4 py-8 pb-12 sm:px-6">
         {!isEditing && profile.profile_complete ? (
           <div className="space-y-6">
-            <PortalPanel className="bg-[#132130] text-white">
+            <section
+              className="overflow-hidden rounded-[28px] border border-[#1f3145] shadow-[0_18px_45px_rgba(15,23,42,0.06)]"
+              style={{ backgroundColor: '#132130' }}
+            >
               <PanelBody className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
                 <div className="flex items-center gap-5">
                   <div className="grid h-20 w-20 place-items-center rounded-full border border-white/20 bg-white/10 text-3xl font-semibold text-white">
@@ -345,11 +371,11 @@ export function JobseekerProfilePage() {
                     )}
                   </div>
                   <div>
-                    <h1 className="jobseeker-display text-[2.6rem] leading-none font-semibold">
+                    <h1 className="jobseeker-display text-[2.6rem] leading-none font-semibold text-white">
                       {profile.full_name ?? 'Your profile'}
                     </h1>
                     <p className="mt-3 text-sm text-[#cfdbeb]">
-                      Member since {formatMonthYear(profile.created_at)} .{' '}
+                      Member since {formatMonthYear(profile.created_at)}.{' '}
                       <span className="capitalize">{profile.status}</span>{' '}
                       jobseeker
                     </p>
@@ -361,18 +387,27 @@ export function JobseekerProfilePage() {
                     </div>
                   </div>
                 </div>
-                <PortalButton
-                  onClick={() => {
-                    setError(null)
-                    setSuccess(null)
-                    setStep(2)
-                    setIsEditing(true)
-                  }}
-                >
-                  Edit Profile
-                </PortalButton>
+                <div className="flex flex-wrap gap-3">
+                  <PortalButton
+                    onClick={() => {
+                      setError(null)
+                      setSuccess(null)
+                      setStep(2)
+                      setWizardMode('edit')
+                      setIsEditing(true)
+                    }}
+                  >
+                    Edit Profile
+                  </PortalButton>
+                  <PortalButton
+                    variant="secondary"
+                    onClick={() => void auth.logout()}
+                  >
+                    Sign Out
+                  </PortalButton>
+                </div>
               </PanelBody>
-            </PortalPanel>
+            </section>
 
             {success ? (
               <InlineNotice tone="success">{success}</InlineNotice>
@@ -438,37 +473,24 @@ export function JobseekerProfilePage() {
             </Surface>
 
             <Surface>
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#8da2c5]">
-                    TWA support
-                  </p>
-                  <h2 className="jobseeker-display mt-2 text-[1.8rem] font-semibold text-slate-950">
-                    Staff-facing profile extras
-                  </h2>
-                </div>
-                <PortalBadge tone="warning">Frontend placeholder</PortalBadge>
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#8da2c5]">
+                  Background information
+                </p>
+                <h2 className="jobseeker-display mt-2 text-[1.8rem] font-semibold text-slate-950">
+                  Private matching details
+                </h2>
               </div>
               <DefinitionList
                 className="mt-6"
                 items={[
                   {
-                    label: 'Case Manager',
-                    value: 'Assigned through TWA staff',
-                  },
-                  { label: 'Office', value: 'Saint Louis University TWA' },
-                  {
-                    label: 'Background Status',
-                    value:
-                      selectedCharges.length > 0
-                        ? `${selectedCharges.length} category${selectedCharges.length === 1 ? '' : 'ies'} selected privately`
-                        : 'No categories selected',
+                    label: 'Selected Categories',
+                    value: selectedChargeSummary,
                   },
                   {
-                    label: 'Profile Stage',
-                    value: profile.profile_complete
-                      ? 'Ready for job browsing'
-                      : 'Setup in progress',
+                    label: 'Visibility',
+                    value: 'Private to your TWA support workflow',
                   },
                 ]}
               />
@@ -486,23 +508,11 @@ export function JobseekerProfilePage() {
           <div className="space-y-6">
             <Surface className="text-center">
               <div className="mx-auto max-w-[720px]">
-                <div className="mx-auto flex w-fit items-center gap-3 rounded-full border border-[#ddcfba] bg-[#fcfaf6] px-4 py-2">
-                  <div className="grid h-9 w-9 place-items-center rounded-xl bg-[#132130] text-sm font-semibold text-white">
-                    T
-                  </div>
-                  <p className="text-sm font-semibold text-slate-950">
-                    TWA Jobseeker Portal
-                  </p>
-                </div>
                 <h1 className="jobseeker-display mt-6 text-[3rem] leading-[0.98] font-semibold text-slate-950">
-                  {profile.profile_complete
+                  {wizardMode === 'edit'
                     ? 'Update your profile'
                     : 'Set up your profile'}
                 </h1>
-                <p className="mt-4 text-lg leading-8 text-slate-500">
-                  This information helps TWA match you with the right job
-                  opportunities. You can update it at any time.
-                </p>
               </div>
 
               <div className="mt-10 flex flex-wrap justify-center gap-3 lg:gap-0">
@@ -883,7 +893,7 @@ export function JobseekerProfilePage() {
                       >
                         {isSaving
                           ? 'Saving...'
-                          : profile.profile_complete
+                          : wizardMode === 'edit'
                             ? 'Save Changes'
                             : 'Complete Setup'}
                       </PortalButton>

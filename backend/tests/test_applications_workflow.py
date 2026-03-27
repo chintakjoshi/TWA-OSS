@@ -220,10 +220,12 @@ def test_jobseeker_can_browse_jobs_and_apply(applications_env) -> None:
     assert "ineligibility_reasons" not in payload["items"][0]
     assert payload["items"][0]["is_eligible"] is False
     assert payload["items"][0]["ineligibility_tag"] is None
+    assert payload["items"][0]["has_applied"] is False
 
     detail = client.get(f"/api/v1/jobs/{listing_ids['eligible']}")
     assert detail.status_code == 200
     assert detail.json()["eligibility"]["is_eligible"] is True
+    assert detail.json()["eligibility"]["has_applied"] is False
 
     closed_detail = client.get(f"/api/v1/jobs/{listing_ids['closed']}")
     assert closed_detail.status_code == 404
@@ -253,6 +255,18 @@ def test_jobseeker_can_browse_jobs_and_apply(applications_env) -> None:
     assert mine.json()["meta"]["total_items"] == 1
     assert mine.json()["items"][0]["id"] == application_id
     assert mine.json()["items"][0]["job"]["title"] == "Warehouse Associate"
+
+    refreshed_jobs = client.get("/api/v1/jobs", params={"sort": "title"})
+    assert refreshed_jobs.status_code == 200
+    refreshed_items = refreshed_jobs.json()["items"]
+    applied_listing = next(
+        item for item in refreshed_items if item["job"]["title"] == "Warehouse Associate"
+    )
+    assert applied_listing["has_applied"] is True
+
+    refreshed_detail = client.get(f"/api/v1/jobs/{listing_ids['eligible']}")
+    assert refreshed_detail.status_code == 200
+    assert refreshed_detail.json()["eligibility"]["has_applied"] is True
 
 
 def test_incomplete_jobseeker_is_blocked_from_jobs_and_applications(

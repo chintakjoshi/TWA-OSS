@@ -10,16 +10,27 @@ function formatTransitLabel(value: 'own_car' | 'any'): string {
 }
 
 export function JobCard({ item }: { item: JobListItem }) {
+  const statusTone = item.has_applied
+    ? 'info'
+    : item.is_eligible
+      ? 'success'
+      : 'warning'
+  const statusLabel = item.has_applied
+    ? 'Already applied'
+    : item.is_eligible
+      ? 'Eligible'
+      : (item.ineligibility_tag ?? 'Not eligible')
+
   return (
     <PortalPanel className="h-full">
       <PanelBody className="flex h-full flex-col gap-5">
         <div className="flex items-start justify-between gap-4">
-          <div className="space-y-3">
+          <div className="min-w-0 flex-1 space-y-3">
             <div className="grid h-11 w-11 place-items-center rounded-2xl border border-[#e6dac7] bg-[#f9f4eb] text-lg font-semibold text-[#132130]">
               {item.job.title.charAt(0).toUpperCase()}
             </div>
-            <div className="space-y-1">
-              <h2 className="jobseeker-display text-[1.7rem] leading-none font-semibold text-slate-950">
+            <div className="min-w-0 space-y-1">
+              <h2 className="jobseeker-display break-words text-[1.7rem] leading-none font-semibold text-slate-950">
                 {item.job.title}
               </h2>
               <p className="text-sm text-slate-500">
@@ -28,10 +39,11 @@ export function JobCard({ item }: { item: JobListItem }) {
               </p>
             </div>
           </div>
-          <PortalBadge tone={item.is_eligible ? 'success' : 'warning'}>
-            {item.is_eligible
-              ? 'Eligible'
-              : (item.ineligibility_tag ?? 'Not eligible')}
+          <PortalBadge
+            className="shrink-0 self-start whitespace-nowrap"
+            tone={statusTone}
+          >
+            {statusLabel}
           </PortalBadge>
         </div>
 
@@ -69,7 +81,7 @@ export function JobCard({ item }: { item: JobListItem }) {
             className="inline-flex min-h-11 flex-1 items-center justify-center rounded-xl border border-[#d0922c] bg-[#d0922c] px-4 text-sm font-semibold text-white transition hover:border-[#b67a1b] hover:bg-[#b67a1b] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d0922c]/60"
             to={`/jobs/${item.job.id}`}
           >
-            Review & Apply
+            {item.has_applied ? 'Review Listing' : 'Review & Apply'}
           </Link>
         </div>
       </PanelBody>

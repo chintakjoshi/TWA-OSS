@@ -8,8 +8,7 @@ import { AuthProvider } from '@shared/auth/AuthProvider'
 import { buildAuthMe, createMockAuthClient } from '../../../tests/utils/auth'
 import { JobseekerAuthPage } from './AuthPage'
 
-test('jobseeker bootstrap transitions the authenticated user into the local TWA flow', async () => {
-  const user = userEvent.setup()
+test('jobseeker auth automatically bootstraps first-login users into the local TWA flow', async () => {
   const { client, spies } = createMockAuthClient({
     authMe: {
       app_user: null,
@@ -30,9 +29,12 @@ test('jobseeker bootstrap transitions the authenticated user into the local TWA 
     </MemoryRouter>
   )
 
-  await user.click(
-    await screen.findByRole('button', { name: 'Bootstrap as Jobseeker' })
-  )
+  expect(
+    await screen.findByText('Preparing your profile setup.')
+  ).toBeInTheDocument()
+  expect(
+    screen.queryByRole('button', { name: 'Bootstrap as Jobseeker' })
+  ).not.toBeInTheDocument()
 
   await waitFor(() => {
     expect(spies.bootstrapRole).toHaveBeenCalledWith(
@@ -50,4 +52,42 @@ test('jobseeker bootstrap transitions the authenticated user into the local TWA 
   expect(
     screen.getByRole('link', { name: 'Complete profile' })
   ).toHaveAttribute('href', '/profile')
+})
+
+test('auth screen removes shared-auth copy and toggles password visibility', async () => {
+  const user = userEvent.setup()
+  const { client } = createMockAuthClient()
+
+  render(
+    <MemoryRouter>
+      <AuthProvider client={client}>
+        <JobseekerAuthPage />
+      </AuthProvider>
+    </MemoryRouter>
+  )
+
+  await screen.findByText('Welcome back')
+
+  const passwordInput = screen.getByPlaceholderText(
+    'Your password'
+  ) as HTMLInputElement
+
+  expect(passwordInput.type).toBe('password')
+  expect(screen.queryByText(/shared auth/i)).not.toBeInTheDocument()
+  expect(screen.queryByText(/staff portal/i)).not.toBeInTheDocument()
+  expect(
+    screen.queryByRole('button', { name: /manual reset/i })
+  ).not.toBeInTheDocument()
+
+  await user.click(screen.getByRole('button', { name: 'Show password' }))
+  expect(passwordInput.type).toBe('text')
+
+  await user.click(screen.getByRole('button', { name: 'Hide password' }))
+  expect(passwordInput.type).toBe('password')
+
+  const employerLink = screen.getByRole('link', {
+    name: 'Open Employer Portal',
+  })
+  expect(employerLink).toHaveAttribute('href')
+  expect(employerLink).toHaveStyle({ color: '#ffffff' })
 })
