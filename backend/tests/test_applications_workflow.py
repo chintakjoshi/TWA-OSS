@@ -260,7 +260,9 @@ def test_jobseeker_can_browse_jobs_and_apply(applications_env) -> None:
     assert refreshed_jobs.status_code == 200
     refreshed_items = refreshed_jobs.json()["items"]
     applied_listing = next(
-        item for item in refreshed_items if item["job"]["title"] == "Warehouse Associate"
+        item
+        for item in refreshed_items
+        if item["job"]["title"] == "Warehouse Associate"
     )
     assert applied_listing["has_applied"] is True
 

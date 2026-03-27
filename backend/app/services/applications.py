@@ -225,7 +225,9 @@ def list_visible_jobs_for_jobseeker(
             session.execute(
                 select(Application.job_listing_id).where(
                     Application.jobseeker_id == jobseeker.id,
-                    Application.job_listing_id.in_([listing.id for listing in listings]),
+                    Application.job_listing_id.in_(
+                        [listing.id for listing in listings]
+                    ),
                 )
             )
             .scalars()
@@ -269,9 +271,7 @@ def get_job_detail_for_jobseeker(
         )
         is not None
     )
-    return build_job_detail_for_jobseeker(
-        jobseeker, listing, has_applied=has_applied
-    )
+    return build_job_detail_for_jobseeker(jobseeker, listing, has_applied=has_applied)
 
 
 def create_application(
