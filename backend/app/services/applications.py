@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from uuid import UUID
 
-from sqlalchemy import func, or_, select
+from sqlalchemy import false, func, not_, or_, select
 from sqlalchemy.orm import Session, joinedload
 
 from app.audit import write_audit
@@ -14,6 +14,8 @@ from app.models.enums import (
     EmployerReviewStatus,
     ListingLifecycleStatus,
     ListingReviewStatus,
+    TransitRequirement,
+    TransitType,
 )
 from app.schemas.applications import (
     AdminApplicationJobseekerSummaryPayload,
@@ -69,6 +71,14 @@ ALLOWED_APPLICATION_TRANSITIONS = {
     ApplicationStatus.REVIEWED: {ApplicationStatus.REVIEWED, ApplicationStatus.HIRED},
     ApplicationStatus.HIRED: {ApplicationStatus.HIRED},
 }
+JOBSEEKER_LISTING_CHARGE_FLAG_PAIRS = (
+    ("charge_sex_offense", "disq_sex_offense"),
+    ("charge_violent", "disq_violent"),
+    ("charge_armed", "disq_armed"),
+    ("charge_children", "disq_children"),
+    ("charge_drug", "disq_drug"),
+    ("charge_theft", "disq_theft"),
+)
 
 
 def _visible_jobs_statement():
@@ -90,6 +100,46 @@ def _applications_statement():
         .joinedload(JobListing.employer)
         .joinedload(Employer.app_user),
         joinedload(Application.jobseeker).joinedload(Jobseeker.app_user),
+    )
+
+
+def _build_listing_ineligibility_condition(jobseeker: Jobseeker):
+    charge_conflicts = [
+        getattr(JobListing, listing_attr).is_(True)
+        for jobseeker_attr, listing_attr in JOBSEEKER_LISTING_CHARGE_FLAG_PAIRS
+        if bool(getattr(jobseeker, jobseeker_attr))
+    ]
+    conditions = []
+    if charge_conflicts:
+        conditions.append(or_(*charge_conflicts))
+
+    if jobseeker.transit_type == TransitType.PUBLIC_TRANSIT:
+        conditions.append(
+            or_(
+                JobListing.transit_required == TransitRequirement.OWN_CAR,
+                JobListing.transit_accessible.is_(False),
+                JobListing.transit_accessible.is_(None),
+            )
+        )
+
+    return or_(*conditions) if conditions else false()
+
+
+def _get_applied_listing_ids_for_jobseeker(
+    session: Session, *, jobseeker_id: UUID, listing_ids: list[UUID]
+) -> set[UUID]:
+    if not listing_ids:
+        return set()
+
+    return set(
+        session.execute(
+            select(Application.job_listing_id).where(
+                Application.jobseeker_id == jobseeker_id,
+                Application.job_listing_id.in_(listing_ids),
+            )
+        )
+        .scalars()
+        .all()
     )
 
 
@@ -218,25 +268,26 @@ def list_visible_jobs_for_jobseeker(
             "transit_required": JobListing.transit_required,
         },
     )
+    if is_eligible is not None:
+        ineligibility_condition = _build_listing_ineligibility_condition(jobseeker)
+        base_statement = base_statement.where(
+            not_(ineligibility_condition) if is_eligible else ineligibility_condition
+        )
+
+    total_items = session.execute(
+        select(func.count()).select_from(base_statement.subquery())
+    ).scalar_one()
     statement = apply_sorting(
         base_statement, sort=sort, allowed_sorts=VISIBLE_JOB_ALLOWED_SORTS
     )
+    statement = apply_pagination(statement, pagination)
     listings = session.execute(statement).unique().scalars().all()
-    applied_listing_ids: set[UUID] = set()
-    if listings:
-        applied_listing_ids = set(
-            session.execute(
-                select(Application.job_listing_id).where(
-                    Application.jobseeker_id == jobseeker.id,
-                    Application.job_listing_id.in_(
-                        [listing.id for listing in listings]
-                    ),
-                )
-            )
-            .scalars()
-            .all()
-        )
-    serialized_items = [
+    applied_listing_ids = _get_applied_listing_ids_for_jobseeker(
+        session,
+        jobseeker_id=jobseeker.id,
+        listing_ids=[listing.id for listing in listings],
+    )
+    items = [
         serialize_job_with_eligibility(
             jobseeker,
             listing,
@@ -244,16 +295,8 @@ def list_visible_jobs_for_jobseeker(
         )
         for listing in listings
     ]
-    if is_eligible is not None:
-        serialized_items = [
-            item for item in serialized_items if item.is_eligible is is_eligible
-        ]
-    total_items = len(serialized_items)
-    page_items = serialized_items[
-        pagination.offset : pagination.offset + pagination.page_size
-    ]
     return build_paginated_response(
-        items=page_items,
+        items=items,
         total_items=total_items,
         pagination=pagination,
     )
