@@ -171,47 +171,47 @@ export function EmployerProfilePage() {
                 </div>
               </Surface>
               <Surface className="flex h-full flex-col px-6 py-6">
-                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#8da2c5]">
-                    Account review
-                  </p>
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#8da2c5]">
+                  Account review
+                </p>
 
-                  <div className="mt-6 space-y-3">
-                    {[
-                      {
-                        label: 'Current status',
-                        value:
-                          reviewStatus === 'approved'
-                            ? 'Approved and able to submit listings'
-                            : reviewStatus === 'rejected'
-                              ? 'Not approved by TWA staff'
-                              : 'Pending review by TWA staff',
-                      },
-                      {
-                        label: 'Contact name',
-                        value: profile?.contact_name ?? 'Not set',
-                      },
-                      {
-                        label: 'Last reviewed',
-                        value: formatDateTime(profile?.reviewed_at),
-                      },
-                      {
-                        label: 'Profile updated',
-                        value: formatDateTime(profile?.updated_at),
-                      },
-                    ].map((item) => (
-                      <div
-                        className="rounded-[22px] border border-[#eadfce] bg-[#fcfaf6] px-4 py-4"
-                        key={item.label}
-                      >
-                        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#8da2c5]">
-                          {item.label}
-                        </p>
-                        <p className="mt-2 text-sm leading-7 font-semibold text-slate-900">
-                          {item.value}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
+                <div className="mt-6 space-y-3">
+                  {[
+                    {
+                      label: 'Current status',
+                      value:
+                        reviewStatus === 'approved'
+                          ? 'Approved and able to submit listings'
+                          : reviewStatus === 'rejected'
+                            ? 'Not approved by TWA staff'
+                            : 'Pending review by TWA staff',
+                    },
+                    {
+                      label: 'Contact name',
+                      value: profile?.contact_name ?? 'Not set',
+                    },
+                    {
+                      label: 'Last reviewed',
+                      value: formatDateTime(profile?.reviewed_at),
+                    },
+                    {
+                      label: 'Profile updated',
+                      value: formatDateTime(profile?.updated_at),
+                    },
+                  ].map((item) => (
+                    <div
+                      className="rounded-[22px] border border-[#eadfce] bg-[#fcfaf6] px-4 py-4"
+                      key={item.label}
+                    >
+                      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#8da2c5]">
+                        {item.label}
+                      </p>
+                      <p className="mt-2 text-sm leading-7 font-semibold text-slate-900">
+                        {item.value}
+                      </p>
+                    </div>
+                  ))}
+                </div>
               </Surface>
             </div>
           </>

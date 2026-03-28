@@ -46,7 +46,7 @@ export function ApplicantsPanel({
     setMessage(null)
     setApplicantVisibilityDisabled(false)
 
-    void listEmployerApplicants(auth.requestTwa, listingId, page)
+    void listEmployerApplicants(auth.requestTwa, listingId, { page })
       .then((response) => {
         if (!active) return
         setApplicants(response.items)
@@ -106,8 +106,8 @@ export function ApplicantsPanel({
         {isLoading ? <LoadingState title="Loading applicants..." /> : null}
         {!isLoading && applicantVisibilityDisabled ? (
           <div className="space-y-4 rounded-[24px] border border-[#d7cab4] bg-[#fffdf9] px-6 py-10 text-center">
-            <div className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-[#fff4d7] text-3xl">
-              🔒
+            <div className="mx-auto inline-flex items-center rounded-full border border-[#f3dc9f] bg-[#fff4d7] px-4 py-2 text-sm font-semibold text-[#a86b00]">
+              Locked
             </div>
             <h3 className="employer-display text-[2rem] font-semibold text-slate-950">
               Applicant visibility is currently off
@@ -162,9 +162,9 @@ export function ApplicantsPanel({
                             'Applicant name pending'}
                         </p>
                         <p className="text-sm text-slate-500">
-                          Applied {formatDate(applicant.applied_at)} ·{' '}
+                          Applied {formatDate(applicant.applied_at)} -{' '}
                           {formatTransitType(applicant.jobseeker.transit_type)}{' '}
-                          · {applicant.jobseeker.city ?? 'City pending'}
+                          - {applicant.jobseeker.city ?? 'City pending'}
                         </p>
                       </div>
                       <div className="flex flex-wrap gap-2">

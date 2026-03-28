@@ -501,7 +501,6 @@ export function AdminWorkspaceLayout({
           )}
         >
           <div className="flex h-full flex-col">
-
             <div className="flex-1 overflow-y-auto px-3 py-3">
               <div className="space-y-4">
                 {sections.map((section) => (

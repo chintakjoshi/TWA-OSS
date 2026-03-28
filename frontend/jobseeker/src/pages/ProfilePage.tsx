@@ -567,8 +567,8 @@ export function JobseekerProfilePage() {
                         Confirm your portal account
                       </h2>
                       <p className="mt-3 text-sm leading-7 text-slate-500">
-                        Your shared auth account is ready. Next, you&apos;ll add
-                        the profile details TWA uses for job matching.
+                        Your account is ready. Next, you&apos;ll add the profile
+                        details TWA uses for job matching.
                       </p>
                     </div>
 
