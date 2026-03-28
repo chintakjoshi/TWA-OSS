@@ -22,6 +22,7 @@ from app.models.enums import (
     ListingReviewStatus,
     TransitRequirement,
 )
+from app.services import applications as applications_service
 from app.services.auth import AuthProviderIdentity, get_auth_provider_identity
 
 
@@ -353,6 +354,62 @@ def test_job_list_supports_documented_filters(applications_env) -> None:
     assert ineligible_only.status_code == 200
     assert ineligible_only.json()["meta"]["total_items"] == 1
     assert ineligible_only.json()["items"][0]["job"]["title"] == "Cash Office Clerk"
+
+
+def test_job_list_paginates_before_evaluating_page_items(
+    applications_env, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    client, _, session_factory = applications_env
+    bootstrap_completed_jobseeker(client)
+    seed_employer_and_listings(session_factory)
+
+    original = applications_service.evaluate_jobseeker_listing_match
+    calls = {"count": 0}
+
+    def counting_match(*args, **kwargs):
+        calls["count"] += 1
+        return original(*args, **kwargs)
+
+    monkeypatch.setattr(
+        applications_service, "evaluate_jobseeker_listing_match", counting_match
+    )
+
+    jobs = client.get("/api/v1/jobs", params={"page_size": 1, "sort": "title"})
+    assert jobs.status_code == 200
+    assert jobs.json()["meta"]["total_items"] == 3
+    assert len(jobs.json()["items"]) == 1
+    assert jobs.json()["items"][0]["job"]["title"] == "Cash Office Clerk"
+    assert calls["count"] == 1
+
+
+def test_job_list_applies_eligibility_filter_before_page_serialization(
+    applications_env, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    client, _, session_factory = applications_env
+    bootstrap_completed_jobseeker(client)
+    seed_employer_and_listings(session_factory)
+
+    original = applications_service.evaluate_jobseeker_listing_match
+    calls = {"count": 0}
+
+    def counting_match(*args, **kwargs):
+        calls["count"] += 1
+        return original(*args, **kwargs)
+
+    monkeypatch.setattr(
+        applications_service, "evaluate_jobseeker_listing_match", counting_match
+    )
+
+    jobs = client.get(
+        "/api/v1/jobs",
+        params={"page_size": 1, "sort": "title", "is_eligible": True},
+    )
+    assert jobs.status_code == 200
+    assert jobs.json()["meta"]["total_items"] == 2
+    assert len(jobs.json()["items"]) == 1
+    assert jobs.json()["items"][0]["job"]["title"] == "Packaging Associate"
+    assert jobs.json()["items"][0]["is_eligible"] is True
+    assert calls["count"] == 1
 
 
 def test_admin_can_review_hire_and_close_listing_from_application(
