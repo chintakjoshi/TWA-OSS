@@ -11,6 +11,7 @@ from app.core.exceptions import AppError
 from app.models import Application, Employer, JobListing, Jobseeker
 from app.models.enums import (
     ApplicationStatus,
+    EmployerReviewStatus,
     ListingLifecycleStatus,
     ListingReviewStatus,
 )
@@ -73,8 +74,10 @@ ALLOWED_APPLICATION_TRANSITIONS = {
 def _visible_jobs_statement():
     return (
         select(JobListing)
+        .join(JobListing.employer)
         .options(joinedload(JobListing.employer).joinedload(Employer.app_user))
         .where(
+            Employer.review_status == EmployerReviewStatus.APPROVED,
             JobListing.review_status == ListingReviewStatus.APPROVED,
             JobListing.lifecycle_status == ListingLifecycleStatus.OPEN,
         )

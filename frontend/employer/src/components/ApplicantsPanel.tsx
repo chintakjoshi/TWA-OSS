@@ -32,6 +32,8 @@ export function ApplicantsPanel({
   description?: string
 }) {
   const auth = useAuth()
+  const reviewStatus = auth.authMe?.employer_review_status ?? 'pending'
+  const reviewLocked = reviewStatus !== 'approved'
   const [page, setPage] = useState(1)
   const [applicants, setApplicants] = useState<EmployerApplicant[]>([])
   const [totalPages, setTotalPages] = useState(0)
@@ -45,6 +47,15 @@ export function ApplicantsPanel({
     setIsLoading(true)
     setMessage(null)
     setApplicantVisibilityDisabled(false)
+
+    if (reviewLocked) {
+      setApplicants([])
+      setTotalPages(0)
+      setIsLoading(false)
+      return () => {
+        active = false
+      }
+    }
 
     void listEmployerApplicants(auth.requestTwa, listingId, { page })
       .then((response) => {
@@ -81,7 +92,7 @@ export function ApplicantsPanel({
     return () => {
       active = false
     }
-  }, [auth, listingId, page])
+  }, [auth.requestTwa, listingId, page, reviewLocked])
 
   return (
     <PortalPanel>
@@ -96,7 +107,11 @@ export function ApplicantsPanel({
             </h2>
             <p className="text-sm text-slate-500">{description}</p>
           </div>
-          {!applicantVisibilityDisabled ? (
+          {reviewLocked ? (
+            <PortalBadge tone={reviewStatus === 'rejected' ? 'danger' : 'info'}>
+              Applicant access locked
+            </PortalBadge>
+          ) : !applicantVisibilityDisabled ? (
             <PortalBadge tone="success">
               Applicant sharing enabled by TWA
             </PortalBadge>
@@ -104,6 +119,23 @@ export function ApplicantsPanel({
         </div>
 
         {isLoading ? <LoadingState title="Loading applicants..." /> : null}
+        {!isLoading && reviewLocked ? (
+          <div className="space-y-4 rounded-[24px] border border-[#d7cab4] bg-[#fffdf9] px-6 py-10 text-center">
+            <div className="mx-auto inline-flex items-center rounded-full border border-[#d6e2ff] bg-[#f5f8ff] px-4 py-2 text-sm font-semibold text-[#3569c7]">
+              Locked
+            </div>
+            <h3 className="employer-display text-[2rem] font-semibold text-slate-950">
+              {reviewStatus === 'rejected'
+                ? 'Applicant access is unavailable until re-approval'
+                : 'Applicant access unlocks after approval'}
+            </h3>
+            <p className="mx-auto max-w-[560px] text-sm leading-7 text-slate-500">
+              {reviewStatus === 'rejected'
+                ? 'TWA staff removed employer approval for this account. Applicant information stays hidden until the employer account is approved again.'
+                : 'TWA staff are still reviewing this employer account. Applicant information becomes available after approval.'}
+            </p>
+          </div>
+        ) : null}
         {!isLoading && applicantVisibilityDisabled ? (
           <div className="space-y-4 rounded-[24px] border border-[#d7cab4] bg-[#fffdf9] px-6 py-10 text-center">
             <div className="mx-auto inline-flex items-center rounded-full border border-[#f3dc9f] bg-[#fff4d7] px-4 py-2 text-sm font-semibold text-[#a86b00]">
@@ -126,11 +158,15 @@ export function ApplicantsPanel({
             </div>
           </div>
         ) : null}
-        {!isLoading && !applicantVisibilityDisabled && message ? (
+        {!isLoading &&
+        !reviewLocked &&
+        !applicantVisibilityDisabled &&
+        message ? (
           <InlineNotice tone="danger">{message}</InlineNotice>
         ) : null}
 
         {!isLoading &&
+        !reviewLocked &&
         !applicantVisibilityDisabled &&
         applicants.length === 0 &&
         !message ? (
@@ -140,7 +176,10 @@ export function ApplicantsPanel({
           />
         ) : null}
 
-        {!isLoading && !applicantVisibilityDisabled && applicants.length > 0 ? (
+        {!isLoading &&
+        !reviewLocked &&
+        !applicantVisibilityDisabled &&
+        applicants.length > 0 ? (
           <div className="space-y-4">
             {applicants.map((applicant) => {
               const chargeLabels = formatChargeFlags(
@@ -213,6 +252,7 @@ export function ApplicantsPanel({
         ) : null}
 
         {!isLoading &&
+        !reviewLocked &&
         !applicantVisibilityDisabled &&
         applicants.length > 0 &&
         totalPages > 1 ? (

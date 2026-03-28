@@ -385,7 +385,8 @@ export function EmployerListingsPage() {
                                 View
                               </PortalButton>
                             </Link>
-                            {listing.review_status === 'approved' &&
+                            {reviewGate === 'approved' &&
+                            listing.review_status === 'approved' &&
                             listing.lifecycle_status === 'open' ? (
                               <>
                                 <Link to={`/listings/${listing.id}/applicants`}>

@@ -26,6 +26,9 @@ export function EmployerProfilePage() {
   const [isSaving, setIsSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
+  const reviewStatus =
+    profile?.review_status ?? auth.authMe?.employer_review_status ?? 'pending'
+  const readOnly = reviewStatus !== 'approved'
 
   useEffect(() => {
     let active = true
@@ -52,6 +55,7 @@ export function EmployerProfilePage() {
   async function handleSubmit(
     values: Parameters<typeof updateMyEmployerProfile>[1]
   ) {
+    if (readOnly) return
     setIsSaving(true)
     setError(null)
     setSuccess(null)
@@ -72,9 +76,6 @@ export function EmployerProfilePage() {
       setIsSaving(false)
     }
   }
-
-  const reviewStatus =
-    profile?.review_status ?? auth.authMe?.employer_review_status ?? 'pending'
 
   return (
     <div className="min-h-screen bg-[#f7f1e5]">
@@ -140,6 +141,15 @@ export function EmployerProfilePage() {
               <InlineNotice tone="success">{success}</InlineNotice>
             ) : null}
             {error ? <InlineNotice tone="danger">{error}</InlineNotice> : null}
+            {readOnly ? (
+              <InlineNotice
+                tone={reviewStatus === 'rejected' ? 'danger' : 'info'}
+              >
+                {reviewStatus === 'rejected'
+                  ? 'Your employer account is awaiting re-approval. You can review your current profile here, but edits stay locked until staff approves the account again.'
+                  : 'Your employer account is still under review. You can review your current profile here, but edits stay locked until staff approves the account.'}
+              </InlineNotice>
+            ) : null}
             {profile?.review_note ? (
               <InlineNotice
                 tone={reviewStatus === 'rejected' ? 'danger' : 'info'}
@@ -155,11 +165,14 @@ export function EmployerProfilePage() {
                     Organization details
                   </p>
                   <h2 className="employer-display mt-2 text-[1.8rem] font-semibold text-slate-950">
-                    Keep your employer record current
+                    {readOnly
+                      ? 'Review your employer record'
+                      : 'Keep your employer record current'}
                   </h2>
                   <p className="mt-3 max-w-[760px] text-sm leading-7 text-slate-500">
-                    Update the core organization details TWA staff use to review
-                    and maintain your employer account.
+                    {readOnly
+                      ? 'Your current organization details remain visible while staff review the account. Editing unlocks again after approval.'
+                      : 'Update the core organization details TWA staff use to review and maintain your employer account.'}
                   </p>
                 </div>
                 <div className="mt-6">
@@ -167,6 +180,7 @@ export function EmployerProfilePage() {
                     isSubmitting={isSaving}
                     onSubmit={handleSubmit}
                     profile={profile}
+                    readOnly={readOnly}
                   />
                 </div>
               </Surface>
