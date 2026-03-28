@@ -1,5 +1,6 @@
 import type {
   EmployerApplicant,
+  EmployerApplicantListItem,
   EmployerProfile,
   EmployerProfileFormValues,
   JobListing,
@@ -47,17 +48,29 @@ export function listEmployerListings(
   options: {
     page?: number
     pageSize?: number
+    search?: string
     reviewStatus?: string
     lifecycleStatus?: string
+    sort?: string
+    order?: 'asc' | 'desc'
   } = {}
 ) {
-  const { page = 1, pageSize = 8, reviewStatus, lifecycleStatus } = options
+  const {
+    page = 1,
+    pageSize = 8,
+    search,
+    reviewStatus,
+    lifecycleStatus,
+    sort = 'created_at',
+    order = 'desc',
+  } = options
   return requestTwa<PaginatedResponse<JobListing>>(
     `/api/v1/employer/listings${buildQuery({
       page,
       page_size: pageSize,
-      sort: 'created_at',
-      order: 'desc',
+      search,
+      sort,
+      order,
       review_status: reviewStatus,
       lifecycle_status: lifecycleStatus,
     })}`
@@ -83,9 +96,65 @@ export function createEmployerListing(
 export function listEmployerApplicants(
   requestTwa: RequestTwa,
   listingId: string,
-  page = 1
+  options: {
+    page?: number
+    pageSize?: number
+    search?: string
+    status?: string
+    sort?: string
+    order?: 'asc' | 'desc'
+  } = {}
 ) {
+  const {
+    page = 1,
+    pageSize = 10,
+    search,
+    status,
+    sort = 'applied_at',
+    order = 'desc',
+  } = options
   return requestTwa<PaginatedResponse<EmployerApplicant>>(
-    `/api/v1/employer/listings/${listingId}/applicants${buildQuery({ page, page_size: 10 })}`
+    `/api/v1/employer/listings/${listingId}/applicants${buildQuery({
+      page,
+      page_size: pageSize,
+      search,
+      status,
+      sort,
+      order,
+    })}`
+  )
+}
+
+export function listEmployerApplications(
+  requestTwa: RequestTwa,
+  options: {
+    page?: number
+    pageSize?: number
+    search?: string
+    status?: string
+    listingId?: string
+    sort?: string
+    order?: 'asc' | 'desc'
+  } = {}
+) {
+  const {
+    page = 1,
+    pageSize = 10,
+    search,
+    status,
+    listingId,
+    sort = 'applied_at',
+    order = 'desc',
+  } = options
+  return requestTwa<PaginatedResponse<EmployerApplicantListItem>>(
+    `/api/v1/employer/applicants${buildQuery({
+      page,
+      page_size: pageSize,
+      search,
+      status,
+      job_listing_id: listingId,
+      sort,
+      order,
+    })}`
   )
 }

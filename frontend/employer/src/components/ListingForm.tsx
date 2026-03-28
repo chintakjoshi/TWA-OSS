@@ -92,11 +92,6 @@ export function ListingForm({
         void onSubmit(values)
       }}
     >
-      <InlineNotice tone="info">
-        TWA staff review every listing before it goes live. Keep requirements
-        specific so staff can match candidates accurately.
-      </InlineNotice>
-
       <section className="space-y-5 rounded-[28px] border border-[#e7ddce] bg-[#fffdf9] p-6">
         <div className="space-y-1">
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#8da2c5]">

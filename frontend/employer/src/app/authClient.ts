@@ -12,6 +12,4 @@ export const employerAuthClient = createAuthClient({
 })
 
 export const jobseekerAppUrl =
-  import.meta.env.VITE_PUBLIC_APP_URL ?? 'http://localhost:5173'
-export const adminAppUrl =
-  import.meta.env.VITE_ADMIN_APP_URL ?? 'http://localhost:5175'
+  import.meta.env.VITE_PUBLIC_APP_URL ?? 'http://localhost:5173/auth'

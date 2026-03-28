@@ -10,6 +10,7 @@ from app.core.responses import PaginatedResponse
 from app.db.session import get_db_session
 from app.schemas.employer import (
     CreateJobListingRequest,
+    EmployerApplicantPayload,
     EmployerListingApplicantPayload,
     EmployerProfileResponse,
     EmployerProfileUpdateRequest,
@@ -28,6 +29,7 @@ from app.services.employer import (
     create_listing,
     get_employer_by_app_user_id,
     get_listing_by_id,
+    list_employer_applicants,
     list_employer_listing_applicants,
     list_employer_listings,
     serialize_employer,
@@ -82,6 +84,7 @@ def create_employer_listing(
     "/api/v1/employer/listings", response_model=PaginatedResponse[JobListingPayload]
 )
 def get_employer_listings(
+    search: str | None = Query(default=None),
     review_status: str | None = Query(default=None),
     lifecycle_status: str | None = Query(default=None),
     pagination: PaginationParams = Depends(get_pagination_params),
@@ -98,6 +101,7 @@ def get_employer_listings(
         employer,
         pagination=pagination,
         sort=sort,
+        search=search,
         review_status=review_status,
         lifecycle_status=lifecycle_status,
     )
@@ -117,12 +121,43 @@ def get_employer_listing(
 
 
 @router.get(
+    "/api/v1/employer/applicants",
+    response_model=PaginatedResponse[EmployerApplicantPayload],
+)
+def get_employer_applicants(
+    search: str | None = Query(default=None),
+    status: str | None = Query(default=None),
+    job_listing_id: UUID | None = Query(default=None),
+    pagination: PaginationParams = Depends(get_pagination_params),
+    sort: SortParams = Depends(get_sort_params),
+    auth_context: AuthContext = Depends(require_employer),
+    session: Session = Depends(get_db_session),
+) -> PaginatedResponse[EmployerApplicantPayload]:
+    employer = ensure_found(
+        get_employer_by_app_user_id(session, auth_context.app_user_id),
+        entity_name="Employer",
+    )
+    return list_employer_applicants(
+        session,
+        employer,
+        pagination=pagination,
+        sort=sort,
+        status=status,
+        job_listing_id=job_listing_id,
+        search=search,
+    )
+
+
+@router.get(
     "/api/v1/employer/listings/{listing_id}/applicants",
     response_model=PaginatedResponse[EmployerListingApplicantPayload],
 )
 def get_employer_listing_applicants(
     listing_id: UUID,
+    search: str | None = Query(default=None),
+    status: str | None = Query(default=None),
     pagination: PaginationParams = Depends(get_pagination_params),
+    sort: SortParams = Depends(get_sort_params),
     auth_context: AuthContext = Depends(require_employer),
     session: Session = Depends(get_db_session),
 ) -> PaginatedResponse[EmployerListingApplicantPayload]:
@@ -131,5 +166,10 @@ def get_employer_listing_applicants(
     )
     ensure_permission(listing.employer.app_user_id == auth_context.app_user_id)
     return list_employer_listing_applicants(
-        session, listing=listing, pagination=pagination
+        session,
+        listing=listing,
+        pagination=pagination,
+        sort=sort,
+        status=status,
+        search=search,
     )

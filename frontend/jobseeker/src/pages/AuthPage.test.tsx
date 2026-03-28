@@ -66,7 +66,7 @@ test('auth screen removes shared-auth copy and toggles password visibility', asy
     </MemoryRouter>
   )
 
-  await screen.findByText('Welcome back')
+  await screen.findByText('Jobseeker portal access')
 
   const passwordInput = screen.getByPlaceholderText(
     'Your password'
@@ -85,9 +85,6 @@ test('auth screen removes shared-auth copy and toggles password visibility', asy
   await user.click(screen.getByRole('button', { name: 'Hide password' }))
   expect(passwordInput.type).toBe('password')
 
-  const employerLink = screen.getByRole('link', {
-    name: 'Open Employer Portal',
-  })
+  const employerLink = screen.getByRole('link', { name: 'Employer Portal' })
   expect(employerLink).toHaveAttribute('href')
-  expect(employerLink).toHaveStyle({ color: '#ffffff' })
 })

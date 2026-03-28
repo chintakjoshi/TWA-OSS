@@ -5,12 +5,7 @@ import type {
   EmployerProfileFormValues,
 } from '../types/employer'
 import { announceComingSoon } from '../lib/comingSoon'
-import {
-  FieldLabel,
-  InlineNotice,
-  PortalButton,
-  inputClassName,
-} from './ui/EmployerUi'
+import { FieldLabel, PortalButton, inputClassName } from './ui/EmployerUi'
 
 function toValues(profile: EmployerProfile | null): EmployerProfileFormValues {
   return {
@@ -152,24 +147,6 @@ export function EmployerProfileForm({
           />
         </div>
       </div>
-
-      <div>
-        <FieldLabel>Why do you want to hire fair-chance candidates?</FieldLabel>
-        <button
-          aria-label="Why do you want to hire fair-chance candidates?"
-          className={`${inputClassName} min-h-28 cursor-pointer text-left leading-7 text-slate-400`}
-          type="button"
-          onClick={() => announceComingSoon('Employer mission statement')}
-        >
-          Share the commitment, hiring philosophy, and support systems you want
-          TWA staff to understand.
-        </button>
-      </div>
-
-      <InlineNotice tone="info">
-        The profile fields above save into the current employer API. Additional
-        organization metadata is shown here as a forward-looking UI placeholder.
-      </InlineNotice>
 
       <div className="flex flex-wrap justify-end gap-3">
         <PortalButton disabled={isSubmitting} type="submit">

@@ -171,7 +171,7 @@ export function AdminDashboardPage() {
   if (summaryLoading && !summary) {
     return (
       <AdminWorkspaceLayout
-        title="Dashboard"
+        title="TWA Dashboard"
         primaryActionLabel="+ Add Jobseeker"
         onPrimaryAction={() => announceComingSoon('Add Jobseeker')}
       >
@@ -183,7 +183,7 @@ export function AdminDashboardPage() {
   if (!summary && error) {
     return (
       <AdminWorkspaceLayout
-        title="Dashboard"
+        title="TWA Dashboard"
         primaryActionLabel="+ Add Jobseeker"
         onPrimaryAction={() => announceComingSoon('Add Jobseeker')}
       >
@@ -194,7 +194,7 @@ export function AdminDashboardPage() {
 
   return (
     <AdminWorkspaceLayout
-      title="Dashboard"
+      title="TWA Dashboard"
       primaryActionLabel="Add Jobseeker"
       onPrimaryAction={() => announceComingSoon('Add Jobseeker')}
     >

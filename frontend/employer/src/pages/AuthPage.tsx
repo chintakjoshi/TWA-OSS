@@ -1,20 +1,24 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Building2, LockKeyhole, Mail, ShieldCheck } from 'lucide-react'
+import { Building2, Eye, EyeOff, LockKeyhole, Mail } from 'lucide-react'
 
 import { useAuth } from '@shared/auth/AuthProvider'
-import { getAuthStateLabel } from '@shared/lib/auth-client'
 import { HttpError } from '@shared/lib/http'
 
-import { adminAppUrl, jobseekerAppUrl } from '../app/authClient'
+import { jobseekerAppUrl } from '../app/authClient'
 import {
   InlineNotice,
   PortalBadge,
   PortalButton,
-  inputClassName,
 } from '../components/ui/EmployerUi'
 import { announceComingSoon } from '../lib/comingSoon'
 
-type AuthMode = 'login' | 'signup' | 'forgot' | 'reset' | 'otp' | 'verify'
+type AuthMode = 'login' | 'signup' | 'forgot' | 'otp' | 'verify'
+
+const authInputClassName =
+  'min-h-12 w-full rounded-xl border border-[#ddcfba] bg-white px-4 text-[0.95rem] text-slate-800 shadow-[inset_0_1px_0_rgba(255,255,255,0.6)] outline-none transition placeholder:text-slate-400 focus:border-[#d0922c] focus:ring-4 focus:ring-[#d0922c]/10'
+
+const authLabelClassName =
+  'block text-xs font-semibold uppercase tracking-[0.18em] text-slate-700'
 
 function getErrorMessage(error: unknown) {
   if (error instanceof HttpError) return error.message
@@ -22,22 +26,16 @@ function getErrorMessage(error: unknown) {
   return 'Something went wrong. Please try again.'
 }
 
-const supportPoints = [
-  'Create your employer account with work email credentials.',
-  'Complete your TWA organization profile after sign-up so staff can review it.',
-  'Submit listings for staff review once the employer account is approved.',
-  'Review applicants only when TWA has enabled applicant sharing.',
-]
-
 export function EmployerAuthPage() {
   const auth = useAuth()
-  const authStateLabel = getAuthStateLabel(auth.authMe)
   const [mode, setMode] = useState<AuthMode>(
     auth.state === 'otp_required' ? 'otp' : 'login'
   )
   const [busy, setBusy] = useState(false)
   const [notice, setNotice] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [showLoginPassword, setShowLoginPassword] = useState(false)
+  const [showSignupPassword, setShowSignupPassword] = useState(false)
   const [verificationEmail, setVerificationEmail] = useState<string | null>(
     null
   )
@@ -51,7 +49,6 @@ export function EmployerAuthPage() {
   const title = useMemo(() => {
     if (mode === 'signup') return 'Create your employer account'
     if (mode === 'forgot') return 'Reset your password'
-    if (mode === 'reset') return 'Complete password reset'
     if (mode === 'otp') return 'Verify sign-in'
     if (mode === 'verify') return 'Verify your email'
     return 'Employer portal access'
@@ -71,9 +68,9 @@ export function EmployerAuthPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f7f1e5] lg:grid lg:grid-cols-[520px_minmax(0,1fr)]">
-      <aside className="employer-grid-surface bg-[#132130] px-10 py-12 text-white">
-        <div className="flex h-full flex-col">
+    <div className="min-h-screen bg-[#f7f1e5] lg:grid lg:grid-cols-[minmax(360px,460px)_minmax(0,1fr)]">
+      <aside className="employer-grid-surface bg-[#132130] px-8 py-12 text-white xl:px-10 xl:py-16">
+        <div className="flex h-full flex-col justify-center">
           <div className="flex items-center gap-3">
             <div className="grid h-11 w-11 place-items-center rounded-xl bg-[#d99a2b] text-lg font-semibold text-white">
               T
@@ -86,36 +83,20 @@ export function EmployerAuthPage() {
             </div>
           </div>
 
-          <div className="mt-20 max-w-[390px]">
-            <h1 className="employer-display text-[clamp(3rem,5vw,4.5rem)] leading-[0.96] font-semibold">
+          <div className="mt-16 max-w-[360px] lg:mt-20">
+            <h1 className="employer-display text-[clamp(2.8rem,4.2vw,4.1rem)] leading-[0.98] font-semibold">
               Build a stronger workforce with{' '}
               <span className="text-[#f3ac34] italic">fair-chance</span> talent.
             </h1>
-            <p className="mt-8 text-xl leading-9 text-[#aebfd6]">
+            <p className="mt-6 max-w-[330px] text-[1.02rem] leading-8 text-[#aebfd6]">
               Join Missouri employers using TWA to open vetted opportunities,
               review listing approvals, and connect with motivated candidates.
             </p>
-
-            <ul className="mt-12 space-y-6">
-              {supportPoints.map((point) => (
-                <li key={point} className="flex gap-4">
-                  <span className="mt-2 h-2.5 w-2.5 rounded-full bg-[#d99a2b]" />
-                  <span className="text-lg leading-8 text-[#dce6f2]">
-                    {point}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          <div className="mt-auto rounded-2xl border border-white/10 bg-white/5 px-5 py-4 text-sm text-[#8ea3c4]">
-            Employer credentials are separate from jobseeker and staff accounts.
-            TWA role checks keep each portal isolated.
           </div>
         </div>
       </aside>
 
-      <main className="employer-auth-pattern flex min-h-screen items-center justify-center px-6 py-10 sm:px-10">
+      <main className="employer-auth-pattern flex min-h-screen items-center justify-center px-6 py-10 sm:px-10 lg:px-12">
         <div className="w-full max-w-[620px] rounded-[32px] border border-[#e4d8c6] bg-white/80 p-8 shadow-[0_24px_80px_rgba(15,23,42,0.08)] backdrop-blur md:p-10">
           <PortalBadge tone="warning" className="mb-8">
             Employer Access
@@ -125,8 +106,7 @@ export function EmployerAuthPage() {
             {title}
           </h2>
           <p className="mt-4 text-lg text-slate-500">
-            Sign in with your employer credentials, then complete the TWA
-            organization setup.
+            Sign in with your credentials, and complete organization setup.
           </p>
 
           <div className="mt-8 space-y-4">
@@ -197,18 +177,18 @@ export function EmployerAuthPage() {
                         }
                         throw nextError
                       }
-                      setNotice('Signed in through the shared auth service.')
+                      setNotice('Signed in successfully.')
                     })
                   }}
                 >
                   <div>
-                    <label className="block text-xs font-semibold uppercase tracking-[0.18em] text-slate-700">
-                      Work email
-                    </label>
+                    <label className={authLabelClassName}>Work email</label>
                     <div className="relative mt-2">
-                      <Mail className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[#8ea3c4]" />
+                      <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 text-[#8ea3c4]">
+                        <Mail className="h-4 w-4" />
+                      </span>
                       <input
-                        className={`${inputClassName} pl-12`}
+                        className={`${authInputClassName} pl-11`}
                         name="email"
                         placeholder="you@yourcompany.com"
                         required
@@ -217,25 +197,41 @@ export function EmployerAuthPage() {
                     </div>
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold uppercase tracking-[0.18em] text-slate-700">
-                      Password
-                    </label>
+                    <label className={authLabelClassName}>Password</label>
                     <div className="relative mt-2">
-                      <LockKeyhole className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[#8ea3c4]" />
+                      <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 text-[#8ea3c4]">
+                        <LockKeyhole className="h-4 w-4" />
+                      </span>
                       <input
-                        className={`${inputClassName} pl-12`}
+                        className={`${authInputClassName} pl-11 pr-11`}
                         minLength={8}
                         name="password"
                         placeholder="Your password"
                         required
-                        type="password"
+                        type={showLoginPassword ? 'text' : 'password'}
                       />
+                      <button
+                        aria-label={
+                          showLoginPassword ? 'Hide password' : 'Show password'
+                        }
+                        className="absolute inset-y-0 right-0 flex items-center pr-4 text-slate-400 transition hover:text-slate-700 focus-visible:outline-none"
+                        type="button"
+                        onClick={() =>
+                          setShowLoginPassword((current) => !current)
+                        }
+                      >
+                        {showLoginPassword ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
+                      </button>
                     </div>
                   </div>
 
-                  <div className="flex flex-wrap items-center justify-between gap-3 text-sm">
+                  <div className="flex justify-end">
                     <button
-                      className="font-semibold text-[#d0922c]"
+                      className="text-sm font-semibold text-[#d0922c]"
                       type="button"
                       onClick={() => setMode('forgot')}
                     >
@@ -268,35 +264,57 @@ export function EmployerAuthPage() {
                       setVerificationEmail(email)
                       setMode('verify')
                       setNotice(
-                        'Account created in the shared auth service. Verify your email, then sign in to continue into employer setup.'
+                        'Account created. Check your email to verify it before signing in.'
                       )
                     })
                   }}
                 >
                   <div>
-                    <label className="block text-xs font-semibold uppercase tracking-[0.18em] text-slate-700">
-                      Work email
-                    </label>
-                    <input
-                      className={inputClassName}
-                      name="email"
-                      placeholder="you@yourcompany.com"
-                      required
-                      type="email"
-                    />
+                    <label className={authLabelClassName}>Work email</label>
+                    <div className="relative mt-2">
+                      <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 text-[#8ea3c4]">
+                        <Mail className="h-4 w-4" />
+                      </span>
+                      <input
+                        className={`${authInputClassName} pl-11`}
+                        name="email"
+                        placeholder="you@yourcompany.com"
+                        required
+                        type="email"
+                      />
+                    </div>
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold uppercase tracking-[0.18em] text-slate-700">
-                      Password
-                    </label>
-                    <input
-                      className={inputClassName}
-                      minLength={8}
-                      name="password"
-                      placeholder="Create a secure password"
-                      required
-                      type="password"
-                    />
+                    <label className={authLabelClassName}>Password</label>
+                    <div className="relative mt-2">
+                      <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 text-[#8ea3c4]">
+                        <LockKeyhole className="h-4 w-4" />
+                      </span>
+                      <input
+                        className={`${authInputClassName} pl-11 pr-11`}
+                        minLength={8}
+                        name="password"
+                        placeholder="Create a secure password"
+                        required
+                        type={showSignupPassword ? 'text' : 'password'}
+                      />
+                      <button
+                        aria-label={
+                          showSignupPassword ? 'Hide password' : 'Show password'
+                        }
+                        className="absolute inset-y-0 right-0 flex items-center pr-4 text-slate-400 transition hover:text-slate-700 focus-visible:outline-none"
+                        type="button"
+                        onClick={() =>
+                          setShowSignupPassword((current) => !current)
+                        }
+                      >
+                        {showSignupPassword ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
+                      </button>
+                    </div>
                   </div>
                   <PortalButton
                     className="w-full"
@@ -319,75 +337,28 @@ export function EmployerAuthPage() {
                         email: String(form.get('email') ?? ''),
                       })
                       setNotice(
-                        'If that account exists, the auth service has sent a reset link.'
+                        'If that account exists, a reset link has been sent.'
                       )
                     })
                   }}
                 >
                   <div>
-                    <label className="block text-xs font-semibold uppercase tracking-[0.18em] text-slate-700">
-                      Work email
-                    </label>
-                    <input
-                      className={inputClassName}
-                      name="email"
-                      required
-                      type="email"
-                    />
+                    <label className={authLabelClassName}>Work email</label>
+                    <div className="relative mt-2">
+                      <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 text-[#8ea3c4]">
+                        <Mail className="h-4 w-4" />
+                      </span>
+                      <input
+                        className={`${authInputClassName} pl-11`}
+                        name="email"
+                        required
+                        type="email"
+                      />
+                    </div>
                   </div>
                   <div className="flex flex-wrap gap-3">
                     <PortalButton disabled={busy} type="submit">
                       {busy ? 'Sending...' : 'Send reset email'}
-                    </PortalButton>
-                    <PortalButton
-                      variant="secondary"
-                      onClick={() => setMode('login')}
-                    >
-                      Back to sign in
-                    </PortalButton>
-                  </div>
-                </form>
-              ) : null}
-
-              {mode === 'reset' ? (
-                <form
-                  className="space-y-5"
-                  onSubmit={(event) => {
-                    event.preventDefault()
-                    const form = new FormData(event.currentTarget)
-                    void run(async () => {
-                      await auth.resetPassword({
-                        token: String(form.get('token') ?? ''),
-                        new_password: String(form.get('new_password') ?? ''),
-                      })
-                      setMode('login')
-                      setNotice(
-                        'Password updated. Sign in with the new password.'
-                      )
-                    })
-                  }}
-                >
-                  <div>
-                    <label className="block text-xs font-semibold uppercase tracking-[0.18em] text-slate-700">
-                      Reset token
-                    </label>
-                    <input className={inputClassName} name="token" required />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold uppercase tracking-[0.18em] text-slate-700">
-                      New password
-                    </label>
-                    <input
-                      className={inputClassName}
-                      minLength={8}
-                      name="new_password"
-                      required
-                      type="password"
-                    />
-                  </div>
-                  <div className="flex flex-wrap gap-3">
-                    <PortalButton disabled={busy} type="submit">
-                      {busy ? 'Resetting...' : 'Reset password'}
                     </PortalButton>
                     <PortalButton
                       variant="secondary"
@@ -418,11 +389,9 @@ export function EmployerAuthPage() {
                     Enter the code sent to {auth.otpChallenge.masked_email}.
                   </InlineNotice>
                   <div>
-                    <label className="block text-xs font-semibold uppercase tracking-[0.18em] text-slate-700">
-                      OTP code
-                    </label>
+                    <label className={authLabelClassName}>OTP code</label>
                     <input
-                      className={inputClassName}
+                      className={`${authInputClassName} mt-2`}
                       inputMode="numeric"
                       name="code"
                       required
@@ -518,38 +487,14 @@ export function EmployerAuthPage() {
 
           <p className="mt-8 text-center text-sm text-slate-400">
             Looking for another experience? Visit the{' '}
-            <a className="font-semibold text-[#d0922c]" href={jobseekerAppUrl}>
+            <a
+              className="font-semibold text-[#b77712] underline decoration-2 underline-offset-4 transition hover:text-[#8f5b08]"
+              href={jobseekerAppUrl}
+            >
               Jobseeker Portal
-            </a>{' '}
-            or{' '}
-            <a className="font-semibold text-[#d0922c]" href={adminAppUrl}>
-              Staff Portal
             </a>
             .
           </p>
-
-          <div className="mt-6 flex flex-wrap gap-3">
-            <PortalButton variant="ghost" onClick={() => setMode('login')}>
-              Sign in
-            </PortalButton>
-            <PortalButton variant="ghost" onClick={() => setMode('signup')}>
-              Register
-            </PortalButton>
-            <PortalButton variant="ghost" onClick={() => setMode('forgot')}>
-              Forgot password
-            </PortalButton>
-            <PortalButton variant="ghost" onClick={() => setMode('reset')}>
-              Manual reset
-            </PortalButton>
-          </div>
-
-          <div className="mt-6 flex items-center gap-2 text-sm text-[#8ea3c4]">
-            <ShieldCheck className="h-4 w-4" />
-            <span>
-              Shared auth foundation with TWA role-based access checks. Current
-              auth state: {authStateLabel.replaceAll('_', ' ')}.
-            </span>
-          </div>
         </div>
       </main>
     </div>

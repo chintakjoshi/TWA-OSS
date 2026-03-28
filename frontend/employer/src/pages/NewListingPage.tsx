@@ -68,13 +68,7 @@ export function EmployerNewListingPage() {
                   ? 'Your employer account is not approved right now, so listing submission stays locked until staff reassesses the account.'
                   : 'Your employer account is still pending review. Finish your profile and wait for staff approval before posting listings.'}
               </InlineNotice>
-            ) : (
-              <InlineNotice tone="info">
-                Listing submission uses the live employer API fields today.
-                Extra controls shown in the form are visual placeholders for
-                planned enhancements.
-              </InlineNotice>
-            )}
+            ) : null}
 
             {error ? <InlineNotice tone="danger">{error}</InlineNotice> : null}
 

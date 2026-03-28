@@ -397,6 +397,67 @@ def test_staff_cannot_reopen_closed_listing(employer_workflow_env) -> None:
     assert invalid_reopen.json()["error"]["code"] == "STATE_TRANSITION_NOT_ALLOWED"
 
 
+def test_employer_listing_list_supports_search_and_sort(
+    employer_workflow_env,
+) -> None:
+    client, state, session_factory = employer_workflow_env
+
+    bootstrap = client.post(
+        "/api/v1/auth/bootstrap",
+        json={
+            "role": "employer",
+            "employer_profile": {"org_name": "Northside Logistics"},
+        },
+    )
+    assert bootstrap.status_code == 200
+
+    staff = seed_staff(
+        session_factory, auth_user_id=uuid.UUID("f0f0f0f0-f0f0-f0f0-f0f0-f0f0f0f0f0f0")
+    )
+    state["identity"] = AuthProviderIdentity(
+        auth_user_id=staff.auth_user_id,
+        email=staff.email,
+        auth_provider_role="admin",
+    )
+
+    employer_id = client.get("/api/v1/admin/queue/employers").json()["items"][0]["id"]
+    approved_employer = client.patch(
+        f"/api/v1/admin/employers/{employer_id}",
+        json={"review_status": "approved", "review_note": "Approved."},
+    )
+    assert approved_employer.status_code == 200
+
+    state["identity"] = AuthProviderIdentity(
+        auth_user_id=uuid.UUID("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"),
+        email="employer@example.com",
+        auth_provider_role="user",
+    )
+
+    for title in ("Warehouse Lead", "Delivery Driver", "Forklift Operator"):
+        listing = client.post(
+            "/api/v1/employer/listings",
+            json={"title": title, "transit_required": "any"},
+        )
+        assert listing.status_code == 200
+
+    searched = client.get("/api/v1/employer/listings", params={"search": "driver"})
+    assert searched.status_code == 200
+    searched_payload = searched.json()
+    assert searched_payload["meta"]["total_items"] == 1
+    assert searched_payload["items"][0]["title"] == "Delivery Driver"
+
+    sorted_payload = client.get(
+        "/api/v1/employer/listings",
+        params={"sort": "title", "order": "asc", "page_size": 20},
+    )
+    assert sorted_payload.status_code == 200
+    assert [item["title"] for item in sorted_payload.json()["items"]] == [
+        "Delivery Driver",
+        "Forklift Operator",
+        "Warehouse Lead",
+    ]
+
+
 def test_employer_can_view_listing_applicants_when_sharing_is_enabled(
     employer_workflow_env,
     monkeypatch: pytest.MonkeyPatch,
@@ -461,6 +522,20 @@ def test_employer_can_view_listing_applicants_when_sharing_is_enabled(
     assert listing.status_code == 200
     listing_id = listing.json()["listing"]["id"]
 
+    second_listing = client.post(
+        "/api/v1/employer/listings",
+        json={
+            "title": "Transit Dispatcher",
+            "description": "Coordinate daily routes.",
+            "location_address": "3100 Olive St",
+            "city": "St. Louis",
+            "zip": "63103",
+            "transit_required": "any",
+        },
+    )
+    assert second_listing.status_code == 200
+    second_listing_id = second_listing.json()["listing"]["id"]
+
     state["identity"] = AuthProviderIdentity(
         auth_user_id=staff.auth_user_id,
         email=staff.email,
@@ -471,6 +546,12 @@ def test_employer_can_view_listing_applicants_when_sharing_is_enabled(
         json={"review_status": "approved", "review_note": "Approved."},
     )
     assert approved_listing.status_code == 200
+
+    approved_second_listing = client.patch(
+        f"/api/v1/admin/listings/{second_listing_id}",
+        json={"review_status": "approved", "review_note": "Approved."},
+    )
+    assert approved_second_listing.status_code == 200
 
     state["identity"] = AuthProviderIdentity(
         auth_user_id=uuid.UUID("cccccccc-cccc-cccc-cccc-cccccccccccc"),
@@ -500,6 +581,36 @@ def test_employer_can_view_listing_applicants_when_sharing_is_enabled(
         json={"job_listing_id": listing_id},
     )
     assert application.status_code == 200
+    application_id = application.json()["application"]["id"]
+
+    state["identity"] = AuthProviderIdentity(
+        auth_user_id=uuid.UUID("dddddddd-dddd-dddd-dddd-dddddddddddd"),
+        email="jobseeker-two@example.com",
+        auth_provider_role="user",
+    )
+    bootstrap_jobseeker_two = client.post(
+        "/api/v1/auth/bootstrap", json={"role": "jobseeker"}
+    )
+    assert bootstrap_jobseeker_two.status_code == 200
+    second_profile = client.patch(
+        "/api/v1/jobseekers/me",
+        json={
+            "full_name": "Marco Hill",
+            "phone": "3145550102",
+            "address": "456 Pine St",
+            "city": "Columbia",
+            "zip": "65201",
+            "transit_type": "public_transit",
+            "charges": {"drug": True},
+        },
+    )
+    assert second_profile.status_code == 200
+
+    second_application = client.post(
+        "/api/v1/applications",
+        json={"job_listing_id": second_listing_id},
+    )
+    assert second_application.status_code == 200
 
     state["identity"] = AuthProviderIdentity(
         auth_user_id=uuid.UUID("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"),
@@ -522,6 +633,13 @@ def test_employer_can_view_listing_applicants_when_sharing_is_enabled(
     assert config.status_code == 200
     assert config.json()["config"]["share_applicants_with_employer"] is True
 
+    hired = client.patch(
+        f"/api/v1/admin/applications/{application_id}",
+        json={"status": "hired", "close_listing_after_hire": False},
+    )
+    assert hired.status_code == 200
+    assert hired.json()["application"]["status"] == "hired"
+
     state["identity"] = AuthProviderIdentity(
         auth_user_id=uuid.UUID("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"),
         email="employer@example.com",
@@ -531,7 +649,44 @@ def test_employer_can_view_listing_applicants_when_sharing_is_enabled(
     assert applicants.status_code == 200
     payload = applicants.json()
     assert payload["meta"]["total_items"] == 1
-    assert payload["items"][0]["status"] == "submitted"
+    assert payload["items"][0]["status"] == "hired"
     assert payload["items"][0]["jobseeker"]["full_name"] == "Jane Doe"
     assert payload["items"][0]["jobseeker"]["charges"]["drug"] is True
     assert payload["items"][0]["jobseeker"]["charges"]["theft"] is True
+
+    filtered_applicants = client.get(
+        "/api/v1/employer/applicants",
+        params={"search": "Jane", "status": "hired"},
+    )
+    assert filtered_applicants.status_code == 200
+    filtered_payload = filtered_applicants.json()
+    assert filtered_payload["meta"]["total_items"] == 1
+    assert filtered_payload["items"][0]["jobseeker"]["full_name"] == "Jane Doe"
+    assert filtered_payload["items"][0]["listing"]["title"] == "Warehouse Associate"
+
+    listing_scoped = client.get(
+        "/api/v1/employer/applicants",
+        params={"job_listing_id": second_listing_id},
+    )
+    assert listing_scoped.status_code == 200
+    scoped_payload = listing_scoped.json()
+    assert scoped_payload["meta"]["total_items"] == 1
+    assert scoped_payload["items"][0]["jobseeker"]["full_name"] == "Marco Hill"
+
+    sorted_applicants = client.get(
+        "/api/v1/employer/applicants",
+        params={"sort": "jobseeker_name", "order": "asc", "page_size": 5},
+    )
+    assert sorted_applicants.status_code == 200
+    assert [
+        item["jobseeker"]["full_name"] for item in sorted_applicants.json()["items"]
+    ] == ["Jane Doe", "Marco Hill"]
+
+    listing_filtered = client.get(
+        f"/api/v1/employer/listings/{listing_id}/applicants",
+        params={"search": "Jane", "status": "hired"},
+    )
+    assert listing_filtered.status_code == 200
+    listing_filtered_payload = listing_filtered.json()
+    assert listing_filtered_payload["meta"]["total_items"] == 1
+    assert listing_filtered_payload["items"][0]["status"] == "hired"

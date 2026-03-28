@@ -6,7 +6,7 @@ import { useAuth } from '@shared/auth/AuthProvider'
 
 import { updateMyEmployerProfile } from '../api/employerApi'
 import { EmployerProfileForm } from '../components/EmployerProfileForm'
-import { InlineNotice, PortalBadge, Surface } from '../components/ui/EmployerUi'
+import { InlineNotice, Surface } from '../components/ui/EmployerUi'
 
 export function EmployerSetupPage() {
   const auth = useAuth()
@@ -37,15 +37,9 @@ export function EmployerSetupPage() {
         </div>
 
         <div className="mx-auto max-w-[680px] text-center">
-          <PortalBadge tone="info">Profile Setup</PortalBadge>
-          <h1 className="employer-display mt-6 text-[3.1rem] leading-[0.98] font-semibold text-slate-950">
+          <h1 className="employer-display text-[3.1rem] leading-[0.98] font-semibold text-slate-950">
             Set up your employer profile
           </h1>
-          <p className="mt-4 text-lg leading-8 text-slate-500">
-            Your organization details help TWA staff review the account before
-            you can submit listings. Most reviews are completed within 1 to 2
-            business days.
-          </p>
         </div>
 
         <Surface className="mx-auto mt-10 max-w-[760px]">
@@ -58,8 +52,9 @@ export function EmployerSetupPage() {
                 Organization details
               </h2>
               <p className="mt-2 text-sm leading-7 text-slate-500">
-                We save the real employer profile fields into the current API,
-                then keep richer business metadata visible as future-ready UI.
+                Your organization details help TWA staff review the account
+                before you can submit listings. Most reviews are completed
+                within 1 to 2 business days.
               </p>
             </div>
           </div>

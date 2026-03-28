@@ -53,6 +53,17 @@ LISTING_ALLOWED_SORTS = {
     "created_at": JobListing.created_at,
     "updated_at": JobListing.updated_at,
     "title": JobListing.title,
+    "city": JobListing.city,
+}
+EMPLOYER_APPLICANT_ALLOWED_FILTERS = {
+    "status": Application.status,
+    "job_listing_id": Application.job_listing_id,
+}
+EMPLOYER_APPLICANT_ALLOWED_SORTS = {
+    "applied_at": Application.applied_at,
+    "updated_at": Application.updated_at,
+    "status": Application.status,
+    "jobseeker_name": Jobseeker.full_name,
 }
 ALLOWED_EMPLOYER_REVIEW_TRANSITIONS = {
     EmployerReviewStatus.PENDING: {
@@ -171,31 +182,56 @@ def serialize_listing(listing: JobListing, *, include_employer: bool = False):
     return payload_type(**kwargs)
 
 
-def serialize_employer_applicant(application: Application):
+def _serialize_employer_applicant_jobseeker(jobseeker: Jobseeker):
     from app.schemas.employer import (
         EmployerApplicantJobseekerPayload,
-        EmployerListingApplicantPayload,
     )
 
-    jobseeker = application.jobseeker
+    return EmployerApplicantJobseekerPayload(
+        id=jobseeker.id,
+        full_name=jobseeker.full_name,
+        phone=jobseeker.phone,
+        address=jobseeker.address,
+        city=jobseeker.city,
+        zip=jobseeker.zip,
+        transit_type=(jobseeker.transit_type.value if jobseeker.transit_type else None),
+        charges=serialize_charge_flags(jobseeker),
+        profile_complete=is_jobseeker_profile_complete(jobseeker),
+        status=jobseeker.status.value,
+    )
+
+
+def serialize_employer_applicant(application: Application):
+    from app.schemas.employer import EmployerListingApplicantPayload
+
     return EmployerListingApplicantPayload(
         application_id=application.id,
         status=application.status.value,
         applied_at=application.applied_at,
         updated_at=application.updated_at,
-        jobseeker=EmployerApplicantJobseekerPayload(
-            id=jobseeker.id,
-            full_name=jobseeker.full_name,
-            phone=jobseeker.phone,
-            address=jobseeker.address,
-            city=jobseeker.city,
-            zip=jobseeker.zip,
-            transit_type=(
-                jobseeker.transit_type.value if jobseeker.transit_type else None
-            ),
-            charges=serialize_charge_flags(jobseeker),
-            profile_complete=is_jobseeker_profile_complete(jobseeker),
-            status=jobseeker.status.value,
+        jobseeker=_serialize_employer_applicant_jobseeker(application.jobseeker),
+    )
+
+
+def serialize_employer_applicant_with_listing(application: Application):
+    from app.schemas.employer import (
+        EmployerApplicantListingSummaryPayload,
+        EmployerApplicantPayload,
+    )
+
+    listing = application.job_listing
+    return EmployerApplicantPayload(
+        application_id=application.id,
+        status=application.status.value,
+        applied_at=application.applied_at,
+        updated_at=application.updated_at,
+        jobseeker=_serialize_employer_applicant_jobseeker(application.jobseeker),
+        listing=EmployerApplicantListingSummaryPayload(
+            id=listing.id,
+            title=listing.title,
+            city=listing.city,
+            review_status=listing.review_status.value,
+            lifecycle_status=listing.lifecycle_status.value,
         ),
     )
 
@@ -363,8 +399,20 @@ def list_employer_listings(
     sort: SortParams,
     review_status: str | None = None,
     lifecycle_status: str | None = None,
+    search: str | None = None,
 ):
     base_statement = select(JobListing).where(JobListing.employer_id == employer.id)
+    if search:
+        term = f"%{search.strip()}%"
+        base_statement = base_statement.where(
+            or_(
+                JobListing.title.ilike(term),
+                JobListing.description.ilike(term),
+                JobListing.city.ilike(term),
+                JobListing.location_address.ilike(term),
+                JobListing.zip.ilike(term),
+            )
+        )
     base_statement = apply_filters(
         base_statement,
         filters={"review_status": review_status, "lifecycle_status": lifecycle_status},
@@ -582,7 +630,115 @@ def list_employer_listing_applicants(
     *,
     listing: JobListing,
     pagination: PaginationParams,
+    sort: SortParams,
+    status: str | None = None,
+    search: str | None = None,
 ):
+    _ensure_employer_applicant_visibility_enabled(session)
+
+    base_statement = (
+        select(Application)
+        .join(Application.job_listing)
+        .join(Application.jobseeker)
+        .options(
+            joinedload(Application.jobseeker).joinedload(Jobseeker.app_user),
+            joinedload(Application.job_listing).joinedload(JobListing.employer),
+        )
+        .where(Application.job_listing_id == listing.id)
+    )
+    if search:
+        term = f"%{search.strip()}%"
+        base_statement = base_statement.where(
+            or_(
+                Jobseeker.full_name.ilike(term),
+                Jobseeker.city.ilike(term),
+            )
+        )
+    base_statement = apply_filters(
+        base_statement,
+        filters={"status": status},
+        allowed_filters={"status": EMPLOYER_APPLICANT_ALLOWED_FILTERS["status"]},
+    )
+    total_items = session.execute(
+        select(func.count()).select_from(base_statement.subquery())
+    ).scalar_one()
+    statement = apply_sorting(
+        base_statement, sort=sort, allowed_sorts=EMPLOYER_APPLICANT_ALLOWED_SORTS
+    )
+    if sort.sort_by is None:
+        statement = statement.order_by(Application.applied_at.desc())
+    statement = apply_pagination(statement, pagination)
+    items = session.execute(statement).unique().scalars().all()
+    return build_paginated_response(
+        items=[serialize_employer_applicant(item) for item in items],
+        total_items=total_items,
+        pagination=pagination,
+    )
+
+
+def list_employer_applicants(
+    session: Session,
+    employer: Employer,
+    *,
+    pagination: PaginationParams,
+    sort: SortParams,
+    status: str | None = None,
+    job_listing_id: UUID | None = None,
+    search: str | None = None,
+):
+    _ensure_employer_applicant_visibility_enabled(session)
+
+    base_statement = (
+        select(Application)
+        .join(Application.job_listing)
+        .join(Application.jobseeker)
+        .options(
+            joinedload(Application.jobseeker).joinedload(Jobseeker.app_user),
+            joinedload(Application.job_listing)
+            .joinedload(JobListing.employer)
+            .joinedload(Employer.app_user),
+        )
+        .where(
+            JobListing.employer_id == employer.id,
+            JobListing.review_status == ListingReviewStatus.APPROVED,
+            JobListing.lifecycle_status == ListingLifecycleStatus.OPEN,
+        )
+    )
+    if search:
+        term = f"%{search.strip()}%"
+        base_statement = base_statement.where(
+            or_(
+                Jobseeker.full_name.ilike(term),
+                Jobseeker.city.ilike(term),
+                JobListing.title.ilike(term),
+            )
+        )
+    base_statement = apply_filters(
+        base_statement,
+        filters={
+            "status": status,
+            "job_listing_id": job_listing_id,
+        },
+        allowed_filters=EMPLOYER_APPLICANT_ALLOWED_FILTERS,
+    )
+    total_items = session.execute(
+        select(func.count()).select_from(base_statement.subquery())
+    ).scalar_one()
+    statement = apply_sorting(
+        base_statement, sort=sort, allowed_sorts=EMPLOYER_APPLICANT_ALLOWED_SORTS
+    )
+    if sort.sort_by is None:
+        statement = statement.order_by(Application.applied_at.desc())
+    statement = apply_pagination(statement, pagination)
+    items = session.execute(statement).unique().scalars().all()
+    return build_paginated_response(
+        items=[serialize_employer_applicant_with_listing(item) for item in items],
+        total_items=total_items,
+        pagination=pagination,
+    )
+
+
+def _ensure_employer_applicant_visibility_enabled(session: Session) -> None:
     config = get_notification_config(session)
     if not config.share_applicants_with_employer:
         raise AppError(
@@ -590,24 +746,3 @@ def list_employer_listing_applicants(
             code="APPLICANT_VISIBILITY_DISABLED",
             detail="Applicant visibility is currently disabled for employers.",
         )
-
-    base_statement = (
-        select(Application)
-        .options(
-            joinedload(Application.jobseeker).joinedload(Jobseeker.app_user),
-            joinedload(Application.job_listing).joinedload(JobListing.employer),
-        )
-        .where(Application.job_listing_id == listing.id)
-    )
-    total_items = session.execute(
-        select(func.count()).select_from(base_statement.subquery())
-    ).scalar_one()
-    statement = apply_pagination(
-        base_statement.order_by(Application.applied_at.desc()), pagination
-    )
-    items = session.execute(statement).unique().scalars().all()
-    return build_paginated_response(
-        items=[serialize_employer_applicant(item) for item in items],
-        total_items=total_items,
-        pagination=pagination,
-    )

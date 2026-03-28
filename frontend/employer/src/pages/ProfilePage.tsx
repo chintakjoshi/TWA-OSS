@@ -10,13 +10,13 @@ import { EmployerHeader } from '../components/EmployerHeader'
 import { EmployerProfileForm } from '../components/EmployerProfileForm'
 import { ErrorState, LoadingState } from '../components/PageState'
 import {
-  DefinitionList,
   InlineNotice,
+  PanelBody,
   PortalBadge,
-  PortalPanel,
+  PortalButton,
   Surface,
 } from '../components/ui/EmployerUi'
-import { formatDateTime, getStatusTone } from '../lib/formatting'
+import { formatDateTime, getInitials } from '../lib/formatting'
 import type { EmployerProfile } from '../types/employer'
 
 export function EmployerProfilePage() {
@@ -89,61 +89,94 @@ export function EmployerProfilePage() {
 
         {!isLoading && (!error || profile) ? (
           <>
-            <PortalPanel>
-              <div className="space-y-6 px-6 py-6">
-                <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <section
+              className="overflow-hidden rounded-[28px] border border-[#1f3145] shadow-[0_18px_45px_rgba(15,23,42,0.06)]"
+              style={{ backgroundColor: '#132130' }}
+            >
+              <PanelBody className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+                <div className="flex items-center gap-5">
+                  <div className="grid h-20 w-20 place-items-center rounded-full border border-white/20 bg-white/10 text-3xl font-semibold text-white">
+                    {getInitials(profile?.contact_name ?? profile?.org_name)}
+                  </div>
                   <div>
-                    <PortalBadge tone={getStatusTone(reviewStatus)}>
-                      {reviewStatus === 'approved'
-                        ? 'Approved profile'
-                        : reviewStatus === 'rejected'
-                          ? 'Not approved'
-                          : 'Pending review'}
-                    </PortalBadge>
-                    <h1 className="employer-display mt-4 text-[2.4rem] leading-[1.02] font-semibold text-slate-950">
-                      Employer profile
+                    <h1 className="employer-display text-[2.6rem] leading-none font-semibold text-white">
+                      {profile?.contact_name ?? 'Employer profile'}
                     </h1>
-                    <p className="mt-3 max-w-[760px] text-base leading-8 text-slate-500">
-                      Keep the organization record current so TWA staff can
-                      review, approve, or reassess the employer account from the
-                      same source of truth.
+                    <p className="mt-3 text-sm text-[#cfdbeb]">
+                      {profile?.org_name ?? 'Organization pending'}
                     </p>
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      <PortalBadge
+                        tone={
+                          reviewStatus === 'approved'
+                            ? 'success'
+                            : reviewStatus === 'rejected'
+                              ? 'danger'
+                              : 'warning'
+                        }
+                      >
+                        {reviewStatus === 'approved'
+                          ? 'Active account'
+                          : reviewStatus === 'rejected'
+                            ? 'Not approved'
+                            : 'Pending review'}
+                      </PortalBadge>
+                      <PortalBadge tone="info">Employer profile</PortalBadge>
+                    </div>
                   </div>
                 </div>
-
-                {success ? (
-                  <InlineNotice tone="success">{success}</InlineNotice>
-                ) : null}
-                {error ? (
-                  <InlineNotice tone="danger">{error}</InlineNotice>
-                ) : null}
-                {profile?.review_note ? (
-                  <InlineNotice
-                    tone={reviewStatus === 'rejected' ? 'danger' : 'info'}
+                <div className="flex flex-wrap gap-3">
+                  <PortalButton
+                    variant="secondary"
+                    onClick={() => void auth.logout()}
                   >
-                    {profile.review_note}
-                  </InlineNotice>
-                ) : null}
-              </div>
-            </PortalPanel>
+                    Sign Out
+                  </PortalButton>
+                </div>
+              </PanelBody>
+            </section>
 
-            <div className="grid gap-6 xl:grid-cols-[minmax(0,1.3fr)_360px]">
+            {success ? (
+              <InlineNotice tone="success">{success}</InlineNotice>
+            ) : null}
+            {error ? <InlineNotice tone="danger">{error}</InlineNotice> : null}
+            {profile?.review_note ? (
+              <InlineNotice
+                tone={reviewStatus === 'rejected' ? 'danger' : 'info'}
+              >
+                {profile.review_note}
+              </InlineNotice>
+            ) : null}
+
+            <div className="grid items-stretch gap-6 xl:grid-cols-[minmax(0,1.3fr)_360px]">
               <Surface>
-                <EmployerProfileForm
-                  isSubmitting={isSaving}
-                  onSubmit={handleSubmit}
-                  profile={profile}
-                />
-              </Surface>
-
-              <div className="space-y-6">
-                <Surface>
-                  <h2 className="employer-display text-[1.5rem] font-semibold text-slate-950">
-                    Account review
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#8da2c5]">
+                    Organization details
+                  </p>
+                  <h2 className="employer-display mt-2 text-[1.8rem] font-semibold text-slate-950">
+                    Keep your employer record current
                   </h2>
-                  <DefinitionList
-                    className="mt-5 md:grid-cols-1"
-                    items={[
+                  <p className="mt-3 max-w-[760px] text-sm leading-7 text-slate-500">
+                    Update the core organization details TWA staff use to review
+                    and maintain your employer account.
+                  </p>
+                </div>
+                <div className="mt-6">
+                  <EmployerProfileForm
+                    isSubmitting={isSaving}
+                    onSubmit={handleSubmit}
+                    profile={profile}
+                  />
+                </div>
+              </Surface>
+              <Surface className="flex h-full flex-col px-6 py-6">
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#8da2c5]">
+                    Account review
+                  </p>
+
+                  <div className="mt-6 space-y-3">
+                    {[
                       {
                         label: 'Current status',
                         value:
@@ -154,6 +187,10 @@ export function EmployerProfilePage() {
                               : 'Pending review by TWA staff',
                       },
                       {
+                        label: 'Contact name',
+                        value: profile?.contact_name ?? 'Not set',
+                      },
+                      {
                         label: 'Last reviewed',
                         value: formatDateTime(profile?.reviewed_at),
                       },
@@ -161,22 +198,21 @@ export function EmployerProfilePage() {
                         label: 'Profile updated',
                         value: formatDateTime(profile?.updated_at),
                       },
-                    ]}
-                  />
-                </Surface>
-
-                <Surface>
-                  <h2 className="employer-display text-[1.5rem] font-semibold text-slate-950">
-                    Portal placeholders
-                  </h2>
-                  <p className="mt-3 text-sm leading-7 text-slate-500">
-                    The richer organization metadata in this screen is
-                    intentionally frontend-only for now. It mirrors the planned
-                    employer experience without inventing unsupported backend
-                    behavior.
-                  </p>
-                </Surface>
-              </div>
+                    ].map((item) => (
+                      <div
+                        className="rounded-[22px] border border-[#eadfce] bg-[#fcfaf6] px-4 py-4"
+                        key={item.label}
+                      >
+                        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#8da2c5]">
+                          {item.label}
+                        </p>
+                        <p className="mt-2 text-sm leading-7 font-semibold text-slate-900">
+                          {item.value}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+              </Surface>
             </div>
           </>
         ) : null}
