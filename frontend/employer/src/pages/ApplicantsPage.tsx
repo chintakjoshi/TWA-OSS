@@ -53,9 +53,9 @@ export function EmployerApplicantsPage() {
     () => searchParams.get('search') ?? ''
   )
   const [groups, setGroups] = useState<ApplicantGroup[]>([])
-  const [listingOptions, setListingOptions] = useState<ApplicantListingSummary[]>(
-    []
-  )
+  const [listingOptions, setListingOptions] = useState<
+    ApplicantListingSummary[]
+  >([])
   const [listingTotal, setListingTotal] = useState(0)
   const [totalItems, setTotalItems] = useState(0)
   const [totalPages, setTotalPages] = useState(0)
@@ -140,13 +140,16 @@ export function EmployerApplicantsPage() {
         return
       }
 
-      const applicantsResponse = await listEmployerApplications(auth.requestTwa, {
-        page,
-        pageSize: PAGE_SIZE,
-        search: searchQuery || undefined,
-        status: statusFilter || undefined,
-        listingId: listingFilter || undefined,
-      })
+      const applicantsResponse = await listEmployerApplications(
+        auth.requestTwa,
+        {
+          page,
+          pageSize: PAGE_SIZE,
+          search: searchQuery || undefined,
+          status: statusFilter || undefined,
+          listingId: listingFilter || undefined,
+        }
+      )
 
       if (!active) return
 
@@ -361,7 +364,9 @@ export function EmployerApplicantsPage() {
               <div className="mt-6 flex justify-center">
                 <PortalButton
                   variant="secondary"
-                  onClick={() => announceComingSoon('Applicant sharing preview')}
+                  onClick={() =>
+                    announceComingSoon('Applicant sharing preview')
+                  }
                 >
                   Preview with sharing enabled
                 </PortalButton>
@@ -495,7 +500,10 @@ export function EmployerApplicantsPage() {
             </div>
           ) : null}
 
-          {!isLoading && !sharingDisabled && groups.length > 0 && totalPages > 1 ? (
+          {!isLoading &&
+          !sharingDisabled &&
+          groups.length > 0 &&
+          totalPages > 1 ? (
             <div className="flex flex-wrap items-center justify-between gap-3">
               <p className="text-sm text-slate-500">
                 Page {page} of {totalPages}

@@ -280,7 +280,9 @@ export function EmployerListingsPage() {
         </PortalPanel>
 
         <div aria-busy={isLoading || isRefreshing}>
-          {isLoading ? <LoadingState title="Loading employer listings..." /> : null}
+          {isLoading ? (
+            <LoadingState title="Loading employer listings..." />
+          ) : null}
           {!isLoading && error && items.length === 0 ? (
             <ErrorState title="Listings unavailable" message={error} />
           ) : null}
@@ -323,7 +325,10 @@ export function EmployerListingsPage() {
                   </thead>
                   <tbody>
                     {items.map((listing) => (
-                      <tr className="border-t border-[#eadfce]" key={listing.id}>
+                      <tr
+                        className="border-t border-[#eadfce]"
+                        key={listing.id}
+                      >
                         <td className="px-6 py-4">
                           <div>
                             <p className="font-semibold text-slate-950">
@@ -340,7 +345,9 @@ export function EmployerListingsPage() {
                           {listing.city || 'Location pending'}
                         </td>
                         <td className="px-6 py-4 text-slate-600">
-                          {listing.transit_required === 'any' ? 'Yes' : 'Own car'}
+                          {listing.transit_required === 'any'
+                            ? 'Yes'
+                            : 'Own car'}
                         </td>
                         <td className="px-6 py-4 text-slate-600">
                           {applicantCounts[listing.id] === null ||
@@ -374,7 +381,9 @@ export function EmployerListingsPage() {
                         <td className="px-6 py-4">
                           <div className="flex flex-wrap gap-2">
                             <Link to={`/my-listings/${listing.id}`}>
-                              <PortalButton variant="secondary">View</PortalButton>
+                              <PortalButton variant="secondary">
+                                View
+                              </PortalButton>
                             </Link>
                             {listing.review_status === 'approved' &&
                             listing.lifecycle_status === 'open' ? (

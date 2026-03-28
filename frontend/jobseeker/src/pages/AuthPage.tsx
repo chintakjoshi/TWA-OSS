@@ -487,9 +487,7 @@ export function JobseekerAuthPage() {
                         challenge_token: auth.otpChallenge!.challenge_token,
                         code: String(form.get('code') ?? ''),
                       })
-                      setNotice(
-                        'OTP verified. Continue into jobseeker setup.'
-                      )
+                      setNotice('OTP verified. Continue into jobseeker setup.')
                     })
                   }}
                 >
