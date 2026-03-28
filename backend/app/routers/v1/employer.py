@@ -55,7 +55,7 @@ def get_my_employer_profile(
 @router.patch("/api/v1/employers/me", response_model=EmployerProfileResponse)
 def patch_my_employer_profile(
     payload: EmployerProfileUpdateRequest,
-    auth_context: AuthContext = Depends(require_employer),
+    auth_context: AuthContext = Depends(require_approved_employer),
     session: Session = Depends(get_db_session),
 ) -> EmployerProfileResponse:
     employer = ensure_found(
@@ -130,7 +130,7 @@ def get_employer_applicants(
     job_listing_id: UUID | None = Query(default=None),
     pagination: PaginationParams = Depends(get_pagination_params),
     sort: SortParams = Depends(get_sort_params),
-    auth_context: AuthContext = Depends(require_employer),
+    auth_context: AuthContext = Depends(require_approved_employer),
     session: Session = Depends(get_db_session),
 ) -> PaginatedResponse[EmployerApplicantPayload]:
     employer = ensure_found(
@@ -158,7 +158,7 @@ def get_employer_listing_applicants(
     status: str | None = Query(default=None),
     pagination: PaginationParams = Depends(get_pagination_params),
     sort: SortParams = Depends(get_sort_params),
-    auth_context: AuthContext = Depends(require_employer),
+    auth_context: AuthContext = Depends(require_approved_employer),
     session: Session = Depends(get_db_session),
 ) -> PaginatedResponse[EmployerListingApplicantPayload]:
     listing = ensure_found(

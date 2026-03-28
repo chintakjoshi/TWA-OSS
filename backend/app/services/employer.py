@@ -634,6 +634,7 @@ def list_employer_listing_applicants(
     status: str | None = None,
     search: str | None = None,
 ):
+    _ensure_employer_is_approved(listing.employer)
     _ensure_employer_applicant_visibility_enabled(session)
 
     base_statement = (
@@ -686,6 +687,7 @@ def list_employer_applicants(
     job_listing_id: UUID | None = None,
     search: str | None = None,
 ):
+    _ensure_employer_is_approved(employer)
     _ensure_employer_applicant_visibility_enabled(session)
 
     base_statement = (
@@ -745,4 +747,13 @@ def _ensure_employer_applicant_visibility_enabled(session: Session) -> None:
             status_code=403,
             code="APPLICANT_VISIBILITY_DISABLED",
             detail="Applicant visibility is currently disabled for employers.",
+        )
+
+
+def _ensure_employer_is_approved(employer: Employer) -> None:
+    if employer.review_status != EmployerReviewStatus.APPROVED:
+        raise AppError(
+            status_code=403,
+            code="EMPLOYER_REVIEW_PENDING",
+            detail="This employer account is not approved for employer features yet.",
         )

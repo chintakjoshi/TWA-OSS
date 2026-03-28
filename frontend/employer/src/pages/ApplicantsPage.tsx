@@ -68,6 +68,8 @@ export function EmployerApplicantsPage() {
   const searchQuery = searchParams.get('search') ?? ''
   const statusFilter = searchParams.get('status') ?? ''
   const listingFilter = listingId ?? searchParams.get('listing') ?? ''
+  const reviewStatus = auth.authMe?.employer_review_status ?? 'pending'
+  const reviewLocked = reviewStatus !== 'approved'
 
   useEffect(() => {
     if (searchDraft !== searchQuery) {
@@ -111,6 +113,13 @@ export function EmployerApplicantsPage() {
       if (!active) return
       setListingTotal(listingsResponse.meta.total_items)
       setListingOptions(listingsResponse.items.filter(isListingVisible))
+      if (reviewLocked) {
+        setGroups([])
+        setTotalItems(0)
+        setTotalPages(0)
+        hasLoadedOnceRef.current = true
+        return
+      }
 
       if (listingId) {
         const [listingResponse, applicantsResponse] = await Promise.all([
@@ -205,6 +214,7 @@ export function EmployerApplicantsPage() {
     listingFilter,
     listingId,
     page,
+    reviewLocked,
     searchQuery,
     statusFilter,
   ])
@@ -245,18 +255,25 @@ export function EmployerApplicantsPage() {
                   Applicants
                 </h1>
                 <p className="mt-3 text-base leading-8 text-slate-500">
-                  Candidates matched to and applied for your visible TWA
-                  listings.
+                  {reviewLocked
+                    ? 'Applicant data stays locked until TWA approves your employer account.'
+                    : 'Candidates matched to and applied for your visible TWA listings.'}
                 </p>
               </div>
-              {!sharingDisabled ? (
+              {reviewLocked ? (
+                <PortalBadge
+                  tone={reviewStatus === 'rejected' ? 'danger' : 'info'}
+                >
+                  Applicant access locked
+                </PortalBadge>
+              ) : !sharingDisabled ? (
                 <PortalBadge tone="success">
                   Applicant sharing enabled by TWA
                 </PortalBadge>
               ) : null}
             </div>
 
-            {!sharingDisabled ? (
+            {!reviewLocked && !sharingDisabled ? (
               <>
                 <div
                   className={`grid gap-4 ${
@@ -339,11 +356,41 @@ export function EmployerApplicantsPage() {
 
         <div aria-busy={isLoading || isRefreshing}>
           {isLoading ? <LoadingState title="Loading applicants..." /> : null}
-          {!isLoading && error && groups.length === 0 ? (
+          {!isLoading && !reviewLocked && error && groups.length === 0 ? (
             <ErrorState title="Applicants unavailable" message={error} />
           ) : null}
-          {!isLoading && error && groups.length > 0 ? (
+          {!isLoading && !reviewLocked && error && groups.length > 0 ? (
             <InlineNotice tone="danger">{error}</InlineNotice>
+          ) : null}
+          {!isLoading && reviewLocked ? (
+            <Surface className="border-[#ead8bb] bg-[linear-gradient(180deg,#fffdf9_0%,#fbf4e7_100%)] py-10 text-center">
+              <div className="mx-auto inline-flex items-center gap-3 rounded-full border border-[#d6e2ff] bg-[#f5f8ff] px-4 py-2 text-sm font-semibold text-[#3569c7] shadow-[0_10px_24px_rgba(53,105,199,0.08)]">
+                <span className="grid h-7 w-7 place-items-center rounded-full bg-white/80 text-[#3569c7]">
+                  <Lock className="h-4 w-4" />
+                </span>
+                <span>Locked</span>
+              </div>
+              <h2 className="employer-display mt-6 text-[2rem] font-semibold text-slate-950">
+                {reviewStatus === 'rejected'
+                  ? 'Applicant access is unavailable until re-approval'
+                  : 'Applicant access unlocks after approval'}
+              </h2>
+              <p className="mx-auto mt-4 max-w-[560px] text-sm leading-7 text-slate-500">
+                {reviewStatus === 'rejected'
+                  ? 'TWA staff removed approval for this employer account. You can still review your employer profile and listing history, but applicant data will stay hidden until the account is approved again.'
+                  : 'TWA staff are still reviewing this employer account. You can review your employer profile and listing history while you wait, and applicant data will unlock after approval.'}
+              </p>
+              <div className="mt-6 flex justify-center gap-3">
+                <Link to="/profile">
+                  <PortalButton variant="secondary">
+                    Review profile
+                  </PortalButton>
+                </Link>
+                <Link to="/my-listings">
+                  <PortalButton variant="ghost">View listings</PortalButton>
+                </Link>
+              </div>
+            </Surface>
           ) : null}
           {!isLoading && sharingDisabled ? (
             <Surface className="border-[#ead8bb] bg-[linear-gradient(180deg,#fffdf9_0%,#fbf4e7_100%)] py-10 text-center">
@@ -373,7 +420,11 @@ export function EmployerApplicantsPage() {
               </div>
             </Surface>
           ) : null}
-          {!isLoading && !error && !sharingDisabled && groups.length === 0 ? (
+          {!isLoading &&
+          !reviewLocked &&
+          !error &&
+          !sharingDisabled &&
+          groups.length === 0 ? (
             <EmptyState
               title={
                 hasActiveFilters
@@ -388,7 +439,10 @@ export function EmployerApplicantsPage() {
             />
           ) : null}
 
-          {!isLoading && !sharingDisabled && groups.length > 0 ? (
+          {!isLoading &&
+          !reviewLocked &&
+          !sharingDisabled &&
+          groups.length > 0 ? (
             <div className="mt-8 space-y-8">
               {groups.map((group) => (
                 <PortalPanel key={group.listing.id}>
@@ -501,6 +555,7 @@ export function EmployerApplicantsPage() {
           ) : null}
 
           {!isLoading &&
+          !reviewLocked &&
           !sharingDisabled &&
           groups.length > 0 &&
           totalPages > 1 ? (

@@ -4,7 +4,6 @@ import { Navigate, useNavigate } from 'react-router-dom'
 
 import { useAuth } from '@shared/auth/AuthProvider'
 
-import { updateMyEmployerProfile } from '../api/employerApi'
 import { EmployerProfileForm } from '../components/EmployerProfileForm'
 import { InlineNotice, Surface } from '../components/ui/EmployerUi'
 
@@ -12,7 +11,6 @@ export function EmployerSetupPage() {
   const auth = useAuth()
   const navigate = useNavigate()
   const [error, setError] = useState<string | null>(null)
-  const [notice, setNotice] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
 
   if (auth.state === 'anonymous') return <Navigate replace to="/auth" />
@@ -52,25 +50,24 @@ export function EmployerSetupPage() {
                 Organization details
               </h2>
               <p className="mt-2 text-sm leading-7 text-slate-500">
-                Your organization details help TWA staff review the account
-                before you can submit listings. Most reviews are completed
-                within 1 to 2 business days.
+                Share the core organization and contact details TWA staff use to
+                review your employer account. Once approved, you will unlock the
+                rest of the employer workflow and future profile edits.
               </p>
             </div>
           </div>
 
-          {notice ? <InlineNotice tone="success">{notice}</InlineNotice> : null}
           {error ? <InlineNotice tone="danger">{error}</InlineNotice> : null}
 
           <div className="mt-6">
             <EmployerProfileForm
               isSubmitting={busy}
+              mode="setup"
               profile={null}
               submitLabel="Submit for review"
               onSubmit={async (values) => {
                 setBusy(true)
                 setError(null)
-                setNotice(null)
                 try {
                   await auth.bootstrapRole({
                     role: 'employer',
@@ -80,11 +77,7 @@ export function EmployerSetupPage() {
                       phone: values.phone || null,
                     },
                   })
-                  await updateMyEmployerProfile(auth.requestTwa, values)
-                  setNotice(
-                    'Employer profile created and submitted for staff review.'
-                  )
-                  navigate('/dashboard')
+                  navigate('/dashboard', { replace: true })
                 } catch (nextError) {
                   setError(
                     nextError instanceof Error

@@ -110,7 +110,11 @@ def seed_staff(session_factory, *, auth_user_id: uuid.UUID | None = None) -> App
         return staff
 
 
-def seed_employer_and_listings(session_factory) -> dict[str, uuid.UUID]:
+def seed_employer_and_listings(
+    session_factory,
+    *,
+    employer_review_status: EmployerReviewStatus = EmployerReviewStatus.APPROVED,
+) -> dict[str, uuid.UUID]:
     with session_factory() as session:
         employer_user = AppUser(
             auth_user_id=uuid.uuid4(),
@@ -125,7 +129,7 @@ def seed_employer_and_listings(session_factory) -> dict[str, uuid.UUID]:
         employer = Employer(
             app_user_id=employer_user.id,
             org_name="Northside Logistics",
-            review_status=EmployerReviewStatus.APPROVED,
+            review_status=employer_review_status,
         )
         session.add(employer)
         session.flush()
@@ -269,6 +273,31 @@ def test_jobseeker_can_browse_jobs_and_apply(applications_env) -> None:
     refreshed_detail = client.get(f"/api/v1/jobs/{listing_ids['eligible']}")
     assert refreshed_detail.status_code == 200
     assert refreshed_detail.json()["eligibility"]["has_applied"] is True
+
+
+def test_rejected_employer_listings_are_hidden_from_jobseekers(
+    applications_env,
+) -> None:
+    client, _, session_factory = applications_env
+    bootstrap_completed_jobseeker(client)
+    listing_ids = seed_employer_and_listings(
+        session_factory,
+        employer_review_status=EmployerReviewStatus.REJECTED,
+    )
+
+    jobs = client.get("/api/v1/jobs")
+    assert jobs.status_code == 200
+    assert jobs.json()["meta"]["total_items"] == 0
+
+    detail = client.get(f"/api/v1/jobs/{listing_ids['eligible']}")
+    assert detail.status_code == 404
+    assert detail.json()["error"]["code"] == "NOT_FOUND"
+
+    create = client.post(
+        "/api/v1/applications", json={"job_listing_id": str(listing_ids["eligible"])}
+    )
+    assert create.status_code == 404
+    assert create.json()["error"]["code"] == "NOT_FOUND"
 
 
 def test_incomplete_jobseeker_is_blocked_from_jobs_and_applications(

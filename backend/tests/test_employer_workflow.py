@@ -120,8 +120,8 @@ def test_employer_review_and_listing_workflow(employer_workflow_env) -> None:
         "/api/v1/employers/me",
         json={"address": "500 Market St", "city": "St. Louis", "zip": "63101"},
     )
-    assert patch_me.status_code == 200
-    assert patch_me.json()["employer"]["address"] == "500 Market St"
+    assert patch_me.status_code == 403
+    assert patch_me.json()["error"]["code"] == "EMPLOYER_REVIEW_PENDING"
 
     blocked_listing = client.post(
         "/api/v1/employer/listings",
@@ -157,6 +157,13 @@ def test_employer_review_and_listing_workflow(employer_workflow_env) -> None:
         email="employer@example.com",
         auth_provider_role="user",
     )
+
+    patch_me = client.patch(
+        "/api/v1/employers/me",
+        json={"address": "500 Market St", "city": "St. Louis", "zip": "63101"},
+    )
+    assert patch_me.status_code == 200
+    assert patch_me.json()["employer"]["address"] == "500 Market St"
 
     create_listing = client.post(
         "/api/v1/employer/listings",
@@ -291,6 +298,117 @@ def test_staff_can_reassess_rejected_employer_and_listing(
     )
     assert approved_listing.status_code == 200
     assert approved_listing.json()["listing"]["review_status"] == "approved"
+
+
+def test_rejected_employer_keeps_read_only_access_but_loses_mutations_and_applicants(
+    employer_workflow_env,
+) -> None:
+    client, state, session_factory = employer_workflow_env
+
+    bootstrap = client.post(
+        "/api/v1/auth/bootstrap",
+        json={
+            "role": "employer",
+            "employer_profile": {
+                "org_name": "Northside Logistics",
+                "contact_name": "Sam Carter",
+                "phone": "3145550199",
+            },
+        },
+    )
+    assert bootstrap.status_code == 200
+
+    staff = seed_staff(
+        session_factory, auth_user_id=uuid.UUID("12121212-1212-1212-1212-121212121212")
+    )
+    state["identity"] = AuthProviderIdentity(
+        auth_user_id=staff.auth_user_id,
+        email=staff.email,
+        auth_provider_role="admin",
+    )
+
+    employer_id = client.get("/api/v1/admin/queue/employers").json()["items"][0]["id"]
+    approved_employer = client.patch(
+        f"/api/v1/admin/employers/{employer_id}",
+        json={"review_status": "approved", "review_note": "Approved."},
+    )
+    assert approved_employer.status_code == 200
+
+    config = client.patch(
+        "/api/v1/admin/config/notifications",
+        json={"share_applicants_with_employer": True},
+    )
+    assert config.status_code == 200
+
+    state["identity"] = AuthProviderIdentity(
+        auth_user_id=uuid.UUID("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"),
+        email="employer@example.com",
+        auth_provider_role="user",
+    )
+    listing = client.post(
+        "/api/v1/employer/listings",
+        json={"title": "Warehouse Associate", "transit_required": "any"},
+    )
+    assert listing.status_code == 200
+    listing_id = listing.json()["listing"]["id"]
+
+    state["identity"] = AuthProviderIdentity(
+        auth_user_id=staff.auth_user_id,
+        email=staff.email,
+        auth_provider_role="admin",
+    )
+    approved_listing = client.patch(
+        f"/api/v1/admin/listings/{listing_id}",
+        json={"review_status": "approved", "review_note": "Approved."},
+    )
+    assert approved_listing.status_code == 200
+
+    rejected_employer = client.patch(
+        f"/api/v1/admin/employers/{employer_id}",
+        json={"review_status": "rejected", "review_note": "Needs re-review."},
+    )
+    assert rejected_employer.status_code == 200
+    assert rejected_employer.json()["employer"]["review_status"] == "rejected"
+
+    state["identity"] = AuthProviderIdentity(
+        auth_user_id=uuid.UUID("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"),
+        email="employer@example.com",
+        auth_provider_role="user",
+    )
+
+    me = client.get("/api/v1/employers/me")
+    assert me.status_code == 200
+    assert me.json()["employer"]["review_status"] == "rejected"
+
+    my_listings = client.get("/api/v1/employer/listings")
+    assert my_listings.status_code == 200
+    assert my_listings.json()["meta"]["total_items"] == 1
+
+    listing_detail = client.get(f"/api/v1/employer/listings/{listing_id}")
+    assert listing_detail.status_code == 200
+    assert listing_detail.json()["listing"]["id"] == listing_id
+
+    patch_me = client.patch(
+        "/api/v1/employers/me",
+        json={"address": "500 Market St"},
+    )
+    assert patch_me.status_code == 403
+    assert patch_me.json()["error"]["code"] == "EMPLOYER_REVIEW_PENDING"
+
+    create_listing = client.post(
+        "/api/v1/employer/listings",
+        json={"title": "Second Listing", "transit_required": "any"},
+    )
+    assert create_listing.status_code == 403
+    assert create_listing.json()["error"]["code"] == "EMPLOYER_REVIEW_PENDING"
+
+    applicants = client.get("/api/v1/employer/applicants")
+    assert applicants.status_code == 403
+    assert applicants.json()["error"]["code"] == "EMPLOYER_REVIEW_PENDING"
+
+    listing_applicants = client.get(f"/api/v1/employer/listings/{listing_id}/applicants")
+    assert listing_applicants.status_code == 403
+    assert listing_applicants.json()["error"]["code"] == "EMPLOYER_REVIEW_PENDING"
 
 
 def test_staff_cannot_move_employer_from_approved_back_to_pending(

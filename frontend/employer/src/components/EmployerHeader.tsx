@@ -71,12 +71,16 @@ export function EmployerHeader({
             label="My Listings"
             to="/my-listings"
           />
-          <EmployerNavLink label="Applicants" to="/applicants" />
+          {reviewStatus === 'approved' ? (
+            <EmployerNavLink label="Applicants" to="/applicants" />
+          ) : null}
         </nav>
 
         <div className="ml-auto flex flex-wrap items-center gap-3">
           {reviewStatus === 'pending' ? (
             <PortalBadge tone="info">Pending Review</PortalBadge>
+          ) : reviewStatus === 'rejected' ? (
+            <PortalBadge tone="danger">Not Approved</PortalBadge>
           ) : null}
           <NavLink
             className={({ isActive }) =>
