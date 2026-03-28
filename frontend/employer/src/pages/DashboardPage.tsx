@@ -14,7 +14,7 @@ import { HttpError } from '@shared/lib/http'
 
 import {
   getMyEmployerProfile,
-  listEmployerApplicants,
+  listEmployerApplications,
   listEmployerListings,
 } from '../api/employerApi'
 import { EmployerHeader } from '../components/EmployerHeader'
@@ -79,24 +79,22 @@ export function EmployerDashboardPage() {
         }
 
         try {
-          const applicantResponses = await Promise.all(
-            visibleListings.map((listing) =>
-              listEmployerApplicants(auth.requestTwa, listing.id, 1)
-            )
-          )
+          const [allApplicants, hiredApplicants] = await Promise.all([
+            listEmployerApplications(auth.requestTwa, {
+              page: 1,
+              pageSize: 1,
+            }),
+            listEmployerApplications(auth.requestTwa, {
+              page: 1,
+              pageSize: 1,
+              status: 'hired',
+            }),
+          ])
 
           if (!active) return
-          let applicantCount = 0
-          let hireCount = 0
-          applicantResponses.forEach((response) => {
-            applicantCount += response.meta.total_items
-            hireCount += response.items.filter(
-              (item) => item.status === 'hired'
-            ).length
-          })
           setMetrics({
-            applicants: applicantCount,
-            hires: hireCount,
+            applicants: allApplicants.meta.total_items,
+            hires: hiredApplicants.meta.total_items,
             sharingEnabled: true,
           })
         } catch (nextError) {
@@ -131,6 +129,15 @@ export function EmployerDashboardPage() {
 
   const reviewStatus =
     profile?.review_status ?? auth.authMe?.employer_review_status ?? 'pending'
+  const approvedWelcomeLabel = useMemo(() => {
+    const contactName = profile?.contact_name?.trim()
+    const orgName = profile?.org_name?.trim()
+    if (contactName && orgName)
+      return `Welcome, ${contactName} from ${orgName}.`
+    if (orgName) return `Welcome, ${orgName}.`
+    if (contactName) return `Welcome, ${contactName}.`
+    return 'Welcome, Employer.'
+  }, [profile?.contact_name, profile?.org_name])
   const visibleListings = useMemo(
     () => listings.filter(isListingVisible).length,
     [listings]
@@ -162,80 +169,71 @@ export function EmployerDashboardPage() {
               >
                 <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
                   <div className="flex gap-5">
-                    <div className="grid h-16 w-16 shrink-0 place-items-center rounded-2xl bg-white/60 text-slate-950">
+                    <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-white/60 text-slate-950">
                       {reviewStatus === 'approved' ? (
-                        <CheckCircle2 className="h-8 w-8 text-[#2a8150]" />
+                        <CheckCircle2 className="h-5 w-5 text-[#2a8150]" />
                       ) : reviewStatus === 'rejected' ? (
-                        <XCircle className="h-8 w-8 text-[#c7372e]" />
+                        <XCircle className="h-5 w-5 text-[#c7372e]" />
                       ) : (
-                        <Hourglass className="h-8 w-8 text-[#2458b8]" />
+                        <Hourglass className="h-5 w-5 text-[#2458b8]" />
                       )}
                     </div>
                     <div className="space-y-3">
-                      <PortalBadge tone={getStatusTone(reviewStatus)}>
-                        Account status:{' '}
-                        {reviewStatus === 'approved'
-                          ? 'approved'
-                          : reviewStatus === 'rejected'
+                      {reviewStatus !== 'approved' ? (
+                        <PortalBadge tone={getStatusTone(reviewStatus)}>
+                          Account status:{' '}
+                          {reviewStatus === 'rejected'
                             ? 'not approved'
                             : 'pending review'}
-                      </PortalBadge>
+                        </PortalBadge>
+                      ) : null}
                       <div>
                         <h1 className="employer-display text-[2.3rem] leading-[1.02] font-semibold text-slate-950">
                           {reviewStatus === 'approved'
-                            ? `Welcome, ${profile?.org_name ?? 'Employer'}`
+                            ? approvedWelcomeLabel
                             : reviewStatus === 'rejected'
                               ? 'Your registration was not approved'
                               : 'Your registration is under review'}
                         </h1>
-                        <p className="mt-3 max-w-[760px] text-base leading-8 text-slate-600">
-                          {reviewStatus === 'approved'
-                            ? 'Your employer account is active. You can now submit job listings for TWA staff review and monitor applicant visibility from one place.'
-                            : reviewStatus === 'rejected'
+                        {reviewStatus === 'approved' ? null : (
+                          <p className="mt-3 max-w-[760px] text-base leading-8 text-slate-600">
+                            {reviewStatus === 'rejected'
                               ? 'TWA staff reviewed your employer registration and were unable to approve it at this time. Review the note below and request reassessment after updates.'
                               : 'TWA staff are reviewing your employer registration. Once approved, you will be able to submit listings and access the full employer workflow.'}
-                        </p>
-                      </div>
-
-                      <div className="flex flex-wrap gap-3">
-                        {reviewStatus === 'approved' ? (
-                          <>
-                            <Link to="/submit-listing">
-                              <PortalButton>Submit New Listing</PortalButton>
-                            </Link>
-                            <Link to="/my-listings">
-                              <PortalButton variant="secondary">
-                                View My Listings
-                              </PortalButton>
-                            </Link>
-                          </>
-                        ) : reviewStatus === 'rejected' ? (
-                          <>
-                            <PortalButton
-                              onClick={() =>
-                                announceComingSoon('Request re-review')
-                              }
-                            >
-                              Request Review
-                            </PortalButton>
-                            <PortalButton
-                              variant="secondary"
-                              onClick={() => setReasonOpen(true)}
-                            >
-                              View Reason
-                            </PortalButton>
-                          </>
-                        ) : (
-                          <PortalButton
-                            variant="secondary"
-                            onClick={() =>
-                              announceComingSoon('Contact TWA staff')
-                            }
-                          >
-                            Contact TWA Staff
-                          </PortalButton>
+                          </p>
                         )}
                       </div>
+
+                      {reviewStatus === 'approved' ? null : (
+                        <div className="flex flex-wrap gap-3">
+                          {reviewStatus === 'rejected' ? (
+                            <>
+                              <PortalButton
+                                onClick={() =>
+                                  announceComingSoon('Request re-review')
+                                }
+                              >
+                                Request Review
+                              </PortalButton>
+                              <PortalButton
+                                variant="secondary"
+                                onClick={() => setReasonOpen(true)}
+                              >
+                                View Reason
+                              </PortalButton>
+                            </>
+                          ) : (
+                            <PortalButton
+                              variant="secondary"
+                              onClick={() =>
+                                announceComingSoon('Contact TWA staff')
+                              }
+                            >
+                              Contact TWA Staff
+                            </PortalButton>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -243,45 +241,60 @@ export function EmployerDashboardPage() {
             </PortalPanel>
 
             <div className="grid gap-5 lg:grid-cols-3">
-              <StatCard
-                accent="#2458b8"
-                hint={
-                  reviewStatus === 'approved'
-                    ? `${visibleListings} currently visible in TWA`
-                    : 'Will unlock after approval'
-                }
-                icon={BriefcaseBusiness}
-                label="Active Listings"
-                value={String(visibleListings)}
-              />
-              <StatCard
-                accent="#d0922c"
-                hint={
-                  metrics.sharingEnabled
-                    ? 'Across visible listings'
-                    : 'Available when applicant sharing is enabled'
-                }
-                icon={Users}
-                label="Total Applicants"
-                value={
-                  metrics.applicants === null
-                    ? 'Locked'
-                    : String(metrics.applicants)
-                }
-              />
-              <StatCard
-                accent="#2a8150"
-                hint={
-                  metrics.hires === null
-                    ? 'Shared applicant data required'
-                    : 'Recorded in employer applicant feeds'
-                }
-                icon={ClipboardList}
-                label="Hires Via TWA"
-                value={
-                  metrics.hires === null ? 'Locked' : String(metrics.hires)
-                }
-              />
+              <Link
+                className="block rounded-[28px] transition hover:-translate-y-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d0922c]/60"
+                to="/my-listings"
+              >
+                <StatCard
+                  accent="#2458b8"
+                  hint={
+                    reviewStatus === 'approved'
+                      ? `${visibleListings} currently visible in TWA`
+                      : 'Will unlock after approval'
+                  }
+                  icon={BriefcaseBusiness}
+                  label="Active Listings"
+                  value={String(visibleListings)}
+                />
+              </Link>
+              <Link
+                className="block rounded-[28px] transition hover:-translate-y-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d0922c]/60"
+                to="/applicants"
+              >
+                <StatCard
+                  accent="#d0922c"
+                  hint={
+                    metrics.sharingEnabled
+                      ? 'Across visible listings'
+                      : 'Available when applicant sharing is enabled'
+                  }
+                  icon={Users}
+                  label="Total Applicants"
+                  value={
+                    metrics.applicants === null
+                      ? 'Locked'
+                      : String(metrics.applicants)
+                  }
+                />
+              </Link>
+              <Link
+                className="block rounded-[28px] transition hover:-translate-y-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d0922c]/60"
+                to="/applicants?status=hired"
+              >
+                <StatCard
+                  accent="#2a8150"
+                  hint={
+                    metrics.hires === null
+                      ? 'Shared applicant data required'
+                      : 'Recorded in employer applicant feeds'
+                  }
+                  icon={ClipboardList}
+                  label="Hires Via TWA"
+                  value={
+                    metrics.hires === null ? 'Locked' : String(metrics.hires)
+                  }
+                />
+              </Link>
             </div>
 
             <PortalPanel>
@@ -317,18 +330,21 @@ export function EmployerDashboardPage() {
                   <tbody>
                     {recentListings.map((listing) => (
                       <tr
-                        className="border-t border-[#eadfce]"
+                        className="border-t border-[#eadfce] transition hover:bg-[#fcfaf6]"
                         key={listing.id}
                       >
                         <td className="px-6 py-4">
-                          <div>
-                            <p className="font-semibold text-slate-950">
+                          <Link
+                            className="block"
+                            to={`/my-listings/${listing.id}`}
+                          >
+                            <p className="font-semibold text-slate-950 transition hover:text-[#b77712]">
                               {listing.title}
                             </p>
                             <p className="text-slate-500">
                               {listing.city || 'Location pending'}
                             </p>
-                          </div>
+                          </Link>
                         </td>
                         <td className="px-6 py-4 text-slate-600">
                           {formatDate(listing.created_at)}

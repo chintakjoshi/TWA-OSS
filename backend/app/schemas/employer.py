@@ -98,6 +98,18 @@ class EmployerListingApplicantPayload(BaseModel):
     jobseeker: EmployerApplicantJobseekerPayload
 
 
+class EmployerApplicantListingSummaryPayload(BaseModel):
+    id: UUID
+    title: str
+    city: str | None
+    review_status: Literal["pending", "approved", "rejected"]
+    lifecycle_status: Literal["open", "closed"]
+
+
+class EmployerApplicantPayload(EmployerListingApplicantPayload):
+    listing: EmployerApplicantListingSummaryPayload
+
+
 class CreateJobListingRequest(BaseModel):
     title: str = Field(min_length=1, max_length=255)
     description: str | None = None

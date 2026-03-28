@@ -2,8 +2,7 @@ import { NavLink } from 'react-router-dom'
 
 import { useAuth } from '@shared/auth/AuthProvider'
 
-import { getInitials } from '../lib/formatting'
-import { PortalBadge, PortalButton } from './ui/EmployerUi'
+import { PortalBadge } from './ui/EmployerUi'
 
 function EmployerNavLink({
   to,
@@ -43,65 +42,55 @@ export function EmployerHeader({
 }) {
   const auth = useAuth()
   const reviewStatus = auth.authMe?.employer_review_status ?? 'pending'
-  const statusTone =
-    reviewStatus === 'approved'
-      ? 'success'
-      : reviewStatus === 'rejected'
-        ? 'danger'
-        : 'info'
-  const identity =
-    auth.authMe?.app_user?.email ??
-    auth.authMe?.app_user?.auth_user_id ??
-    'Employer'
 
   return (
     <header className="sticky top-0 z-30 border-b border-[#e6dbc8] bg-white/90 backdrop-blur">
-      <div className="mx-auto flex max-w-[1280px] flex-col gap-4 px-4 py-4 lg:flex-row lg:items-center lg:justify-between lg:px-8">
-        <div className="flex flex-wrap items-center gap-6">
-          <NavLink className="flex items-center gap-3" to="/dashboard">
-            <div className="grid h-10 w-10 place-items-center rounded-xl bg-[#132130] text-sm font-semibold text-white">
-              T
-            </div>
-            <div>
-              <p className="text-lg font-semibold text-slate-950">
-                TWA Employers
-              </p>
-              <p className="text-[11px] uppercase tracking-[0.16em] text-[#8ea3c4]">
-                Transformative Workforce Academy
-              </p>
-            </div>
-          </NavLink>
-
-          <nav
-            className="flex flex-wrap items-center gap-5"
-            aria-label="Employer workspace"
-          >
-            <EmployerNavLink label="Dashboard" to="/dashboard" />
-            <EmployerNavLink label="Submit Listing" to="/submit-listing" />
-            <EmployerNavLink
-              badge={listingCount ?? undefined}
-              label="My Listings"
-              to="/my-listings"
-            />
-            <EmployerNavLink label="Applicants" to="/applicants" />
-            <EmployerNavLink label="Profile" to="/profile" />
-          </nav>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-3">
-          <PortalBadge tone={statusTone}>
-            {reviewStatus === 'approved'
-              ? 'Approved'
-              : reviewStatus === 'rejected'
-                ? 'Not Approved'
-                : 'Pending Review'}
-          </PortalBadge>
-          <div className="grid h-11 w-11 place-items-center rounded-full border border-[#d9cfbe] bg-[#f8f4ec] text-sm font-semibold text-[#2458b8]">
-            {getInitials(identity)}
+      <div className="mx-auto flex w-full max-w-[1280px] flex-wrap items-center gap-4 px-4 py-3 lg:px-8">
+        <NavLink className="mr-2 flex items-center gap-3" to="/dashboard">
+          <div className="grid h-10 w-10 place-items-center rounded-xl bg-[#132130] text-sm font-semibold text-white">
+            T
           </div>
-          <PortalButton variant="secondary" onClick={() => void auth.logout()}>
-            Sign Out
-          </PortalButton>
+          <div>
+            <p className="text-lg font-semibold text-slate-950">
+              TWA Employers
+            </p>
+            <p className="text-[11px] uppercase tracking-[0.16em] text-[#8ea3c4]">
+              Transformative Workforce Academy
+            </p>
+          </div>
+        </NavLink>
+
+        <nav
+          className="flex flex-wrap items-center gap-5"
+          aria-label="Employer workspace"
+        >
+          <EmployerNavLink label="Dashboard" to="/dashboard" />
+          <EmployerNavLink label="Submit Listing" to="/submit-listing" />
+          <EmployerNavLink
+            badge={listingCount ?? undefined}
+            label="My Listings"
+            to="/my-listings"
+          />
+          <EmployerNavLink label="Applicants" to="/applicants" />
+        </nav>
+
+        <div className="ml-auto flex flex-wrap items-center gap-3">
+          {reviewStatus === 'pending' ? (
+            <PortalBadge tone="info">Pending Review</PortalBadge>
+          ) : null}
+          <NavLink
+            className={({ isActive }) =>
+              [
+                'inline-flex min-h-11 items-center rounded-xl border px-4 text-sm font-semibold transition',
+                isActive
+                  ? 'border-[#d0922c] bg-[#fff8ea] text-slate-950'
+                  : 'border-[#ddcfba] bg-[#fcfaf6] text-slate-600 hover:border-[#cfbeaa] hover:text-slate-900',
+              ].join(' ')
+            }
+            to="/profile"
+          >
+            My Profile
+          </NavLink>
         </div>
       </div>
     </header>

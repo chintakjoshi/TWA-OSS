@@ -16,10 +16,10 @@ import { announceComingSoon } from '../lib/comingSoon'
 type AuthMode = 'login' | 'signup' | 'forgot' | 'otp' | 'verify'
 
 const authInputClassName =
-  'min-h-11 w-full rounded-xl border border-[#ddcfba] bg-white px-4 text-sm text-slate-800 shadow-[inset_0_1px_0_rgba(255,255,255,0.6)] outline-none transition placeholder:text-slate-400 focus:border-[#d0922c] focus:ring-4 focus:ring-[#d0922c]/10'
+  'min-h-12 w-full rounded-xl border border-[#ddcfba] bg-white px-4 text-[0.95rem] text-slate-800 shadow-[inset_0_1px_0_rgba(255,255,255,0.6)] outline-none transition placeholder:text-slate-400 focus:border-[#d0922c] focus:ring-4 focus:ring-[#d0922c]/10'
 
 const authLabelClassName =
-  'block text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-700'
+  'block text-xs font-semibold uppercase tracking-[0.18em] text-slate-700'
 
 function getErrorMessage(error: unknown) {
   if (error instanceof HttpError) return error.message
@@ -54,11 +54,11 @@ export function JobseekerAuthPage() {
   const showForms = !authenticatedJobseeker && !needsBootstrap && !wrongPortal
 
   const title = useMemo(() => {
-    if (mode === 'signup') return 'Create your account'
+    if (mode === 'signup') return 'Create your jobseeker account'
     if (mode === 'forgot') return 'Reset your password'
     if (mode === 'otp') return 'Verify sign-in'
-    if (mode === 'verify') return 'Check your inbox'
-    return 'Welcome back'
+    if (mode === 'verify') return 'Verify your email'
+    return 'Jobseeker portal access'
   }, [mode])
 
   useEffect(() => {
@@ -99,60 +99,58 @@ export function JobseekerAuthPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f7f1e5] lg:grid lg:grid-cols-[420px_minmax(0,1fr)] xl:grid-cols-[440px_minmax(0,1fr)]">
-      <aside className="jobseeker-grid-surface bg-[#132130] px-8 py-10 text-white sm:px-10">
-        <div className="flex h-full flex-col">
+    <div className="min-h-screen bg-[#f7f1e5] lg:grid lg:grid-cols-[minmax(360px,460px)_minmax(0,1fr)]">
+      <aside className="jobseeker-grid-surface bg-[#132130] px-8 py-12 text-white xl:px-10 xl:py-16">
+        <div className="flex h-full flex-col justify-center">
           <div className="flex items-center gap-3">
             <div className="grid h-11 w-11 place-items-center rounded-xl bg-[#d99a2b] text-lg font-semibold text-white">
               T
             </div>
             <div>
-              <p className="text-xl font-semibold leading-none">TWA</p>
+              <p className="text-2xl font-semibold leading-none">TWA</p>
               <p className="mt-1 text-[11px] uppercase tracking-[0.16em] text-[#9db6d8]">
                 Transformative Workforce Academy
               </p>
             </div>
           </div>
 
-          <div className="mt-16 max-w-[320px]">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#f3ac34]">
-              Jobseeker portal
-            </p>
-            <h1 className="jobseeker-display mt-5 text-[clamp(2.3rem,4vw,3.25rem)] leading-[0.98] font-semibold">
-              Sign in and keep moving forward.
+          <div className="mt-16 max-w-[360px] lg:mt-20">
+            <h1 className="jobseeker-display text-[clamp(2.8rem,4.2vw,4.1rem)] leading-[0.98] font-semibold">
+              Build your next step with{' '}
+              <span className="text-[#f3ac34] italic">fair-chance</span>{' '}
+              opportunity.
             </h1>
-            <p className="mt-5 text-base leading-7 text-[#bfd0e3]">
-              Use your TWA jobseeker account to continue with profile setup, job
-              browsing, and application tracking.
+            <p className="mt-6 max-w-[330px] text-[1.02rem] leading-8 text-[#aebfd6]">
+              Sign in to complete your profile, explore TWA job matches, and
+              track your applications in one place.
             </p>
           </div>
         </div>
       </aside>
 
-      <main className="jobseeker-auth-pattern flex min-h-screen items-center justify-center px-6 py-8 sm:px-10">
-        <div className="w-full max-w-[520px] rounded-[28px] border border-[#e4d8c6] bg-white/80 p-7 shadow-[0_24px_80px_rgba(15,23,42,0.08)] backdrop-blur md:p-8">
-          <PortalBadge tone="warning" className="mb-6">
+      <main className="jobseeker-auth-pattern flex min-h-screen items-center justify-center px-6 py-10 sm:px-10 lg:px-12">
+        <div className="w-full max-w-[620px] rounded-[32px] border border-[#e4d8c6] bg-white/80 p-8 shadow-[0_24px_80px_rgba(15,23,42,0.08)] backdrop-blur md:p-10">
+          <PortalBadge className="mb-8" tone="warning">
             Jobseeker Access
           </PortalBadge>
 
-          <h2 className="jobseeker-display text-[2.45rem] leading-[0.98] font-semibold text-slate-950">
+          <h2 className="jobseeker-display text-[2.9rem] leading-[0.98] font-semibold text-slate-950">
             {title}
           </h2>
-          <p className="mt-3 text-sm leading-7 text-slate-500">
-            Sign in with your TWA jobseeker credentials.
+          <p className="mt-4 text-lg text-slate-500">
+            Sign in with your credentials, and continue profile setup.
           </p>
 
-          <div className="mt-6 space-y-4">
+          <div className="mt-8 space-y-4">
             {notice ? (
               <InlineNotice tone="success">{notice}</InlineNotice>
             ) : null}
             {error ? <InlineNotice tone="danger">{error}</InlineNotice> : null}
-
             {wrongPortal ? (
               <InlineNotice tone="danger">
-                This account belongs to the{' '}
-                <strong>{auth.authMe?.app_user?.app_role}</strong> portal. Use
-                the matching portal to continue.
+                This account is linked to the{' '}
+                <strong>{auth.authMe?.app_user?.app_role}</strong> portal, so
+                the jobseeker workspace stays locked here.
               </InlineNotice>
             ) : null}
           </div>
@@ -163,9 +161,9 @@ export function JobseekerAuthPage() {
                 <div className="flex flex-wrap items-center justify-between gap-4">
                   <div>
                     <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#8da2c5]">
-                      Session Ready
+                      Session ready
                     </p>
-                    <p className="jobseeker-display mt-2 text-[1.7rem] font-semibold text-slate-950">
+                    <p className="jobseeker-display mt-2 text-[1.9rem] font-semibold text-slate-950">
                       Your jobseeker workspace is unlocked.
                     </p>
                     <p className="mt-2 text-sm text-slate-500">
@@ -182,13 +180,12 @@ export function JobseekerAuthPage() {
                 </div>
               </div>
               <div className="flex flex-wrap gap-3">
-                <Link
-                  className="inline-flex min-h-11 items-center justify-center rounded-xl border border-[#d0922c] bg-[#d0922c] px-4 text-sm font-semibold text-white transition hover:border-[#b67a1b] hover:bg-[#b67a1b] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d0922c]/60"
-                  to={auth.authMe?.profile_complete ? '/jobs' : '/profile'}
-                >
-                  {auth.authMe?.profile_complete
-                    ? 'Go to jobs'
-                    : 'Complete profile'}
+                <Link to={auth.authMe?.profile_complete ? '/jobs' : '/profile'}>
+                  <PortalButton>
+                    {auth.authMe?.profile_complete
+                      ? 'Go to jobs'
+                      : 'Complete profile'}
+                  </PortalButton>
                 </Link>
                 <PortalButton
                   variant="secondary"
@@ -201,27 +198,27 @@ export function JobseekerAuthPage() {
           ) : null}
 
           {needsBootstrap ? (
-            <div className="mt-8 rounded-[24px] border border-[#d8ccb9] bg-[#fcfaf6] p-6">
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#8da2c5]">
-                Profile setup
-              </p>
-              <h3 className="jobseeker-display mt-3 text-[1.7rem] font-semibold text-slate-950">
+            <div className="mt-8 rounded-[24px] border border-[#d8ccb9] bg-[#fcfaf6] px-6 py-8 text-center">
+              <div className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-[#eef6ff] text-[#2458b8]">
+                <Mail className="h-7 w-7" />
+              </div>
+              <h3 className="jobseeker-display mt-6 text-[2rem] font-semibold text-slate-950">
                 {error
                   ? 'We could not finish setting up your account.'
                   : 'Preparing your profile setup.'}
               </h3>
-              <p className="mt-3 text-sm leading-7 text-slate-500">
+              <p className="mx-auto mt-4 max-w-[420px] text-sm leading-7 text-slate-500">
                 {error
-                  ? 'Try again to continue straight into your onboarding flow.'
-                  : 'We are activating your TWA jobseeker account so you can continue directly to the setup page.'}
+                  ? 'Try again to continue directly into your onboarding flow.'
+                  : 'We are activating your TWA jobseeker account so you can continue directly to the profile setup page.'}
               </p>
               {!error ? (
-                <div className="mt-6 flex items-center gap-3 text-sm text-slate-500">
-                  <div className="h-5 w-5 animate-spin rounded-full border-2 border-[#eadfce] border-t-[#d0922c]" />
+                <div className="mt-6 inline-flex items-center gap-3 rounded-full border border-[#eadfce] bg-white px-4 py-2 text-sm text-slate-500">
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-[#eadfce] border-t-[#d0922c]" />
                   <span>One moment while we get things ready.</span>
                 </div>
               ) : (
-                <div className="mt-6">
+                <div className="mt-6 flex justify-center">
                   <PortalButton
                     disabled={busy}
                     onClick={() => setAutoBootstrapPending(false)}
@@ -245,7 +242,7 @@ export function JobseekerAuthPage() {
                   type="button"
                   onClick={() => setMode('login')}
                 >
-                  Sign in
+                  Sign In
                 </button>
                 <button
                   className={`border-b-2 pb-3 transition ${
@@ -256,13 +253,13 @@ export function JobseekerAuthPage() {
                   type="button"
                   onClick={() => setMode('signup')}
                 >
-                  Create account
+                  Register
                 </button>
               </div>
 
               {mode === 'login' ? (
                 <form
-                  className="space-y-4"
+                  className="space-y-5"
                   onSubmit={(event) => {
                     event.preventDefault()
                     const form = new FormData(event.currentTarget)
@@ -281,7 +278,7 @@ export function JobseekerAuthPage() {
                           setVerificationEmail(email)
                           setMode('verify')
                           setNotice(
-                            'Verify your email before signing in. You can resend the verification email below.'
+                            'Verify your email before signing in. You can resend the confirmation below.'
                           )
                           return
                         }
@@ -353,14 +350,14 @@ export function JobseekerAuthPage() {
                     disabled={busy}
                     type="submit"
                   >
-                    {busy ? 'Signing in...' : 'Sign in'}
+                    {busy ? 'Signing in...' : 'Sign In'}
                   </PortalButton>
                 </form>
               ) : null}
 
               {mode === 'signup' ? (
                 <form
-                  className="space-y-4"
+                  className="space-y-5"
                   onSubmit={(event) => {
                     event.preventDefault()
                     const form = new FormData(event.currentTarget)
@@ -430,14 +427,14 @@ export function JobseekerAuthPage() {
                     disabled={busy}
                     type="submit"
                   >
-                    {busy ? 'Creating account...' : 'Create my account'}
+                    {busy ? 'Creating account...' : 'Create Jobseeker Account'}
                   </PortalButton>
                 </form>
               ) : null}
 
               {mode === 'forgot' ? (
                 <form
-                  className="space-y-4"
+                  className="space-y-5"
                   onSubmit={(event) => {
                     event.preventDefault()
                     const form = new FormData(event.currentTarget)
@@ -466,15 +463,10 @@ export function JobseekerAuthPage() {
                     </div>
                   </div>
                   <div className="flex flex-wrap gap-3">
-                    <PortalButton
-                      className="flex-1"
-                      disabled={busy}
-                      type="submit"
-                    >
+                    <PortalButton disabled={busy} type="submit">
                       {busy ? 'Sending...' : 'Send reset email'}
                     </PortalButton>
                     <PortalButton
-                      className="flex-1"
                       variant="secondary"
                       onClick={() => setMode('login')}
                     >
@@ -496,7 +488,7 @@ export function JobseekerAuthPage() {
                         code: String(form.get('code') ?? ''),
                       })
                       setNotice(
-                        'OTP verified. You can continue into the jobseeker portal.'
+                        'OTP verified. Continue into jobseeker setup.'
                       )
                     })
                   }}
@@ -541,16 +533,15 @@ export function JobseekerAuthPage() {
                     <div className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-[#eef6ff] text-[#2458b8]">
                       <Mail className="h-7 w-7" />
                     </div>
-                    <h3 className="jobseeker-display mt-6 text-[1.8rem] font-semibold text-slate-950">
-                      Check your inbox
+                    <h3 className="jobseeker-display mt-6 text-[2rem] font-semibold text-slate-950">
+                      Verify your email
                     </h3>
                     <p className="mx-auto mt-4 max-w-[380px] text-sm leading-7 text-slate-500">
-                      We sent a verification link to your email. Click the link
-                      to confirm your address, then return here to continue
-                      setting up your account.
+                      We sent a confirmation link to your email. Activate the
+                      account, then return here to continue jobseeker setup.
                     </p>
                     <div className="mt-6 rounded-2xl border border-[#eadfce] bg-white px-4 py-3 font-medium text-slate-700">
-                      {verificationEmail ?? 'your@email.com'}
+                      {verificationEmail ?? 'you@example.com'}
                     </div>
                   </div>
                   <div className="flex flex-wrap gap-3">
@@ -606,18 +597,16 @@ export function JobseekerAuthPage() {
                 Sign in with SLU Single Sign-On
               </PortalButton>
 
-              <div className="mt-6 rounded-[24px] border border-[#eadfce] bg-[#fcfaf6] px-5 py-5 text-center">
-                <p className="text-sm text-slate-500">
-                  Looking for employer access instead?
-                </p>
+              <p className="mt-8 text-center text-sm text-slate-400">
+                Looking for another experience? Visit the{' '}
                 <a
-                  className="mt-3 inline-flex min-h-11 items-center justify-center rounded-xl border border-[#132130] bg-[#132130] px-4 text-sm font-semibold text-white transition hover:border-[#1b2d40] hover:bg-[#1b2d40] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d0922c]/60"
+                  className="font-semibold text-[#b77712] underline decoration-2 underline-offset-4 transition hover:text-[#8f5b08]"
                   href={employerAppUrl}
-                  style={{ color: '#ffffff' }}
                 >
-                  Open Employer Portal
+                  Employer Portal
                 </a>
-              </div>
+                .
+              </p>
             </>
           ) : null}
         </div>

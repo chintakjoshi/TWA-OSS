@@ -12,4 +12,4 @@ export const adminAuthClient = createAuthClient({
 })
 
 export const publicAppUrl =
-  import.meta.env.VITE_PUBLIC_APP_URL ?? 'http://localhost:5173'
+  import.meta.env.VITE_PUBLIC_APP_URL ?? 'http://localhost:5173/auth'

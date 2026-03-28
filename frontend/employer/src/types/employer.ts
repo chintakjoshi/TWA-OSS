@@ -66,6 +66,18 @@ export interface EmployerApplicant {
   }
 }
 
+export interface EmployerApplicantListingSummary {
+  id: string
+  title: string
+  city: string | null
+  review_status: 'pending' | 'approved' | 'rejected'
+  lifecycle_status: 'open' | 'closed'
+}
+
+export interface EmployerApplicantListItem extends EmployerApplicant {
+  listing: EmployerApplicantListingSummary
+}
+
 export interface PaginatedResponse<T> {
   items: T[]
   meta: {

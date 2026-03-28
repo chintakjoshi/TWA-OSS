@@ -501,19 +501,6 @@ export function AdminWorkspaceLayout({
           )}
         >
           <div className="flex h-full flex-col">
-            <div className="border-b border-white/7 px-5 py-5">
-              <div className="flex items-center gap-3">
-                <div className="grid h-11 w-11 place-items-center rounded-xl bg-[#d99a2b] text-lg font-semibold text-white">
-                  T
-                </div>
-                <div>
-                  <p className="text-2xl font-semibold leading-none">TWA</p>
-                  <p className="mt-1 text-[11px] uppercase tracking-[0.16em] text-[#9db6d8]">
-                    Transformative Workforce Academy
-                  </p>
-                </div>
-              </div>
-            </div>
 
             <div className="flex-1 overflow-y-auto px-3 py-3">
               <div className="space-y-4">
