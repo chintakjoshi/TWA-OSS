@@ -103,31 +103,41 @@ test('cookie-session login bootstraps csrf, uses credentials include, and does n
 test('cookie-backed requests refresh through /auth/token without raw refresh tokens in the request body', async () => {
   let apiRequestCount = 0
   let refreshRequestInit: RequestInit | undefined
-  const fetchMock = vi.fn(async (input: string | URL | Request, init?: RequestInit) => {
-    const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url
+  const fetchMock = vi.fn(
+    async (input: string | URL | Request, init?: RequestInit) => {
+      const url =
+        typeof input === 'string'
+          ? input
+          : input instanceof URL
+            ? input.toString()
+            : input.url
 
-    if (url === 'http://app.local/api/v1/jobseekers/me') {
-      apiRequestCount += 1
-      if (apiRequestCount === 1) {
-        return jsonResponse(
-          { detail: 'Session expired.', code: 'session_expired' },
-          { status: 401 }
-        )
+      if (url === 'http://app.local/api/v1/jobseekers/me') {
+        apiRequestCount += 1
+        if (apiRequestCount === 1) {
+          return jsonResponse(
+            { detail: 'Session expired.', code: 'session_expired' },
+            { status: 401 }
+          )
+        }
+        return jsonResponse({ profile: { id: 'jobseeker-1' } })
       }
-      return jsonResponse({ profile: { id: 'jobseeker-1' } })
-    }
 
-    if (url === 'http://app.local/_auth/auth/token') {
-      refreshRequestInit = init
-      return jsonResponse({ authenticated: true, session_transport: 'cookie' })
-    }
+      if (url === 'http://app.local/_auth/auth/token') {
+        refreshRequestInit = init
+        return jsonResponse({
+          authenticated: true,
+          session_transport: 'cookie',
+        })
+      }
 
-    if (url === 'http://app.local/_auth/auth/csrf') {
-      return jsonResponse({ csrf_token: 'bootstrap-csrf-token' })
-    }
+      if (url === 'http://app.local/_auth/auth/csrf') {
+        return jsonResponse({ csrf_token: 'bootstrap-csrf-token' })
+      }
 
-    throw new Error(`Unexpected fetch request for ${url}`)
-  })
+      throw new Error(`Unexpected fetch request for ${url}`)
+    }
+  )
   vi.stubGlobal('fetch', fetchMock)
 
   const client = createAuthClient({
@@ -174,5 +184,7 @@ test('auth provider rehydrates authenticated state on reload without a stored to
   await waitFor(() => {
     expect(screen.getByText('state:authenticated')).toBeInTheDocument()
   })
-  expect(screen.getByText(`email:${authMe.app_user?.email}`)).toBeInTheDocument()
+  expect(
+    screen.getByText(`email:${authMe.app_user?.email}`)
+  ).toBeInTheDocument()
 })

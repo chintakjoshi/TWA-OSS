@@ -42,9 +42,7 @@ export interface AuthClient {
   login(
     payload: LoginRequest
   ): Promise<LoginOTPChallengeResponse | CookieSessionResponse>
-  verifyLoginOtp(
-    payload: VerifyLoginOTPRequest
-  ): Promise<CookieSessionResponse>
+  verifyLoginOtp(payload: VerifyLoginOTPRequest): Promise<CookieSessionResponse>
   resendLoginOtp(challengeToken: string): Promise<OTPMessageSentResponse>
   requestPasswordReset(
     payload: ForgotPasswordRequest
@@ -129,8 +127,7 @@ export function createAuthClient(config: AuthClientConfig): AuthClient {
     } = {}
   ): Promise<RequestInit> {
     const headers = new Headers(init.headers)
-    if (cookieTransport)
-      headers.set('X-Auth-Session-Transport', 'cookie')
+    if (cookieTransport) headers.set('X-Auth-Session-Transport', 'cookie')
     if (isUnsafeRequest(init)) {
       headers.set(csrfHeaderName, await ensureCsrfToken())
     }
@@ -202,13 +199,21 @@ export function createAuthClient(config: AuthClientConfig): AuthClient {
     init: RequestInit = {}
   ): Promise<T> {
     try {
-      const result = await requestJsonWithSession<T>(config.twaApiUrl, path, init)
+      const result = await requestJsonWithSession<T>(
+        config.twaApiUrl,
+        path,
+        init
+      )
       store.save(COOKIE_SESSION)
       return result
     } catch (error) {
       if (error instanceof HttpError && error.status === 401) {
         await refresh()
-        const retried = await requestJsonWithSession<T>(config.twaApiUrl, path, init)
+        const retried = await requestJsonWithSession<T>(
+          config.twaApiUrl,
+          path,
+          init
+        )
         store.save(COOKIE_SESSION)
         return retried
       }
@@ -332,10 +337,13 @@ export function createAuthClient(config: AuthClientConfig): AuthClient {
     },
     bootstrapRole(session, payload) {
       void session
-      return requestTwaWithRefresh<AuthBootstrapResponse>('/api/v1/auth/bootstrap', {
-        method: 'POST',
-        body: JSON.stringify(payload),
-      })
+      return requestTwaWithRefresh<AuthBootstrapResponse>(
+        '/api/v1/auth/bootstrap',
+        {
+          method: 'POST',
+          body: JSON.stringify(payload),
+        }
+      )
     },
     requestTwa(path, session, init = {}) {
       void session

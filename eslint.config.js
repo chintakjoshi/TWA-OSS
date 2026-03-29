@@ -10,7 +10,12 @@ export default tseslint.config(
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {
-    files: ['frontend/**/*.ts', 'frontend/**/*.tsx', 'shared/frontend/**/*.ts', 'shared/frontend/**/*.tsx'],
+    files: [
+      'frontend/**/*.ts',
+      'frontend/**/*.tsx',
+      'shared/frontend/**/*.ts',
+      'shared/frontend/**/*.tsx',
+    ],
     languageOptions: {
       ecmaVersion: 'latest',
       sourceType: 'module',
@@ -31,5 +36,5 @@ export default tseslint.config(
       'react-hooks/rules-of-hooks': 'error',
       'react-hooks/exhaustive-deps': 'warn',
     },
-  },
+  }
 )

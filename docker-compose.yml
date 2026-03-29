@@ -2,13 +2,13 @@ x-auth-service-env: &auth-service-env
   APP__ENVIRONMENT: ${AUTH_SERVICE_ENVIRONMENT:-development}
   APP__SERVICE: ${AUTH_SERVICE_NAME:-auth-service}
   APP__HOST: 0.0.0.0
-  APP__PORT: "8000"
+  APP__PORT: '8000'
   APP__LOG_LEVEL: ${AUTH_SERVICE_LOG_LEVEL:-INFO}
   DATABASE__URL: ${AUTH_SERVICE_DATABASE_URL:-postgresql+asyncpg://postgres@auth-postgres:5432/auth_service}
   REDIS__URL: ${AUTH_SERVICE_REDIS_URL:-redis://auth-redis:6379/0}
   JWT__ALGORITHM: RS256
-  JWT__ACCESS_TOKEN_TTL_SECONDS: "900"
-  JWT__REFRESH_TOKEN_TTL_SECONDS: "604800"
+  JWT__ACCESS_TOKEN_TTL_SECONDS: '900'
+  JWT__REFRESH_TOKEN_TTL_SECONDS: '604800'
   OAUTH__GOOGLE_CLIENT_ID: ${AUTH_GOOGLE_CLIENT_ID:-local-google-client-id}
   OAUTH__GOOGLE_CLIENT_SECRET: ${AUTH_GOOGLE_CLIENT_SECRET:-local-google-client-secret}
   OAUTH__GOOGLE_REDIRECT_URI: ${AUTH_GOOGLE_REDIRECT_URI:-http://localhost:8000/auth/oauth/google/callback}
@@ -20,27 +20,27 @@ x-auth-service-env: &auth-service-env
   SAML__IDP_ENTITY_ID: ${AUTH_SAML_IDP_ENTITY_ID:-local-idp-entity}
   SAML__IDP_SSO_URL: ${AUTH_SAML_IDP_SSO_URL:-https://idp.example.com/sso}
   SAML__IDP_X509_CERT: ${AUTH_SAML_IDP_X509_CERT:-local-idp-cert}
-  RATE_LIMIT__DEFAULT_REQUESTS_PER_MINUTE: "120"
-  RATE_LIMIT__LOGIN_REQUESTS_PER_MINUTE: "10"
-  RATE_LIMIT__TOKEN_REQUESTS_PER_MINUTE: "30"
-  RETENTION__ENABLE_RETENTION_PURGE: "false"
-  RETENTION__AUDIT_LOG_RETENTION_DAYS: "90"
-  RETENTION__SESSION_LOG_RETENTION_DAYS: "30"
-  RETENTION__PURGE_CRON: "0 3 * * *"
+  RATE_LIMIT__DEFAULT_REQUESTS_PER_MINUTE: '120'
+  RATE_LIMIT__LOGIN_REQUESTS_PER_MINUTE: '10'
+  RATE_LIMIT__TOKEN_REQUESTS_PER_MINUTE: '30'
+  RETENTION__ENABLE_RETENTION_PURGE: 'false'
+  RETENTION__AUDIT_LOG_RETENTION_DAYS: '90'
+  RETENTION__SESSION_LOG_RETENTION_DAYS: '30'
+  RETENTION__PURGE_CRON: '0 3 * * *'
   EMAIL__MAILHOG_HOST: mailhog
-  EMAIL__MAILHOG_PORT: "1025"
+  EMAIL__MAILHOG_PORT: '1025'
   EMAIL__EMAIL_FROM: ${AUTH_EMAIL_FROM:-auth@localhost}
   EMAIL__PUBLIC_BASE_URL: ${AUTH_PUBLIC_BASE_URL:-http://localhost:8000}
-  EMAIL__EMAIL_VERIFY_TTL_SECONDS: "86400"
-  SIGNING_KEYS__ROTATION_OVERLAP_SECONDS: "900"
+  EMAIL__EMAIL_VERIFY_TTL_SECONDS: '86400'
+  SIGNING_KEYS__ROTATION_OVERLAP_SECONDS: '900'
   SIGNING_KEYS__ENCRYPTION_KEY: ${AUTH_SIGNING_KEYS_ENCRYPTION_KEY:-local-dev-signing-keys-encryption-key}
   WEBHOOK__SECRET_ENCRYPTION_KEY: ${AUTH_WEBHOOK_SECRET_ENCRYPTION_KEY:-local-dev-webhook-secret-encryption-key}
-  BROWSER_SESSIONS__ENABLED: "${AUTH_BROWSER_SESSIONS_ENABLED:-true}"
+  BROWSER_SESSIONS__ENABLED: '${AUTH_BROWSER_SESSIONS_ENABLED:-true}'
   BROWSER_SESSIONS__ACCESS_COOKIE_NAME: ${AUTH_ACCESS_COOKIE_NAME:-twa_auth_access}
   BROWSER_SESSIONS__REFRESH_COOKIE_NAME: ${AUTH_REFRESH_COOKIE_NAME:-twa_auth_refresh}
   BROWSER_SESSIONS__CSRF_COOKIE_NAME: ${AUTH_CSRF_COOKIE_NAME:-twa_auth_csrf}
   BROWSER_SESSIONS__SAME_SITE: ${AUTH_COOKIE_SAME_SITE:-lax}
-  BROWSER_SESSIONS__SECURE_ONLY: "${AUTH_COOKIE_SECURE_ONLY:-false}"
+  BROWSER_SESSIONS__SECURE_ONLY: '${AUTH_COOKIE_SECURE_ONLY:-false}'
   BROWSER_SESSIONS__ACCESS_COOKIE_PATH: ${AUTH_ACCESS_COOKIE_PATH:-/}
   BROWSER_SESSIONS__REFRESH_COOKIE_PATH: ${AUTH_REFRESH_COOKIE_PATH:-/_auth}
   BROWSER_SESSIONS__CSRF_COOKIE_PATH: ${AUTH_CSRF_COOKIE_PATH:-/}
@@ -58,12 +58,12 @@ services:
       POSTGRES_USER: twa
       POSTGRES_PASSWORD: twa
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U twa -d twa"]
+      test: ['CMD-SHELL', 'pg_isready -U twa -d twa']
       interval: 10s
       timeout: 5s
       retries: 5
     ports:
-      - "${DATABASE_PORT:-5432}:5432"
+      - '${DATABASE_PORT:-5432}:5432'
     volumes:
       - twa_postgres_data:/var/lib/postgresql/data
     networks:
@@ -78,12 +78,12 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_HOST_AUTH_METHOD: trust
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d auth_service"]
+      test: ['CMD-SHELL', 'pg_isready -U postgres -d auth_service']
       interval: 10s
       timeout: 5s
       retries: 5
     ports:
-      - "${AUTH_POSTGRES_PORT:-5433}:5432"
+      - '${AUTH_POSTGRES_PORT:-5433}:5432'
     volumes:
       - auth_postgres_data:/var/lib/postgresql/data
     networks:
@@ -94,12 +94,12 @@ services:
     container_name: auth-redis
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ['CMD', 'redis-cli', 'ping']
       interval: 10s
       timeout: 5s
       retries: 5
     ports:
-      - "${AUTH_REDIS_PORT:-6380}:6379"
+      - '${AUTH_REDIS_PORT:-6380}:6379'
     networks:
       - twa-network
 
@@ -113,7 +113,7 @@ services:
       auth-postgres:
         condition: service_healthy
     ports:
-      - "${ADMINER_PORT:-8080}:8080"
+      - '${ADMINER_PORT:-8080}:8080'
     networks:
       - twa-network
 
@@ -122,8 +122,8 @@ services:
     container_name: twa-mailhog
     restart: unless-stopped
     ports:
-      - "${MAILHOG_SMTP_PORT:-1025}:1025"
-      - "${MAILHOG_UI_PORT:-8025}:8025"
+      - '${MAILHOG_SMTP_PORT:-1025}:1025'
+      - '${MAILHOG_UI_PORT:-8025}:8025'
     networks:
       - twa-network
 
@@ -152,13 +152,13 @@ services:
       uvicorn app.main:app --host 0.0.0.0 --port 8000
       '
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health/ready"]
+      test: ['CMD', 'curl', '-f', 'http://localhost:8000/health/ready']
       interval: 10s
       timeout: 5s
       retries: 10
       start_period: 20s
     ports:
-      - "${AUTH_SERVICE_PORT:-8000}:8000"
+      - '${AUTH_SERVICE_PORT:-8000}:8000'
     networks:
       - twa-network
 
@@ -176,8 +176,8 @@ services:
     environment:
       <<: *auth-service-env
       WEBHOOK__QUEUE_NAME: ${AUTH_WEBHOOK_QUEUE_NAME:-webhooks}
-      WEBHOOK__REQUEST_TIMEOUT_SECONDS: "10"
-      WEBHOOK__RESPONSE_BODY_MAX_CHARS: "1000"
+      WEBHOOK__REQUEST_TIMEOUT_SECONDS: '10'
+      WEBHOOK__RESPONSE_BODY_MAX_CHARS: '1000'
     command: >
       /bin/sh -c '
       if [ -z "$$JWT__PRIVATE_KEY_PEM" ] || [ -z "$$JWT__PUBLIC_KEY_PEM" ]; then
@@ -206,8 +206,8 @@ services:
     environment:
       <<: *auth-service-env
       WEBHOOK__QUEUE_NAME: ${AUTH_WEBHOOK_QUEUE_NAME:-webhooks}
-      WEBHOOK__REQUEST_TIMEOUT_SECONDS: "10"
-      WEBHOOK__RESPONSE_BODY_MAX_CHARS: "1000"
+      WEBHOOK__REQUEST_TIMEOUT_SECONDS: '10'
+      WEBHOOK__RESPONSE_BODY_MAX_CHARS: '1000'
     command: >
       /bin/sh -c '
       if [ -z "$$JWT__PRIVATE_KEY_PEM" ] || [ -z "$$JWT__PUBLIC_KEY_PEM" ]; then
@@ -241,14 +241,14 @@ services:
       TWA_AUTH_CSRF_COOKIE_NAME: ${AUTH_CSRF_COOKIE_NAME:-twa_auth_csrf}
       TWA_AUTH_CSRF_HEADER_NAME: ${AUTH_CSRF_HEADER_NAME:-X-CSRF-Token}
       TWA_ENVIRONMENT: ${TWA_ENVIRONMENT:-development}
-      TWA_DEBUG: "${TWA_DEBUG:-true}"
+      TWA_DEBUG: '${TWA_DEBUG:-true}'
       TWA_LOG_LEVEL: ${TWA_LOG_LEVEL:-INFO}
       TWA_REQUEST_ID_HEADER: ${TWA_REQUEST_ID_HEADER:-X-Request-ID}
       TWA_CORS_ORIGINS: ${TWA_CORS_ORIGINS:-http://localhost:5173,http://localhost:5174,http://localhost:5175}
-      TWA_NOTIFICATION_EMAIL_ENABLED: "${TWA_NOTIFICATION_EMAIL_ENABLED:-true}"
+      TWA_NOTIFICATION_EMAIL_ENABLED: '${TWA_NOTIFICATION_EMAIL_ENABLED:-true}'
       TWA_SMTP_HOST: mailhog
-      TWA_SMTP_PORT: "${TWA_SMTP_PORT:-1025}"
-      TWA_SMTP_TIMEOUT_SECONDS: "${TWA_SMTP_TIMEOUT_SECONDS:-10}"
+      TWA_SMTP_PORT: '${TWA_SMTP_PORT:-1025}'
+      TWA_SMTP_TIMEOUT_SECONDS: '${TWA_SMTP_TIMEOUT_SECONDS:-10}'
       TWA_EMAIL_FROM: ${TWA_EMAIL_FROM:-notifications@localhost}
       TWA_SEED_STAFF_AUTH_USER_ID: ${TWA_SEED_STAFF_AUTH_USER_ID:-}
       TWA_SEED_STAFF_EMAIL: ${TWA_SEED_STAFF_EMAIL:-}
@@ -262,13 +262,13 @@ services:
       uv run uvicorn app.main:app --host 0.0.0.0 --port 9000
       '
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9000/health"]
+      test: ['CMD', 'curl', '-f', 'http://localhost:9000/health']
       interval: 10s
       timeout: 5s
       retries: 10
       start_period: 15s
     ports:
-      - "${BACKEND_PORT:-9000}:9000"
+      - '${BACKEND_PORT:-9000}:9000'
     networks:
       - twa-network
 
@@ -289,7 +289,7 @@ services:
       VITE_AUTH_CSRF_COOKIE_NAME: ${AUTH_CSRF_COOKIE_NAME:-twa_auth_csrf}
       VITE_AUTH_CSRF_HEADER_NAME: ${AUTH_CSRF_HEADER_NAME:-X-CSRF-Token}
     ports:
-      - "${JOBSEEKER_PORT:-5173}:5173"
+      - '${JOBSEEKER_PORT:-5173}:5173'
     networks:
       - twa-network
 
@@ -310,7 +310,7 @@ services:
       VITE_AUTH_CSRF_COOKIE_NAME: ${AUTH_CSRF_COOKIE_NAME:-twa_auth_csrf}
       VITE_AUTH_CSRF_HEADER_NAME: ${AUTH_CSRF_HEADER_NAME:-X-CSRF-Token}
     ports:
-      - "${EMPLOYER_PORT:-5174}:5174"
+      - '${EMPLOYER_PORT:-5174}:5174'
     networks:
       - twa-network
 
@@ -331,7 +331,7 @@ services:
       VITE_AUTH_CSRF_COOKIE_NAME: ${AUTH_CSRF_COOKIE_NAME:-twa_auth_csrf}
       VITE_AUTH_CSRF_HEADER_NAME: ${AUTH_CSRF_HEADER_NAME:-X-CSRF-Token}
     ports:
-      - "${ADMIN_PORT:-5175}:5175"
+      - '${ADMIN_PORT:-5175}:5175'
     networks:
       - twa-network
 
@@ -341,4 +341,3 @@ volumes:
 
 networks:
   twa-network:
-
