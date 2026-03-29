@@ -179,7 +179,8 @@ export function createMockAuthClient(options: MockAuthClientOptions = {}) {
   )
 
   const refresh = vi.fn(
-    async (_refreshToken?: string): Promise<StoredSession> => {
+    async (refreshToken?: string): Promise<StoredSession> => {
+      void refreshToken
       if (!state.session && !state.authMe) {
         throw new Error('No active session')
       }

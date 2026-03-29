@@ -52,7 +52,9 @@ def test_auth_middleware_bypasses_public_routes_and_accepts_token_backed_identit
             "auth_time": 1710000000,
         }
 
-    async def fake_validate_access_token_session(self, token: str) -> None:  # noqa: ANN001
+    async def fake_validate_access_token_session(
+        self, token: str
+    ) -> None:  # noqa: ANN001
         assert token == "test-token"
 
     monkeypatch.setattr(
@@ -154,7 +156,9 @@ def test_auth_middleware_accepts_cookie_authenticated_identity_without_bearer_he
             "auth_time": 1710000000,
         }
 
-    async def fake_validate_access_token_session(self, token: str) -> None:  # noqa: ANN001
+    async def fake_validate_access_token_session(
+        self, token: str
+    ) -> None:  # noqa: ANN001
         assert token == "cookie-access-token"
 
     monkeypatch.setattr(
@@ -207,7 +211,9 @@ def test_auth_middleware_rejects_unsafe_cookie_authenticated_requests_without_cs
             "auth_time": 1710000000,
         }
 
-    async def fake_validate_access_token_session(self, token: str) -> None:  # noqa: ANN001
+    async def fake_validate_access_token_session(
+        self, token: str
+    ) -> None:  # noqa: ANN001
         assert token == "cookie-access-token"
 
     monkeypatch.setattr(

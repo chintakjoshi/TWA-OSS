@@ -406,7 +406,9 @@ def test_rejected_employer_keeps_read_only_access_but_loses_mutations_and_applic
     assert applicants.status_code == 403
     assert applicants.json()["error"]["code"] == "EMPLOYER_REVIEW_PENDING"
 
-    listing_applicants = client.get(f"/api/v1/employer/listings/{listing_id}/applicants")
+    listing_applicants = client.get(
+        f"/api/v1/employer/listings/{listing_id}/applicants"
+    )
     assert listing_applicants.status_code == 403
     assert listing_applicants.json()["error"]["code"] == "EMPLOYER_REVIEW_PENDING"
 
