@@ -185,7 +185,8 @@ export function createAuthClient(config: AuthClientConfig): AuthClient {
     throw new HttpError(response.status, message, errorPayload)
   }
 
-  async function refresh(_refreshToken?: string): Promise<StoredSession> {
+  async function refresh(refreshToken?: string): Promise<StoredSession> {
+    void refreshToken
     await requestJsonWithSession<CookieSessionResponse>(
       config.authBaseUrl,
       '/auth/token',
@@ -309,7 +310,8 @@ export function createAuthClient(config: AuthClientConfig): AuthClient {
         { method: 'POST', body: JSON.stringify(payload) }
       )
     },
-    async logout(_session) {
+    async logout(session) {
+      void session
       await requestJsonWithSession<void>(
         config.authBaseUrl,
         '/auth/logout',
@@ -319,7 +321,8 @@ export function createAuthClient(config: AuthClientConfig): AuthClient {
       store.clear()
       csrfTokenCache = null
     },
-    async fetchAuthMe(_session) {
+    async fetchAuthMe(session) {
+      void session
       const result = await requestJsonWithSession<AuthMeResponse>(
         config.twaApiUrl,
         '/api/v1/auth/me'
@@ -327,16 +330,19 @@ export function createAuthClient(config: AuthClientConfig): AuthClient {
       store.save(COOKIE_SESSION)
       return result
     },
-    bootstrapRole(_session, payload) {
+    bootstrapRole(session, payload) {
+      void session
       return requestTwaWithRefresh<AuthBootstrapResponse>('/api/v1/auth/bootstrap', {
         method: 'POST',
         body: JSON.stringify(payload),
       })
     },
-    requestTwa(path, _session, init = {}) {
+    requestTwa(path, session, init = {}) {
+      void session
       return requestTwaWithRefresh(path, init)
     },
-    streamTwa(path, _session, init = {}) {
+    streamTwa(path, session, init = {}) {
+      void session
       return streamTwaWithRefresh(path, init)
     },
     refresh,
