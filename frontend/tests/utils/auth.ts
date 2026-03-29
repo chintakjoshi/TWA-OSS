@@ -2,6 +2,7 @@ import type { AuthClient } from '@shared/lib/auth-client'
 import type {
   AuthBootstrapRequest,
   AuthMeResponse,
+  CookieSessionResponse,
   ForgotPasswordRequest,
   ForgotPasswordResponse,
   LoginOTPChallengeResponse,
@@ -14,7 +15,6 @@ import type {
   SignupRequest,
   SignupResponse,
   StoredSession,
-  TokenPairResponse,
   VerifyLoginOTPRequest,
 } from '@shared/lib/types'
 import { vi } from 'vitest'
@@ -29,8 +29,8 @@ type MockAuthClientOptions = {
   session?: StoredSession | null
   authMe?: AuthMeResponse | null
   loginError?: Error
-  loginResult?: LoginOTPChallengeResponse | TokenPairResponse
-  verifyOtpResult?: TokenPairResponse
+  loginResult?: LoginOTPChallengeResponse | CookieSessionResponse
+  verifyOtpResult?: CookieSessionResponse
   fetchAuthMeError?: Error
   onBootstrap?: (
     payload: AuthBootstrapRequest,
@@ -44,8 +44,7 @@ type MockAuthClientOptions = {
 }
 
 const defaultSession: StoredSession = {
-  accessToken: 'test-access-token',
-  refreshToken: 'test-refresh-token',
+  sessionTransport: 'cookie',
 }
 
 function unbootstrappedAuthMe(): AuthMeResponse {
@@ -92,7 +91,12 @@ export function buildAuthMe({
 
 export function createMockAuthClient(options: MockAuthClientOptions = {}) {
   const state: MockAuthState = {
-    session: options.session ?? (options.authMe ? defaultSession : null),
+    session:
+      options.session !== undefined
+        ? options.session
+        : options.authMe
+          ? defaultSession
+          : null,
     authMe: options.authMe ?? null,
     otpChallenge: null,
   }
@@ -100,18 +104,16 @@ export function createMockAuthClient(options: MockAuthClientOptions = {}) {
   const loginResult =
     options.loginResult ??
     ({
-      access_token: defaultSession.accessToken,
-      refresh_token: defaultSession.refreshToken,
-      token_type: 'bearer',
-    } satisfies TokenPairResponse)
+      authenticated: true,
+      session_transport: 'cookie',
+    } satisfies CookieSessionResponse)
 
   const verifyOtpResult =
     options.verifyOtpResult ??
     ({
-      access_token: defaultSession.accessToken,
-      refresh_token: defaultSession.refreshToken,
-      token_type: 'bearer',
-    } satisfies TokenPairResponse)
+      authenticated: true,
+      session_transport: 'cookie',
+    } satisfies CookieSessionResponse)
 
   const signup = vi.fn(
     async (payload: SignupRequest): Promise<SignupResponse> => ({
@@ -124,14 +126,11 @@ export function createMockAuthClient(options: MockAuthClientOptions = {}) {
   const login = vi.fn(
     async (
       payload: LoginRequest
-    ): Promise<LoginOTPChallengeResponse | TokenPairResponse> => {
+    ): Promise<LoginOTPChallengeResponse | CookieSessionResponse> => {
       void payload
       if (options.loginError) throw options.loginError
-      if ('access_token' in loginResult) {
-        state.session = {
-          accessToken: loginResult.access_token,
-          refreshToken: loginResult.refresh_token,
-        }
+      if ('session_transport' in loginResult) {
+        state.session = defaultSession
         state.otpChallenge = null
       } else {
         state.otpChallenge = loginResult
@@ -150,12 +149,9 @@ export function createMockAuthClient(options: MockAuthClientOptions = {}) {
   )
 
   const verifyLoginOtp = vi.fn(
-    async (payload: VerifyLoginOTPRequest): Promise<TokenPairResponse> => {
+    async (payload: VerifyLoginOTPRequest): Promise<CookieSessionResponse> => {
       void payload
-      state.session = {
-        accessToken: verifyOtpResult.access_token,
-        refreshToken: verifyOtpResult.refresh_token,
-      }
+      state.session = defaultSession
       state.otpChallenge = null
       return verifyOtpResult
     }
@@ -183,8 +179,10 @@ export function createMockAuthClient(options: MockAuthClientOptions = {}) {
   )
 
   const refresh = vi.fn(
-    async (refreshToken?: string): Promise<StoredSession> => {
-      void refreshToken
+    async (_refreshToken?: string): Promise<StoredSession> => {
+      if (!state.session && !state.authMe) {
+        throw new Error('No active session')
+      }
       state.session = defaultSession
       return defaultSession
     }
@@ -198,16 +196,21 @@ export function createMockAuthClient(options: MockAuthClientOptions = {}) {
   })
 
   const fetchAuthMe = vi.fn(
-    async (session: StoredSession): Promise<AuthMeResponse> => {
+    async (session: StoredSession | null): Promise<AuthMeResponse> => {
       void session
       if (options.fetchAuthMeError) throw options.fetchAuthMeError
-      return state.authMe ?? unbootstrappedAuthMe()
+      if (state.authMe && state.session === null) {
+        state.session = defaultSession
+      }
+      if (state.authMe) return state.authMe
+      if (!state.session) throw new Error('No active session')
+      return unbootstrappedAuthMe()
     }
   )
 
   const bootstrapRole = vi.fn(
     async (
-      _session: StoredSession,
+      _session: StoredSession | null,
       payload: AuthBootstrapRequest
     ): Promise<{
       app_user: NonNullable<AuthMeResponse['app_user']>
@@ -239,7 +242,7 @@ export function createMockAuthClient(options: MockAuthClientOptions = {}) {
 
   const requestTwaImpl: AuthClient['requestTwa'] = async <T>(
     path: string,
-    _session: StoredSession,
+    _session: StoredSession | null,
     init?: RequestInit
   ): Promise<T> => {
     if (!options.requestTwaImpl) {
@@ -252,6 +255,7 @@ export function createMockAuthClient(options: MockAuthClientOptions = {}) {
 
   const client: AuthClient = {
     loadStoredSession: () => state.session,
+    hasSessionHint: () => Boolean(state.session || state.authMe),
     clearStoredSession: () => {
       state.session = null
       state.authMe = null

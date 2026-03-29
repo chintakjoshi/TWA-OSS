@@ -32,11 +32,13 @@ function renderGuard(
 }
 
 test('protected routes redirect anonymous users to the auth screen', async () => {
-  const { client } = createMockAuthClient()
+  const { client, spies } = createMockAuthClient()
 
   renderGuard(client)
 
   expect(await screen.findByText('Auth screen')).toBeInTheDocument()
+  expect(spies.fetchAuthMe).not.toHaveBeenCalled()
+  expect(spies.refresh).not.toHaveBeenCalled()
 })
 
 test('protected routes show a role mismatch fallback for the wrong local role', async () => {

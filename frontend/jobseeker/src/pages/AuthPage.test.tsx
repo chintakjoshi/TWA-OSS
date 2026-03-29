@@ -39,8 +39,7 @@ test('jobseeker auth automatically bootstraps first-login users into the local T
   await waitFor(() => {
     expect(spies.bootstrapRole).toHaveBeenCalledWith(
       expect.objectContaining({
-        accessToken: 'test-access-token',
-        refreshToken: 'test-refresh-token',
+        sessionTransport: 'cookie',
       }),
       { role: 'jobseeker' }
     )

@@ -11,8 +11,7 @@ import { EmployerSetupPage } from './SetupPage'
 test('employer setup submits bootstrap data without patching the profile', async () => {
   const user = userEvent.setup()
   const session = {
-    accessToken: 'setup-access-token',
-    refreshToken: 'setup-refresh-token',
+    sessionTransport: 'cookie',
   }
   const { client, spies } = createMockAuthClient({
     session,

@@ -20,7 +20,18 @@ Authentication and authorization are intentionally split:
 - The TWA backend validates `authSDK` tokens with `auth-service-sdk`.
 - TWA-local roles such as `jobseeker`, `employer`, and `staff` live in the TWA database and drive application authorization.
 
-In local development, the frontend apps call `/_auth` and let Vite proxy those requests to `authSDK`. That keeps browser traffic same-origin while preserving the production-style auth boundary.
+Browser clients now use cookie-backed authSDK sessions:
+
+- frontend apps call same-origin `/_auth` for authSDK flows
+- frontend apps call same-origin `/api` for TWA API traffic
+- the shared frontend auth client uses `credentials: include` rather than
+  storing bearer tokens in `localStorage`
+- the backend accepts access cookies in auth middleware and enforces CSRF on
+  unsafe cookie-authenticated requests
+
+In local development, the frontend apps let Vite proxy both `/_auth` and
+`/api`. That keeps browser traffic same-origin while preserving the
+production-style auth and API boundaries.
 
 ## Backend Layout
 

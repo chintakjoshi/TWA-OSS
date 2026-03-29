@@ -1,8 +1,10 @@
 from __future__ import annotations
 
-from sdk import JWTAuthMiddleware
+from sdk import CookieCSRFMiddleware, JWTAuthMiddleware
 from starlette.requests import Request
 from starlette.responses import Response
+
+__all__ = ["CookieCSRFMiddleware", "PathAwareJWTAuthMiddleware"]
 
 
 class PathAwareJWTAuthMiddleware(JWTAuthMiddleware):
@@ -14,6 +16,8 @@ class PathAwareJWTAuthMiddleware(JWTAuthMiddleware):
         expected_audience: str | list[str],
         public_exact_paths: set[str] | None = None,
         public_path_prefixes: tuple[str, ...] | None = None,
+        token_sources: list[str] | None = None,
+        access_cookie_name: str = "twa_auth_access",
     ) -> None:
         self._public_exact_paths = public_exact_paths or set()
         self._public_path_prefixes = public_path_prefixes or tuple()
@@ -21,6 +25,8 @@ class PathAwareJWTAuthMiddleware(JWTAuthMiddleware):
             app,
             auth_base_url=auth_base_url,
             expected_audience=expected_audience,
+            token_sources=token_sources or ["authorization"],
+            access_cookie_name=access_cookie_name,
         )
 
     async def dispatch(self, request: Request, call_next) -> Response:

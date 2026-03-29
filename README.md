@@ -12,7 +12,7 @@ TWA is a multi-portal workforce platform for Saint Louis University's Transforma
 - `docs/`: setup guides, architecture notes, QA docs, and long-form reference material
 - `docker-compose.yml`: full local stack for TWA, authSDK, PostgreSQL, Adminer, and MailHog
 
-The TWA backend trusts `authSDK` bearer tokens through `auth-service-sdk`, but application roles such as `jobseeker`, `employer`, and `staff` stay local to the TWA database. In local development, the frontend apps use a same-origin `/_auth` proxy to avoid browser CORS issues and keep `/auth` free for the SPAs themselves.
+The TWA backend trusts `authSDK` sessions through `auth-service-sdk`, while application roles such as `jobseeker`, `employer`, and `staff` stay local to the TWA database. Browser clients use same-origin `/_auth` and `/api` paths with cookie-backed sessions, and local development keeps that shape through the Vite proxy setup.
 
 ## Quick Start
 
