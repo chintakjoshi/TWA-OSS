@@ -63,7 +63,9 @@ export function AuthProvider({
   const hydrate = useCallback(
     async (sessionOverride?: StoredSession | null) => {
       const activeSession = sessionOverride ?? client.loadStoredSession()
-      if (!activeSession) {
+      const hasSessionHint = activeSession !== null || client.hasSessionHint()
+      if (!hasSessionHint) {
+        client.clearStoredSession()
         setSession(null)
         setAuthMe(null)
         setOtpChallenge(null)
@@ -73,15 +75,15 @@ export function AuthProvider({
       setState('loading')
       try {
         const nextAuthMe = await client.fetchAuthMe(activeSession)
-        setSession(activeSession)
+        setSession(client.loadStoredSession())
         setAuthMe(nextAuthMe)
         setOtpChallenge(null)
         setState('authenticated')
       } catch {
         try {
-          const refreshed = await client.refresh(activeSession.refreshToken)
+          const refreshed = await client.refresh()
           const nextAuthMe = await client.fetchAuthMe(refreshed)
-          setSession(refreshed)
+          setSession(client.loadStoredSession())
           setAuthMe(nextAuthMe)
           setOtpChallenge(null)
           setState('authenticated')
@@ -146,10 +148,7 @@ export function AuthProvider({
         await client.resetPassword(payload)
       },
       async bootstrapRole(payload: AuthBootstrapRequest) {
-        const activeSession = client.loadStoredSession()
-        if (!activeSession)
-          throw new Error('You must sign in before bootstrapping a TWA role.')
-        await client.bootstrapRole(activeSession, payload)
+        await client.bootstrapRole(client.loadStoredSession(), payload)
         setSession(client.loadStoredSession())
         await hydrate(client.loadStoredSession())
       },
@@ -161,16 +160,10 @@ export function AuthProvider({
         setState('anonymous')
       },
       async requestTwa<T>(path: string, init?: RequestInit) {
-        const activeSession = client.loadStoredSession()
-        if (!activeSession)
-          throw new Error('You must sign in before making this request.')
-        return client.requestTwa<T>(path, activeSession, init)
+        return client.requestTwa<T>(path, client.loadStoredSession(), init)
       },
       async streamTwa(path: string, init?: RequestInit) {
-        const activeSession = client.loadStoredSession()
-        if (!activeSession)
-          throw new Error('You must sign in before making this request.')
-        return client.streamTwa(path, activeSession, init)
+        return client.streamTwa(path, client.loadStoredSession(), init)
       },
     }),
     [authMe, client, hydrate, otpChallenge, session, state]

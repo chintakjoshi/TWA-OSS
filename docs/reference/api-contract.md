@@ -7,7 +7,7 @@ This document defines the backend API contract for the TWA app. It is the shared
 Key decisions reflected here:
 
 - Base path is `/api/v1`
-- `authSDK` is the external authentication authority for signup, login, token refresh, logout, email verification, password reset, and OTP
+- `authSDK` is the external authentication authority for signup, login, session refresh, logout, email verification, password reset, and OTP
 - The TWA backend does not issue JWTs or validate passwords directly
 - The TWA backend stores the real app role: `jobseeker`, `employer`, or `staff`
 - Employers can view applicant charge fields when applicant sharing is enabled
@@ -37,18 +37,18 @@ TWA uses `authSDK` as an external auth service.
 
 Production integration model:
 
-- Frontends call `authSDK` directly for signup, login, refresh, logout, password reset, email verification, and OTP
+- Browser frontends call same-origin `/_auth` routes backed by `authSDK` for signup, login, refresh, logout, password reset, email verification, and OTP
 - Frontends must complete authSDK email verification before password login will succeed
-- `authSDK` issues access tokens with audience `twa-api`
-- The TWA backend validates those tokens using `auth-service-sdk` middleware and online session validation
-- The TWA backend resolves the local app user from the auth token subject (`sub`) and enforces the local TWA role from its own database
-- The auth provider role inside the token is not the TWA app role
+- Browser auth uses cookie-backed sessions rather than storing access or refresh tokens in browser storage
+- Unsafe browser requests must include the CSRF header expected by the auth and backend middleware
+- The TWA backend validates authSDK sessions using `auth-service-sdk` middleware and online session validation
+- The TWA backend resolves the local app user from the auth session subject (`sub`) and enforces the local TWA role from its own database
+- The auth provider role inside the validated session is not the TWA app role
 
 Protected TWA routes require:
 
-```http
-Authorization: Bearer <authsdk access token>
-```
+- browser clients: authSDK access cookie plus CSRF header on unsafe requests
+- non-browser clients: `Authorization: Bearer <authsdk access token>`
 
 ### Timestamps
 
@@ -365,14 +365,14 @@ This is the role carried inside `authSDK` tokens.
 
 Authentication is split between two systems:
 
-- `authSDK` handles credentialed auth and token lifecycle
+- `authSDK` handles credentialed auth and browser session lifecycle
 - The TWA backend handles local user bootstrap, local app roles, profile state, and all app authorization decisions
 
-The frontend should talk directly to `authSDK` for login-related actions. The TWA backend should never proxy raw passwords unless there is a very specific gateway requirement later.
+The frontend should talk to `authSDK` through same-origin `/_auth` routes for login-related actions. The TWA backend should never proxy raw passwords unless there is a very specific gateway requirement later.
 
 ### External `authSDK` Endpoints
 
-These endpoints are not implemented by the TWA backend. They are part of the deployed auth service.
+These endpoints are not implemented by the TWA backend. They are part of the deployed auth service and are typically reached from browser clients through same-origin `/_auth`.
 
 ### `POST {AUTH_BASE_URL}/auth/signup`
 
@@ -422,7 +422,7 @@ Requests a fresh verification email without requiring an authenticated session.
 
 ### `POST {AUTH_BASE_URL}/auth/login`
 
-Authenticates the user through `authSDK` and returns tokens.
+Authenticates the user through `authSDK`.
 
 #### Request Body
 
@@ -436,24 +436,28 @@ Authenticates the user through `authSDK` and returns tokens.
 
 #### Response
 
-Defined by `authSDK`, not by the TWA backend contract.
+Defined by `authSDK`, not by the TWA backend contract. For browser clients, the normal success path establishes a cookie-backed session instead of returning browser-managed access and refresh tokens.
 
 #### Policy Note
 
 - When the verified-email login policy is enabled, correct credentials for an unverified account return `400 {"detail":"Email is not verified.","code":"email_not_verified"}`
-- No access token or refresh token is issued in that branch
+- No authenticated browser session is established in that branch
 
 ### `POST {AUTH_BASE_URL}/auth/token`
 
-Refreshes tokens through `authSDK`.
+Refreshes the authenticated authSDK session.
 
 ### `POST {AUTH_BASE_URL}/auth/logout`
 
-Logs the user out through `authSDK`.
+Logs the user out through `authSDK` and clears the browser session cookies.
 
 ### `GET {AUTH_BASE_URL}/auth/validate`
 
 Used by `auth-service-sdk` middleware for session validation.
+
+### `GET {AUTH_BASE_URL}/auth/csrf`
+
+Returns the CSRF token that browser clients echo on unsafe requests while using cookie-backed sessions.
 
 ### `GET {AUTH_BASE_URL}/.well-known/jwks.json`
 
@@ -465,7 +469,7 @@ Used by `auth-service-sdk` middleware for JWT verification.
 
 Creates or returns the local TWA app user for an already authenticated `authSDK` user.
 
-This is the first TWA-specific call after successful email verification and login.
+This is the first TWA-specific call after successful email verification and successful session login.
 
 ### Auth
 
@@ -1721,8 +1725,8 @@ TWA authorization is based on the local TWA app user, not the raw `authSDK` toke
 
 Authorization flow:
 
-- `authSDK` authenticates the user and issues a token with audience `twa-api`
-- The TWA backend validates the token and reads `sub` as `auth_user_id`
+- `authSDK` authenticates the user and establishes a session with audience `twa-api`
+- The TWA backend validates the session and reads `sub` as `auth_user_id`
 - The TWA backend resolves the local TWA app user by `auth_user_id`
 - The TWA backend authorizes routes using the local `app_role`: `jobseeker`, `employer`, or `staff`
 
@@ -1824,7 +1828,7 @@ backend/app/routers/
 
 These are not blockers for the contract, but should be decided during implementation:
 
-1. Whether to support refresh tokens in v1
+1. Whether non-browser bearer-token clients should remain a first-class supported integration surface
 2. Whether jobseeker profile completion should be one PATCH call or a multi-step wizard
 3. Whether in-app notifications should support categories, links, or action buttons
 4. Whether staff should be able to reopen closed listings later

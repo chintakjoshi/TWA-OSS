@@ -15,7 +15,7 @@ class Settings(BaseSettings):
         default="development",
         validation_alias=AliasChoices("TWA_ENVIRONMENT", "ENVIRONMENT"),
     )
-    debug: bool = Field(default=True, validation_alias="TWA_DEBUG")
+    debug: bool = Field(default=False, validation_alias="TWA_DEBUG")
     auth_enabled: bool = Field(default=True, validation_alias="TWA_AUTH_ENABLED")
     log_level: str = Field(default="INFO", validation_alias="TWA_LOG_LEVEL")
     request_id_header: str = Field(
@@ -32,6 +32,18 @@ class Settings(BaseSettings):
     twa_auth_audience: str = Field(
         default="twa-api",
         validation_alias="TWA_AUTH_AUDIENCE",
+    )
+    auth_access_cookie_name: str = Field(
+        default="twa_auth_access",
+        validation_alias="TWA_AUTH_ACCESS_COOKIE_NAME",
+    )
+    auth_csrf_cookie_name: str = Field(
+        default="twa_auth_csrf",
+        validation_alias="TWA_AUTH_CSRF_COOKIE_NAME",
+    )
+    auth_csrf_header_name: str = Field(
+        default="X-CSRF-Token",
+        validation_alias="TWA_AUTH_CSRF_HEADER_NAME",
     )
     cors_origins: str = Field(
         default="http://localhost:5173,http://localhost:5174,http://localhost:5175",

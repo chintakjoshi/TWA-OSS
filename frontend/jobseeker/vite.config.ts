@@ -7,6 +7,7 @@ import { defineConfig, loadEnv, searchForWorkspaceRoot } from 'vite'
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, __dirname, '')
   const authProxyTarget = env.VITE_AUTH_PROXY_TARGET || 'http://localhost:8000'
+  const apiProxyTarget = env.VITE_TWA_API_PROXY_TARGET || 'http://localhost:9000'
   const appNodeModules = path.resolve(__dirname, 'node_modules')
 
   return {
@@ -39,6 +40,11 @@ export default defineConfig(({ mode }) => {
           changeOrigin: true,
           secure: false,
           rewrite: (incomingPath) => incomingPath.replace(/^\/_auth/, ''),
+        },
+        '/api': {
+          target: apiProxyTarget,
+          changeOrigin: true,
+          secure: false,
         },
       },
     },

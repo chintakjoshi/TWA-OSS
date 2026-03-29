@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import get_settings
 from app.core.exceptions import register_exception_handlers
 from app.core.logging import RequestLoggingMiddleware, configure_logging
-from app.core.middleware import PathAwareJWTAuthMiddleware
+from app.core.middleware import CookieCSRFMiddleware, PathAwareJWTAuthMiddleware
 from app.routers import router as api_router
 
 
@@ -21,14 +21,20 @@ def create_app() -> FastAPI:
         docs_url="/docs",
         redoc_url="/redoc",
         openapi_url="/openapi.json",
-        swagger_ui_parameters={"persistAuthorization": True},
     )
 
     if settings.auth_enabled:
         app.add_middleware(
+            CookieCSRFMiddleware,
+            csrf_cookie_name=settings.auth_csrf_cookie_name,
+            csrf_header_name=settings.auth_csrf_header_name,
+        )
+        app.add_middleware(
             PathAwareJWTAuthMiddleware,
             auth_base_url=settings.auth_base_url,
             expected_audience=settings.twa_auth_audience,
+            token_sources=["authorization", "cookie"],
+            access_cookie_name=settings.auth_access_cookie_name,
             public_exact_paths={
                 "/health",
                 settings.api_v1_prefix,

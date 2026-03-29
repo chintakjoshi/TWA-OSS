@@ -35,6 +35,16 @@ x-auth-service-env: &auth-service-env
   SIGNING_KEYS__ROTATION_OVERLAP_SECONDS: "900"
   SIGNING_KEYS__ENCRYPTION_KEY: ${AUTH_SIGNING_KEYS_ENCRYPTION_KEY:-local-dev-signing-keys-encryption-key}
   WEBHOOK__SECRET_ENCRYPTION_KEY: ${AUTH_WEBHOOK_SECRET_ENCRYPTION_KEY:-local-dev-webhook-secret-encryption-key}
+  BROWSER_SESSIONS__ENABLED: "${AUTH_BROWSER_SESSIONS_ENABLED:-true}"
+  BROWSER_SESSIONS__ACCESS_COOKIE_NAME: ${AUTH_ACCESS_COOKIE_NAME:-twa_auth_access}
+  BROWSER_SESSIONS__REFRESH_COOKIE_NAME: ${AUTH_REFRESH_COOKIE_NAME:-twa_auth_refresh}
+  BROWSER_SESSIONS__CSRF_COOKIE_NAME: ${AUTH_CSRF_COOKIE_NAME:-twa_auth_csrf}
+  BROWSER_SESSIONS__SAME_SITE: ${AUTH_COOKIE_SAME_SITE:-lax}
+  BROWSER_SESSIONS__SECURE_ONLY: "${AUTH_COOKIE_SECURE_ONLY:-false}"
+  BROWSER_SESSIONS__ACCESS_COOKIE_PATH: ${AUTH_ACCESS_COOKIE_PATH:-/}
+  BROWSER_SESSIONS__REFRESH_COOKIE_PATH: ${AUTH_REFRESH_COOKIE_PATH:-/_auth}
+  BROWSER_SESSIONS__CSRF_COOKIE_PATH: ${AUTH_CSRF_COOKIE_PATH:-/}
+  BROWSER_SESSIONS__CSRF_HEADER_NAME: ${AUTH_CSRF_HEADER_NAME:-X-CSRF-Token}
 
 x-auth-service-image: &auth-service-image ${AUTH_SERVICE_IMAGE}
 
@@ -227,6 +237,9 @@ services:
       DATABASE_URL: postgresql+psycopg://twa:twa@twa-postgres:5432/twa
       AUTH_BASE_URL: http://auth-service:8000
       TWA_AUTH_AUDIENCE: ${TWA_AUTH_AUDIENCE:-twa-api}
+      TWA_AUTH_ACCESS_COOKIE_NAME: ${AUTH_ACCESS_COOKIE_NAME:-twa_auth_access}
+      TWA_AUTH_CSRF_COOKIE_NAME: ${AUTH_CSRF_COOKIE_NAME:-twa_auth_csrf}
+      TWA_AUTH_CSRF_HEADER_NAME: ${AUTH_CSRF_HEADER_NAME:-X-CSRF-Token}
       TWA_ENVIRONMENT: ${TWA_ENVIRONMENT:-development}
       TWA_DEBUG: "${TWA_DEBUG:-true}"
       TWA_LOG_LEVEL: ${TWA_LOG_LEVEL:-INFO}
@@ -269,9 +282,12 @@ services:
       twa-backend:
         condition: service_healthy
     environment:
-      VITE_TWA_API_URL: ${VITE_TWA_API_URL:-http://localhost:9000}
+      VITE_TWA_API_URL: ${VITE_TWA_API_URL-}
       VITE_AUTH_BASE_URL: ${VITE_AUTH_BASE_URL-}
       VITE_AUTH_PROXY_TARGET: ${DOCKER_VITE_AUTH_PROXY_TARGET:-http://auth-service:8000}
+      VITE_TWA_API_PROXY_TARGET: ${DOCKER_VITE_API_PROXY_TARGET:-http://twa-backend:9000}
+      VITE_AUTH_CSRF_COOKIE_NAME: ${AUTH_CSRF_COOKIE_NAME:-twa_auth_csrf}
+      VITE_AUTH_CSRF_HEADER_NAME: ${AUTH_CSRF_HEADER_NAME:-X-CSRF-Token}
     ports:
       - "${JOBSEEKER_PORT:-5173}:5173"
     networks:
@@ -287,9 +303,12 @@ services:
       twa-backend:
         condition: service_healthy
     environment:
-      VITE_TWA_API_URL: ${VITE_TWA_API_URL:-http://localhost:9000}
+      VITE_TWA_API_URL: ${VITE_TWA_API_URL-}
       VITE_AUTH_BASE_URL: ${VITE_AUTH_BASE_URL-}
       VITE_AUTH_PROXY_TARGET: ${DOCKER_VITE_AUTH_PROXY_TARGET:-http://auth-service:8000}
+      VITE_TWA_API_PROXY_TARGET: ${DOCKER_VITE_API_PROXY_TARGET:-http://twa-backend:9000}
+      VITE_AUTH_CSRF_COOKIE_NAME: ${AUTH_CSRF_COOKIE_NAME:-twa_auth_csrf}
+      VITE_AUTH_CSRF_HEADER_NAME: ${AUTH_CSRF_HEADER_NAME:-X-CSRF-Token}
     ports:
       - "${EMPLOYER_PORT:-5174}:5174"
     networks:
@@ -305,9 +324,12 @@ services:
       twa-backend:
         condition: service_healthy
     environment:
-      VITE_TWA_API_URL: ${VITE_TWA_API_URL:-http://localhost:9000}
+      VITE_TWA_API_URL: ${VITE_TWA_API_URL-}
       VITE_AUTH_BASE_URL: ${VITE_AUTH_BASE_URL-}
       VITE_AUTH_PROXY_TARGET: ${DOCKER_VITE_AUTH_PROXY_TARGET:-http://auth-service:8000}
+      VITE_TWA_API_PROXY_TARGET: ${DOCKER_VITE_API_PROXY_TARGET:-http://twa-backend:9000}
+      VITE_AUTH_CSRF_COOKIE_NAME: ${AUTH_CSRF_COOKIE_NAME:-twa_auth_csrf}
+      VITE_AUTH_CSRF_HEADER_NAME: ${AUTH_CSRF_HEADER_NAME:-X-CSRF-Token}
     ports:
       - "${ADMIN_PORT:-5175}:5175"
     networks:

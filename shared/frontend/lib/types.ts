@@ -60,6 +60,10 @@ export interface TokenPairResponse {
   refresh_token: string
   token_type: 'bearer'
 }
+export interface CookieSessionResponse {
+  authenticated: true
+  session_transport: 'cookie'
+}
 export interface LoginOTPChallengeResponse {
   otp_required: true
   challenge_token: string
@@ -86,18 +90,21 @@ export interface VerifyLoginOTPRequest {
   code: string
 }
 export interface StoredSession {
-  accessToken: string
-  refreshToken: string
+  sessionTransport: 'cookie'
+}
+
+export interface CSRFTokenResponse {
+  csrf_token: string
 }
 
 export function isOtpChallengeResponse(
-  payload: LoginOTPChallengeResponse | TokenPairResponse
+  payload: LoginOTPChallengeResponse | CookieSessionResponse
 ): payload is LoginOTPChallengeResponse {
   return 'otp_required' in payload
 }
 
-export function isTokenPairResponse(
-  payload: LoginOTPChallengeResponse | TokenPairResponse
-): payload is TokenPairResponse {
-  return 'access_token' in payload && 'refresh_token' in payload
+export function isCookieSessionResponse(
+  payload: LoginOTPChallengeResponse | CookieSessionResponse
+): payload is CookieSessionResponse {
+  return 'session_transport' in payload
 }

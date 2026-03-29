@@ -84,7 +84,7 @@ Use `authSDK` unchanged as the centralized authentication authority.
 ### Responsibilities of `authSDK`
 
 - Signup and login
-- JWT access and refresh token issuance
+- Browser session issuance and refresh
 - Session validation
 - Logout
 - Email verification
@@ -101,14 +101,14 @@ Use `authSDK` unchanged as the centralized authentication authority.
 
 ### Production Flow
 
-1. Frontend calls `authSDK` directly for signup
+1. Frontend calls same-origin `/_auth` routes backed by `authSDK` for signup
 2. `authSDK` sends an email verification link and the user must complete verification before password login
-3. Frontend calls `authSDK` for login
-4. `authSDK` issues an access token with audience `twa-api`
-5. Frontend calls the TWA backend with that bearer token
-6. TWA validates the token using `auth-service-sdk`
+3. Frontend calls same-origin `/_auth/login`
+4. `authSDK` establishes a cookie-backed browser session and exposes a CSRF token for unsafe browser requests
+5. Frontend calls the TWA backend through same-origin `/api`
+6. TWA validates the auth session using `auth-service-sdk`
 7. TWA resolves or creates the local app user using `auth_user_id`
-8. TWA authorizes access using the local app role, not the auth-provider role in the token
+8. TWA authorizes access using the local app role, not the auth-provider role in the session
 
 ---
 
@@ -306,13 +306,14 @@ The `ineligibility_tag` is distance-based only. Charge incompatibility is never 
 
 ```text
 # External auth service (`authSDK`)
-POST   {AUTH_BASE_URL}/auth/signup         # create auth identity
-GET    {AUTH_BASE_URL}/auth/verify-email   # verify email from the auth-service link
-POST   {AUTH_BASE_URL}/auth/verify-email/resend/request  # resend verification email without a session
-POST   {AUTH_BASE_URL}/auth/login          # login with audience=twa-api
-POST   {AUTH_BASE_URL}/auth/token          # refresh token
-POST   {AUTH_BASE_URL}/auth/logout         # logout
-GET    {AUTH_BASE_URL}/auth/validate       # token/session validation for SDK
+POST   /_auth/auth/signup                  # create auth identity through the auth service
+GET    /_auth/auth/verify-email            # verify email from the auth-service link
+POST   /_auth/auth/verify-email/resend/request  # resend verification email without a session
+POST   /_auth/auth/login                   # login with audience=twa-api
+POST   /_auth/auth/token                   # refresh browser session / token
+POST   /_auth/auth/logout                  # logout
+GET    /_auth/auth/csrf                    # fetch CSRF token for unsafe browser requests
+GET    {AUTH_BASE_URL}/auth/validate       # session validation for SDK
 GET    {AUTH_BASE_URL}/.well-known/jwks.json
 
 # TWA local auth context

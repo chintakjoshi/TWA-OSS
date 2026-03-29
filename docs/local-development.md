@@ -31,7 +31,21 @@ If you want Docker to build `authSDK` from a local checkout instead of pulling `
 docker compose -f docker-compose.yml -f docker-compose.authsdk.local.yml up --build
 ```
 
-That override reads `AUTHSDK_PATH`, which defaults to `../authSDK-1.2.1`.
+That override reads `AUTHSDK_PATH`, which defaults to `../authSDK`.
+It is also the supported way to test browser cookie sessions against an
+unreleased local `authSDK` checkout because it:
+
+- builds the auth service from your local path
+- keeps browser auth traffic on same-origin `/_auth`
+- points browser API traffic at same-origin `/api` through the frontend dev
+  proxy using the same defaults as the main Docker stack
+
+Example using a sibling `../authSDK` checkout:
+
+```powershell
+$env:AUTHSDK_PATH = '..\\authSDK'
+docker compose -f docker-compose.yml -f docker-compose.authsdk.local.yml up --build
+```
 
 ## Host Workflow
 
@@ -82,6 +96,24 @@ cd ..\employer; npm run dev
 cd ..\admin; npm run dev
 ```
 
+## Same-Origin Browser Auth Model
+
+TWA browser apps now use authSDK cookie sessions instead of persisting raw
+access and refresh tokens in browser storage.
+
+In local development that means:
+
+- browser auth calls should go to `/_auth`
+- browser API calls should go to `/api`
+- the Vite dev servers proxy `/_auth` to authSDK and `/api` to the TWA backend
+- frontend apps should not call `http://localhost:8000` or
+  `http://localhost:9000` directly from browser code unless you are
+  intentionally bypassing the supported local setup
+
+The default frontend config now treats the TWA API as same-origin. You only
+need `VITE_TWA_API_URL` if you are deliberately overriding that behavior for a
+nonstandard environment.
+
 ## Local URLs
 
 - TWA backend API: `http://localhost:9000`
@@ -105,8 +137,13 @@ The local authSDK Postgres container uses trust auth, so Adminer may still ask f
 
 ## Environment Notes
 
-- `docker-compose.yml` pulls authSDK from `ghcr.io/chintakjoshi/auth-service:v1.2.1` by default.
+- `docker-compose.yml` pulls authSDK from `ghcr.io/chintakjoshi/auth-service:v1.3.1` by default.
+- The main Docker stack enables authSDK browser sessions by default and routes frontend API traffic through the same-origin `/api` proxy.
+- Local HTTP development uses non-`__Host-` auth cookie names on purpose. Browsers require `__Host-` cookies to be `Secure`, so those names only make sense once you are running over real HTTPS.
+- Backend debug mode now defaults to off. Set `TWA_DEBUG=true` in your local `.env` only when you intentionally need framework debug behavior while troubleshooting.
 - Frontend auth requests should use `/_auth` and rely on the local proxy target rather than calling `http://localhost:8000` directly from the browser.
+- Frontend API requests should use `/api` and rely on the local proxy target rather than calling `http://localhost:9000` directly from the browser.
+- Cookie-authenticated unsafe requests require CSRF protection. The shared frontend auth client handles the CSRF bootstrap and header automatically.
 - Run `npm install` at the repo root so `shared/frontend/` can resolve shared React dependencies.
 - `twa-backend` applies `alembic upgrade head` on container startup.
 - TWA notification email defaults are already wired to local MailHog.

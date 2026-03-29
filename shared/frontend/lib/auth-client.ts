@@ -4,6 +4,8 @@ import type {
   AuthBootstrapRequest,
   AuthBootstrapResponse,
   AuthMeResponse,
+  CookieSessionResponse,
+  CSRFTokenResponse,
   ForgotPasswordRequest,
   ForgotPasswordResponse,
   LoginOTPChallengeResponse,
@@ -16,20 +18,22 @@ import type {
   SignupRequest,
   SignupResponse,
   StoredSession,
-  TokenPairResponse,
   VerifyLoginOTPRequest,
 } from './types'
-import { isOtpChallengeResponse, isTokenPairResponse } from './types'
+import { isCookieSessionResponse, isOtpChallengeResponse } from './types'
 
 export interface AuthClientConfig {
   authBaseUrl: string
   twaApiUrl: string
   audience: string
   storageKey: string
+  csrfCookieName?: string
+  csrfHeaderName?: string
 }
 
 export interface AuthClient {
   loadStoredSession(): StoredSession | null
+  hasSessionHint(): boolean
   clearStoredSession(): void
   signup(payload: SignupRequest): Promise<SignupResponse>
   requestVerificationEmailResend(
@@ -37,8 +41,10 @@ export interface AuthClient {
   ): Promise<ResendVerifyEmailResponse>
   login(
     payload: LoginRequest
-  ): Promise<LoginOTPChallengeResponse | TokenPairResponse>
-  verifyLoginOtp(payload: VerifyLoginOTPRequest): Promise<TokenPairResponse>
+  ): Promise<LoginOTPChallengeResponse | CookieSessionResponse>
+  verifyLoginOtp(
+    payload: VerifyLoginOTPRequest
+  ): Promise<CookieSessionResponse>
   resendLoginOtp(challengeToken: string): Promise<OTPMessageSentResponse>
   requestPasswordReset(
     payload: ForgotPasswordRequest
@@ -46,46 +52,114 @@ export interface AuthClient {
   resetPassword(payload: ResetPasswordRequest): Promise<ResetPasswordResponse>
   refresh(refreshToken?: string): Promise<StoredSession>
   logout(session: StoredSession | null): Promise<void>
-  fetchAuthMe(session: StoredSession): Promise<AuthMeResponse>
+  fetchAuthMe(session: StoredSession | null): Promise<AuthMeResponse>
   bootstrapRole(
-    session: StoredSession,
+    session: StoredSession | null,
     payload: AuthBootstrapRequest
   ): Promise<AuthBootstrapResponse>
   requestTwa<T>(
     path: string,
-    session: StoredSession,
+    session: StoredSession | null,
     init?: RequestInit
   ): Promise<T>
   streamTwa(
     path: string,
-    session: StoredSession,
+    session: StoredSession | null,
     init?: RequestInit
   ): Promise<Response>
 }
 
+const COOKIE_SESSION: StoredSession = { sessionTransport: 'cookie' }
+const SAFE_HTTP_METHODS = new Set(['GET', 'HEAD', 'OPTIONS', 'TRACE'])
+
 export function createAuthClient(config: AuthClientConfig): AuthClient {
   const store = createSessionStore(config.storageKey)
+  let csrfTokenCache: string | null = null
+  const csrfCookieName = config.csrfCookieName?.trim() || 'twa_auth_csrf'
+  const csrfHeaderName = config.csrfHeaderName?.trim() || 'X-CSRF-Token'
 
-  async function requestWithBearer<T>(
-    baseUrl: string,
-    path: string,
-    token: string,
-    init: RequestInit = {}
-  ) {
-    const headers = new Headers(init.headers)
-    headers.set('Authorization', `Bearer ${token}`)
-    return requestJson<T>(joinUrl(baseUrl, path), { ...init, headers })
+  function isUnsafeRequest(init: RequestInit = {}): boolean {
+    const method = (init.method ?? 'GET').toUpperCase()
+    return !SAFE_HTTP_METHODS.has(method)
   }
 
-  async function fetchWithBearer(
+  function readCookieValue(name: string): string | null {
+    if (typeof document === 'undefined') return null
+
+    const prefix = `${name}=`
+    const value = document.cookie
+      .split(';')
+      .map((entry) => entry.trim())
+      .find((entry) => entry.startsWith(prefix))
+
+    if (!value) return null
+    const parsed = decodeURIComponent(value.slice(prefix.length)).trim()
+    return parsed || null
+  }
+
+  function readCsrfToken(): string | null {
+    const cookieValue = readCookieValue(csrfCookieName)
+    if (cookieValue) {
+      csrfTokenCache = cookieValue
+      return cookieValue
+    }
+    return csrfTokenCache
+  }
+
+  async function ensureCsrfToken(): Promise<string> {
+    const existing = readCsrfToken()
+    if (existing) return existing
+
+    const payload = await requestJson<CSRFTokenResponse>(
+      joinUrl(config.authBaseUrl, '/auth/csrf'),
+      {
+        credentials: 'include',
+      }
+    )
+    csrfTokenCache = payload.csrf_token
+    return payload.csrf_token
+  }
+
+  async function buildRequestInit(
+    init: RequestInit = {},
+    {
+      cookieTransport = false,
+    }: {
+      cookieTransport?: boolean
+    } = {}
+  ): Promise<RequestInit> {
+    const headers = new Headers(init.headers)
+    if (cookieTransport)
+      headers.set('X-Auth-Session-Transport', 'cookie')
+    if (isUnsafeRequest(init)) {
+      headers.set(csrfHeaderName, await ensureCsrfToken())
+    }
+    return {
+      ...init,
+      credentials: 'include',
+      headers,
+    }
+  }
+
+  async function requestJsonWithSession<T>(
     baseUrl: string,
     path: string,
-    token: string,
-    init: RequestInit = {}
+    init: RequestInit = {},
+    options?: { cookieTransport?: boolean }
   ) {
-    const headers = new Headers(init.headers)
-    headers.set('Authorization', `Bearer ${token}`)
-    return fetch(joinUrl(baseUrl, path), { ...init, headers })
+    return requestJson<T>(
+      joinUrl(baseUrl, path),
+      await buildRequestInit(init, options)
+    )
+  }
+
+  async function fetchWithSession(
+    baseUrl: string,
+    path: string,
+    init: RequestInit = {},
+    options?: { cookieTransport?: boolean }
+  ) {
+    return fetch(joinUrl(baseUrl, path), await buildRequestInit(init, options))
   }
 
   async function throwResponseError(response: Response): Promise<never> {
@@ -111,74 +185,110 @@ export function createAuthClient(config: AuthClientConfig): AuthClient {
     throw new HttpError(response.status, message, errorPayload)
   }
 
-  async function refresh(refreshToken?: string): Promise<StoredSession> {
-    const current = refreshToken ?? store.load()?.refreshToken
-    if (!current) throw new HttpError(401, 'No refresh token is available.')
-    const next = await requestJson<TokenPairResponse>(
-      joinUrl(config.authBaseUrl, '/auth/token'),
-      {
-        method: 'POST',
-        body: JSON.stringify({ refresh_token: current }),
-      }
+  async function refresh(_refreshToken?: string): Promise<StoredSession> {
+    await requestJsonWithSession<CookieSessionResponse>(
+      config.authBaseUrl,
+      '/auth/token',
+      { method: 'POST' },
+      { cookieTransport: true }
     )
-    const session = {
-      accessToken: next.access_token,
-      refreshToken: next.refresh_token,
+    store.save(COOKIE_SESSION)
+    return store.load() ?? COOKIE_SESSION
+  }
+
+  async function requestTwaWithRefresh<T>(
+    path: string,
+    init: RequestInit = {}
+  ): Promise<T> {
+    try {
+      const result = await requestJsonWithSession<T>(config.twaApiUrl, path, init)
+      store.save(COOKIE_SESSION)
+      return result
+    } catch (error) {
+      if (error instanceof HttpError && error.status === 401) {
+        await refresh()
+        const retried = await requestJsonWithSession<T>(config.twaApiUrl, path, init)
+        store.save(COOKIE_SESSION)
+        return retried
+      }
+      throw error
     }
-    store.save(session)
-    return session
+  }
+
+  async function streamTwaWithRefresh(
+    path: string,
+    init: RequestInit = {}
+  ): Promise<Response> {
+    let response = await fetchWithSession(config.twaApiUrl, path, init)
+    if (response.status === 401) {
+      await refresh()
+      response = await fetchWithSession(config.twaApiUrl, path, init)
+    }
+    if (!response.ok) {
+      await throwResponseError(response)
+    }
+    store.save(COOKIE_SESSION)
+    return response
   }
 
   return {
     loadStoredSession() {
       return store.load()
     },
+    hasSessionHint() {
+      return readCookieValue(csrfCookieName) !== null
+    },
     clearStoredSession() {
       store.clear()
     },
     signup(payload) {
-      return requestJson<SignupResponse>(
-        joinUrl(config.authBaseUrl, '/auth/signup'),
+      return requestJsonWithSession<SignupResponse>(
+        config.authBaseUrl,
+        '/auth/signup',
         { method: 'POST', body: JSON.stringify(payload) }
       )
     },
     requestVerificationEmailResend(payload) {
-      return requestJson<ResendVerifyEmailResponse>(
-        joinUrl(config.authBaseUrl, '/auth/verify-email/resend/request'),
+      return requestJsonWithSession<ResendVerifyEmailResponse>(
+        config.authBaseUrl,
+        '/auth/verify-email/resend/request',
         { method: 'POST', body: JSON.stringify(payload) }
       )
     },
     async login(payload) {
-      const result = await requestJson<
-        LoginOTPChallengeResponse | TokenPairResponse
-      >(joinUrl(config.authBaseUrl, '/auth/login'), {
-        method: 'POST',
-        body: JSON.stringify({
-          ...payload,
-          audience: payload.audience ?? config.audience,
-        }),
-      })
-      if (isTokenPairResponse(result))
-        store.save({
-          accessToken: result.access_token,
-          refreshToken: result.refresh_token,
-        })
+      const result = await requestJsonWithSession<
+        LoginOTPChallengeResponse | CookieSessionResponse
+      >(
+        config.authBaseUrl,
+        '/auth/login',
+        {
+          method: 'POST',
+          body: JSON.stringify({
+            ...payload,
+            audience: payload.audience ?? config.audience,
+          }),
+        },
+        { cookieTransport: true }
+      )
+      if (isCookieSessionResponse(result)) {
+        store.save(COOKIE_SESSION)
+      }
       return result
     },
     async verifyLoginOtp(payload) {
-      const result = await requestJson<TokenPairResponse>(
-        joinUrl(config.authBaseUrl, '/auth/otp/verify/login'),
-        { method: 'POST', body: JSON.stringify(payload) }
+      const result = await requestJsonWithSession<CookieSessionResponse>(
+        config.authBaseUrl,
+        '/auth/otp/verify/login',
+        { method: 'POST', body: JSON.stringify(payload) },
+        { cookieTransport: true }
       )
-      store.save({
-        accessToken: result.access_token,
-        refreshToken: result.refresh_token,
-      })
+      store.save(COOKIE_SESSION)
       return result
     },
     resendLoginOtp(challengeToken) {
-      return requestJson<OTPMessageSentResponse>(
-        joinUrl(config.authBaseUrl, '/auth/otp/resend/login'),
+      return requestJsonWithSession<OTPMessageSentResponse>(
+        config.authBaseUrl,
+        '/auth/otp/resend/login',
         {
           method: 'POST',
           body: JSON.stringify({ challenge_token: challengeToken }),
@@ -186,97 +296,48 @@ export function createAuthClient(config: AuthClientConfig): AuthClient {
       )
     },
     requestPasswordReset(payload) {
-      return requestJson<ForgotPasswordResponse>(
-        joinUrl(config.authBaseUrl, '/auth/password/forgot'),
+      return requestJsonWithSession<ForgotPasswordResponse>(
+        config.authBaseUrl,
+        '/auth/password/forgot',
         { method: 'POST', body: JSON.stringify(payload) }
       )
     },
     resetPassword(payload) {
-      return requestJson<ResetPasswordResponse>(
-        joinUrl(config.authBaseUrl, '/auth/password/reset'),
+      return requestJsonWithSession<ResetPasswordResponse>(
+        config.authBaseUrl,
+        '/auth/password/reset',
         { method: 'POST', body: JSON.stringify(payload) }
       )
     },
-    async logout(session) {
-      if (!session) {
-        store.clear()
-        return
-      }
-      await requestWithBearer<void>(
+    async logout(_session) {
+      await requestJsonWithSession<void>(
         config.authBaseUrl,
         '/auth/logout',
-        session.accessToken,
-        {
-          method: 'POST',
-          body: JSON.stringify({ refresh_token: session.refreshToken }),
-        }
+        { method: 'POST' },
+        { cookieTransport: true }
       ).catch(() => undefined)
       store.clear()
+      csrfTokenCache = null
     },
-    fetchAuthMe(session) {
-      return requestWithBearer<AuthMeResponse>(
+    async fetchAuthMe(_session) {
+      const result = await requestJsonWithSession<AuthMeResponse>(
         config.twaApiUrl,
-        '/api/v1/auth/me',
-        session.accessToken
+        '/api/v1/auth/me'
       )
+      store.save(COOKIE_SESSION)
+      return result
     },
-    bootstrapRole(session, payload) {
-      return requestWithBearer<AuthBootstrapResponse>(
-        config.twaApiUrl,
-        '/api/v1/auth/bootstrap',
-        session.accessToken,
-        { method: 'POST', body: JSON.stringify(payload) }
-      )
+    bootstrapRole(_session, payload) {
+      return requestTwaWithRefresh<AuthBootstrapResponse>('/api/v1/auth/bootstrap', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      })
     },
-    async requestTwa<T>(
-      path: string,
-      session: StoredSession,
-      init: RequestInit = {}
-    ) {
-      try {
-        return await requestWithBearer<T>(
-          config.twaApiUrl,
-          path,
-          session.accessToken,
-          init
-        )
-      } catch (error) {
-        if (error instanceof HttpError && error.status === 401) {
-          const nextSession = await refresh(session.refreshToken)
-          return requestWithBearer<T>(
-            config.twaApiUrl,
-            path,
-            nextSession.accessToken,
-            init
-          )
-        }
-        throw error
-      }
+    requestTwa(path, _session, init = {}) {
+      return requestTwaWithRefresh(path, init)
     },
-    async streamTwa(
-      path: string,
-      session: StoredSession,
-      init: RequestInit = {}
-    ) {
-      let response = await fetchWithBearer(
-        config.twaApiUrl,
-        path,
-        session.accessToken,
-        init
-      )
-      if (response.status === 401) {
-        const nextSession = await refresh(session.refreshToken)
-        response = await fetchWithBearer(
-          config.twaApiUrl,
-          path,
-          nextSession.accessToken,
-          init
-        )
-      }
-      if (!response.ok) {
-        await throwResponseError(response)
-      }
-      return response
+    streamTwa(path, _session, init = {}) {
+      return streamTwaWithRefresh(path, init)
     },
     refresh,
   }
@@ -293,7 +354,7 @@ export function getAuthStateLabel(response: AuthMeResponse | null): string {
 }
 
 export function hasOtpChallenge(
-  result: LoginOTPChallengeResponse | TokenPairResponse
+  result: LoginOTPChallengeResponse | CookieSessionResponse
 ): result is LoginOTPChallengeResponse {
   return isOtpChallengeResponse(result)
 }

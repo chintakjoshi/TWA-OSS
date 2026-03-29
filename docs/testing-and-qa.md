@@ -34,6 +34,7 @@ cd ..\admin; npm run build
 Backend coverage includes:
 
 - auth bootstrap and role enforcement
+- cookie-authenticated middleware behavior and CSRF enforcement
 - schema and seed behavior
 - employer approval and listing workflows
 - jobseeker profile and application workflows
@@ -45,6 +46,8 @@ Backend coverage includes:
 Frontend coverage includes:
 
 - shared auth console behavior
+- shared cookie-session auth client behavior, including reload hydration and
+  refresh without browser token storage
 - route-guard handling
 - jobseeker auth and bootstrap transitions
 - job board eligibility rendering
@@ -66,6 +69,9 @@ Use this checklist before releases or larger merges:
 - [ ] Employer signs up through `authSDK`, bootstraps into TWA, waits for approval, gets approved, submits a listing, and staff reviews that listing.
 - [ ] Jobseeker signs up through `authSDK`, bootstraps into TWA, completes a profile, sees eligible and ineligible jobs, and submits an application.
 - [ ] Staff signs in, reviews applications, marks a hire, and optionally closes the related listing.
+- [ ] Jobseeker, employer, and admin browser sessions survive a full page reload without relying on browser token storage.
+- [ ] Logout clears the cookie-backed browser session and returns each app to anonymous state.
+- [ ] Unsafe cookie-authenticated requests fail without a valid CSRF header and succeed when the shared client bootstraps CSRF correctly.
 - [ ] Employer applicant visibility toggles off and on correctly in the employer portal.
 - [ ] Notification settings save correctly in the admin app.
 - [ ] Audit log entries appear for employer review, listing review, application updates, and notification-config changes.
