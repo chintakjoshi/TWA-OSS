@@ -570,7 +570,9 @@ def test_user_can_mark_all_notifications_as_read(notifications_env) -> None:
     payload = read_all_response.json()
     assert payload["marked_count"] == 2
     assert len(payload["notifications"]) == 2
-    assert all(notification["read_at"] is not None for notification in payload["notifications"])
+    assert all(
+        notification["read_at"] is not None for notification in payload["notifications"]
+    )
 
     unread = client.get("/api/v1/notifications/me", params={"unread_only": "true"})
     assert unread.status_code == 200
