@@ -12,6 +12,7 @@ export const jobseekerAuthClient = createAuthClient({
   authBaseUrl,
   twaApiUrl,
   audience: twaAudience,
+  portal: 'jobseeker',
   storageKey: 'twa-jobseeker-session',
   csrfCookieName,
   csrfHeaderName,

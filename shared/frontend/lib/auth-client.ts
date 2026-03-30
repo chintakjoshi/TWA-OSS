@@ -1,6 +1,7 @@
 import { HttpError, joinUrl, requestJson } from './http'
 import { createSessionStore } from './session'
 import type {
+  AppRole,
   AuthBootstrapRequest,
   AuthBootstrapResponse,
   AuthMeResponse,
@@ -27,6 +28,7 @@ export interface AuthClientConfig {
   twaApiUrl: string
   audience: string
   storageKey: string
+  portal?: AppRole
   csrfCookieName?: string
   csrfHeaderName?: string
 }
@@ -157,6 +159,12 @@ export function createAuthClient(config: AuthClientConfig): AuthClient {
     options?: { cookieTransport?: boolean }
   ) {
     return fetch(joinUrl(baseUrl, path), await buildRequestInit(init, options))
+  }
+
+  function getAuthMePath(): string {
+    if (!config.portal) return '/api/v1/auth/me'
+    const query = new URLSearchParams({ portal: config.portal })
+    return `/api/v1/auth/me?${query.toString()}`
   }
 
   async function throwResponseError(response: Response): Promise<never> {
@@ -330,7 +338,7 @@ export function createAuthClient(config: AuthClientConfig): AuthClient {
       void session
       const result = await requestJsonWithSession<AuthMeResponse>(
         config.twaApiUrl,
-        '/api/v1/auth/me'
+        getAuthMePath()
       )
       store.save(COOKIE_SESSION)
       return result

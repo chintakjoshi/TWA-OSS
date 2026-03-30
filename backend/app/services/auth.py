@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session
 from app.core.exceptions import AppError
 from app.models import AppUser, Employer, Jobseeker
 from app.models.enums import AppRole, EmployerReviewStatus
+from app.schemas.auth import PortalScope
 from app.services.jobseeker import is_jobseeker_profile_complete
 from app.services.notifications import notify_staff_employer_pending_review
 
@@ -212,3 +213,33 @@ def build_auth_me(*, session: Session, identity: AuthProviderIdentity) -> AuthMe
         employer_review_status=employer_review_status,
         next_step=next_step,
     )
+
+
+def enforce_portal_access(
+    *,
+    auth_me: AuthMeResult,
+    portal: PortalScope | None,
+) -> AuthMeResult:
+    if portal is None:
+        return auth_me
+
+    if auth_me.app_user is None:
+        if (
+            portal in {"jobseeker", "employer"}
+            and auth_me.next_step == "bootstrap_role"
+        ):
+            return auth_me
+        raise AppError(
+            status_code=403,
+            code="PORTAL_ACCESS_DENIED",
+            detail="This account is not authorized for this portal.",
+        )
+
+    if auth_me.app_user.app_role != AppRole(portal):
+        raise AppError(
+            status_code=403,
+            code="PORTAL_ACCESS_DENIED",
+            detail="This account is not authorized for this portal.",
+        )
+
+    return auth_me

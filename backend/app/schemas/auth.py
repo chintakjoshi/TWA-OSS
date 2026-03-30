@@ -6,6 +6,8 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field, model_validator
 
+PortalScope = Literal["jobseeker", "employer", "staff"]
+
 
 class EmployerBootstrapProfile(BaseModel):
     org_name: str = Field(min_length=1, max_length=255)

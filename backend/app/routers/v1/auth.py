@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
@@ -8,11 +8,13 @@ from app.schemas.auth import (
     AuthBootstrapRequest,
     AuthBootstrapResponse,
     AuthMeResponse,
+    PortalScope,
 )
 from app.services.auth import (
     AuthProviderIdentity,
     bootstrap_user,
     build_auth_me,
+    enforce_portal_access,
     get_auth_provider_identity,
 )
 
@@ -40,10 +42,14 @@ def bootstrap_auth_user(
 
 @router.get("/me", response_model=AuthMeResponse)
 def get_auth_me(
+    portal: PortalScope | None = Query(default=None),
     session: Session = Depends(get_db_session),
     identity: AuthProviderIdentity = Depends(get_auth_provider_identity),
 ) -> AuthMeResponse:
-    result = build_auth_me(session=session, identity=identity)
+    result = enforce_portal_access(
+        auth_me=build_auth_me(session=session, identity=identity),
+        portal=portal,
+    )
     return AuthMeResponse(
         app_user=(
             AppUserPayload.model_validate(result.app_user, from_attributes=True)

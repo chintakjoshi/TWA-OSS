@@ -49,9 +49,7 @@ export function JobseekerAuthPage() {
   const authenticatedJobseeker = auth.authMe?.app_user?.app_role === 'jobseeker'
   const needsBootstrap =
     auth.state === 'authenticated' && !auth.authMe?.app_user
-  const wrongPortal =
-    auth.authMe?.app_user && auth.authMe.app_user.app_role !== 'jobseeker'
-  const showForms = !authenticatedJobseeker && !needsBootstrap && !wrongPortal
+  const showForms = !authenticatedJobseeker && !needsBootstrap
 
   const title = useMemo(() => {
     if (mode === 'signup') return 'Create your jobseeker account'
@@ -146,13 +144,6 @@ export function JobseekerAuthPage() {
               <InlineNotice tone="success">{notice}</InlineNotice>
             ) : null}
             {error ? <InlineNotice tone="danger">{error}</InlineNotice> : null}
-            {wrongPortal ? (
-              <InlineNotice tone="danger">
-                This account is linked to the{' '}
-                <strong>{auth.authMe?.app_user?.app_role}</strong> portal, so
-                the jobseeker workspace stays locked here.
-              </InlineNotice>
-            ) : null}
           </div>
 
           {authenticatedJobseeker ? (

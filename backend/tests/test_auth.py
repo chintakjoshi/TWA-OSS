@@ -99,6 +99,25 @@ def test_auth_me_returns_bootstrap_step_for_unbootstrapped_user(
     }
 
 
+def test_public_portals_allow_unbootstrapped_authenticated_users(
+    client: TestClient,
+) -> None:
+    jobseeker_response = client.get("/api/v1/auth/me?portal=jobseeker")
+    employer_response = client.get("/api/v1/auth/me?portal=employer")
+
+    assert jobseeker_response.status_code == 200
+    assert employer_response.status_code == 200
+
+
+def test_staff_portal_rejects_unbootstrapped_authenticated_users(
+    client: TestClient,
+) -> None:
+    response = client.get("/api/v1/auth/me?portal=staff")
+
+    assert response.status_code == 403
+    assert response.json()["error"]["code"] == "PORTAL_ACCESS_DENIED"
+
+
 def test_bootstrap_jobseeker_creates_local_user_and_profile(
     client: TestClient, session: Session
 ) -> None:
@@ -211,6 +230,22 @@ def test_auth_me_returns_employer_review_context(client: TestClient) -> None:
     assert payload["profile_complete"] is True
     assert payload["employer_review_status"] == "pending"
     assert payload["next_step"] == "await_staff_approval"
+
+
+def test_auth_me_rejects_cross_portal_access_without_leaking_role(
+    client: TestClient,
+) -> None:
+    bootstrap = client.post("/api/v1/auth/bootstrap", json={"role": "jobseeker"})
+    assert bootstrap.status_code == 200
+
+    response = client.get("/api/v1/auth/me?portal=employer")
+
+    assert response.status_code == 403
+    payload = response.json()
+    assert payload["error"]["code"] == "PORTAL_ACCESS_DENIED"
+    assert (
+        payload["error"]["message"] == "This account is not authorized for this portal."
+    )
 
 
 def test_require_role_blocks_non_staff_users(client: TestClient) -> None:

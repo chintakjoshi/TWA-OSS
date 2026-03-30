@@ -12,6 +12,7 @@ export const employerAuthClient = createAuthClient({
   authBaseUrl,
   twaApiUrl,
   audience: twaAudience,
+  portal: 'employer',
   storageKey: 'twa-employer-session',
   csrfCookieName,
   csrfHeaderName,

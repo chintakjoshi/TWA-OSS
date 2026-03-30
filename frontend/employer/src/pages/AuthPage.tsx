@@ -44,8 +44,7 @@ export function EmployerAuthPage() {
     if (auth.state === 'otp_required') setMode('otp')
   }, [auth.state])
 
-  const wrongPortal =
-    auth.authMe?.app_user && auth.authMe.app_user.app_role !== 'employer'
+  const authenticatedEmployer = auth.authMe?.app_user?.app_role === 'employer'
   const title = useMemo(() => {
     if (mode === 'signup') return 'Create your employer account'
     if (mode === 'forgot') return 'Reset your password'
@@ -114,16 +113,9 @@ export function EmployerAuthPage() {
               <InlineNotice tone="success">{notice}</InlineNotice>
             ) : null}
             {error ? <InlineNotice tone="danger">{error}</InlineNotice> : null}
-            {wrongPortal ? (
-              <InlineNotice tone="danger">
-                This account is linked to the{' '}
-                <strong>{auth.authMe?.app_user?.app_role}</strong> portal, so
-                the employer workspace stays locked here.
-              </InlineNotice>
-            ) : null}
           </div>
 
-          {!wrongPortal ? (
+          {!authenticatedEmployer ? (
             <div className="mt-8 space-y-6">
               <div className="flex gap-4 border-b border-[#eadfce] text-sm font-semibold">
                 <button

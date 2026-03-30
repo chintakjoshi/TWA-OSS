@@ -50,7 +50,7 @@ export function RequireRole({
     return (
       <GuardFallback
         title="This portal is role-specific."
-        detail={`Your TWA account is currently linked to ${auth.authMe.app_user.app_role ?? 'no local role'}, so this route is blocked.`}
+        detail="Please sign in with an authorized account to access this portal."
       />
     )
   }

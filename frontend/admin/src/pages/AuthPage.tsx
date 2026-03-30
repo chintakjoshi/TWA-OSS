@@ -115,25 +115,6 @@ export function AdminAuthPage() {
               <InlineNotice tone="success">{notice}</InlineNotice>
             ) : null}
             {error ? <InlineNotice tone="danger">{error}</InlineNotice> : null}
-
-            {!authenticatedStaff &&
-            auth.authMe?.app_user &&
-            auth.authMe.app_user.app_role !== 'staff' ? (
-              <InlineNotice tone="danger">
-                This account is linked to the{' '}
-                <strong>{auth.authMe.app_user.app_role}</strong> portal, so
-                staff routes stay locked.
-              </InlineNotice>
-            ) : null}
-
-            {!authenticatedStaff &&
-            auth.state === 'authenticated' &&
-            !auth.authMe?.app_user ? (
-              <InlineNotice tone="info">
-                You authenticated successfully, but this identity is not yet
-                provisioned as a local TWA staff account.
-              </InlineNotice>
-            ) : null}
           </div>
 
           {authenticatedStaff ? (
