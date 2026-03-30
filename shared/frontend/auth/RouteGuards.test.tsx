@@ -51,5 +51,9 @@ test('protected routes show a role mismatch fallback for the wrong local role', 
   expect(
     await screen.findByText('This portal is role-specific.')
   ).toBeInTheDocument()
-  expect(screen.getByText(/currently linked to employer/i)).toBeInTheDocument()
+  expect(
+    screen.getByText(
+      'Please sign in with an authorized account to access this portal.'
+    )
+  ).toBeInTheDocument()
 })

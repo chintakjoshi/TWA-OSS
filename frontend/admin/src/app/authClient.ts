@@ -12,6 +12,7 @@ export const adminAuthClient = createAuthClient({
   authBaseUrl,
   twaApiUrl,
   audience: twaAudience,
+  portal: 'staff',
   storageKey: 'twa-admin-session',
   csrfCookieName,
   csrfHeaderName,

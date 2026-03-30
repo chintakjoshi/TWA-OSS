@@ -1,5 +1,7 @@
 import type { AuthClient } from '@shared/lib/auth-client'
+import { HttpError } from '@shared/lib/http'
 import type {
+  AppRole,
   AuthBootstrapRequest,
   AuthMeResponse,
   CookieSessionResponse,
@@ -28,10 +30,15 @@ type MockAuthState = {
 type MockAuthClientOptions = {
   session?: StoredSession | null
   authMe?: AuthMeResponse | null
+  portal?: AppRole
   loginError?: Error
   loginResult?: LoginOTPChallengeResponse | CookieSessionResponse
   verifyOtpResult?: CookieSessionResponse
   fetchAuthMeError?: Error
+  onLogin?: (
+    payload: LoginRequest,
+    state: MockAuthState
+  ) => void | Promise<void>
   onBootstrap?: (
     payload: AuthBootstrapRequest,
     state: MockAuthState
@@ -54,6 +61,17 @@ function unbootstrappedAuthMe(): AuthMeResponse {
     employer_review_status: null,
     next_step: 'bootstrap_role',
   }
+}
+
+function isPortalAuthorized(authMe: AuthMeResponse, portal: AppRole): boolean {
+  if (!authMe.app_user) {
+    return (
+      (portal === 'jobseeker' || portal === 'employer') &&
+      authMe.next_step === 'bootstrap_role'
+    )
+  }
+
+  return authMe.app_user.app_role === portal
 }
 
 export function buildAuthMe({
@@ -127,8 +145,8 @@ export function createMockAuthClient(options: MockAuthClientOptions = {}) {
     async (
       payload: LoginRequest
     ): Promise<LoginOTPChallengeResponse | CookieSessionResponse> => {
-      void payload
       if (options.loginError) throw options.loginError
+      await options.onLogin?.(payload, state)
       if ('session_transport' in loginResult) {
         state.session = defaultSession
         state.otpChallenge = null
@@ -203,7 +221,22 @@ export function createMockAuthClient(options: MockAuthClientOptions = {}) {
       if (state.authMe && state.session === null) {
         state.session = defaultSession
       }
-      if (state.authMe) return state.authMe
+      if (state.authMe) {
+        if (
+          options.portal &&
+          !isPortalAuthorized(state.authMe, options.portal)
+        ) {
+          throw new HttpError(
+            403,
+            'This account is not authorized for this portal.',
+            {
+              code: 'PORTAL_ACCESS_DENIED',
+              detail: 'This account is not authorized for this portal.',
+            }
+          )
+        }
+        return state.authMe
+      }
       if (!state.session) throw new Error('No active session')
       return unbootstrappedAuthMe()
     }

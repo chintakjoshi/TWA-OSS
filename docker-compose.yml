@@ -166,6 +166,7 @@ services:
     image: *auth-service-image
     pull_policy: missing
     container_name: auth-webhook-worker
+    restart: unless-stopped
     depends_on:
       auth-postgres:
         condition: service_healthy
@@ -196,6 +197,7 @@ services:
     image: *auth-service-image
     pull_policy: missing
     container_name: auth-webhook-scheduler
+    restart: unless-stopped
     depends_on:
       auth-postgres:
         condition: service_healthy

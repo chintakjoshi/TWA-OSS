@@ -9,6 +9,7 @@ import {
 } from 'react'
 
 import { hasOtpChallenge, type AuthClient } from '../lib/auth-client'
+import { HttpError } from '../lib/http'
 import type {
   AuthBootstrapRequest,
   AuthMeResponse,
@@ -44,6 +45,12 @@ interface AuthContextValue {
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null)
+const PORTAL_ACCESS_DENIED_CODE = 'PORTAL_ACCESS_DENIED'
+const GENERIC_LOGIN_FAILURE_MESSAGE = 'Invalid email or password.'
+
+function isPortalAccessDenied(error: unknown): error is HttpError {
+  return error instanceof HttpError && error.code === PORTAL_ACCESS_DENIED_CODE
+}
 
 export function AuthProvider({
   client,
@@ -60,43 +67,87 @@ export function AuthProvider({
   const [otpChallenge, setOtpChallenge] =
     useState<LoginOTPChallengeResponse | null>(null)
 
-  const hydrate = useCallback(
+  const resetAuthState = useCallback(() => {
+    client.clearStoredSession()
+    setSession(null)
+    setAuthMe(null)
+    setOtpChallenge(null)
+    setState('anonymous')
+  }, [client])
+
+  const finalizeAuthenticatedState = useCallback(
+    (nextAuthMe: AuthMeResponse) => {
+      setSession(client.loadStoredSession())
+      setAuthMe(nextAuthMe)
+      setOtpChallenge(null)
+      setState('authenticated')
+    },
+    [client]
+  )
+
+  const clearDeniedSession = useCallback(
     async (sessionOverride?: StoredSession | null) => {
+      const activeSession = sessionOverride ?? client.loadStoredSession()
+      try {
+        await client.logout(activeSession)
+      } catch {
+        client.clearStoredSession()
+      } finally {
+        resetAuthState()
+      }
+    },
+    [client, resetAuthState]
+  )
+
+  const hydrate = useCallback(
+    async (
+      sessionOverride?: StoredSession | null,
+      options: { interactive?: boolean } = {}
+    ) => {
       const activeSession = sessionOverride ?? client.loadStoredSession()
       const hasSessionHint = activeSession !== null || client.hasSessionHint()
       if (!hasSessionHint) {
-        client.clearStoredSession()
-        setSession(null)
-        setAuthMe(null)
-        setOtpChallenge(null)
-        setState('anonymous')
+        resetAuthState()
         return
       }
       setState('loading')
       try {
         const nextAuthMe = await client.fetchAuthMe(activeSession)
-        setSession(client.loadStoredSession())
-        setAuthMe(nextAuthMe)
-        setOtpChallenge(null)
-        setState('authenticated')
-      } catch {
+        finalizeAuthenticatedState(nextAuthMe)
+      } catch (initialError) {
+        if (isPortalAccessDenied(initialError)) {
+          await clearDeniedSession(activeSession)
+          if (options.interactive) {
+            throw new HttpError(401, GENERIC_LOGIN_FAILURE_MESSAGE, {
+              code: 'INVALID_CREDENTIALS',
+              detail: GENERIC_LOGIN_FAILURE_MESSAGE,
+            })
+          }
+          return
+        }
         try {
           const refreshed = await client.refresh()
           const nextAuthMe = await client.fetchAuthMe(refreshed)
-          setSession(client.loadStoredSession())
-          setAuthMe(nextAuthMe)
-          setOtpChallenge(null)
-          setState('authenticated')
-        } catch {
-          client.clearStoredSession()
-          setSession(null)
-          setAuthMe(null)
-          setOtpChallenge(null)
-          setState('anonymous')
+          finalizeAuthenticatedState(nextAuthMe)
+        } catch (refreshError) {
+          if (isPortalAccessDenied(refreshError)) {
+            await clearDeniedSession(client.loadStoredSession())
+            if (options.interactive) {
+              throw new HttpError(401, GENERIC_LOGIN_FAILURE_MESSAGE, {
+                code: 'INVALID_CREDENTIALS',
+                detail: GENERIC_LOGIN_FAILURE_MESSAGE,
+              })
+            }
+            return
+          }
+          resetAuthState()
+          if (options.interactive) {
+            throw refreshError instanceof Error ? refreshError : initialError
+          }
         }
       }
     },
-    [client]
+    [clearDeniedSession, client, finalizeAuthenticatedState, resetAuthState]
   )
 
   useEffect(() => {
@@ -128,14 +179,14 @@ export function AuthProvider({
         }
         const nextSession = client.loadStoredSession()
         setSession(nextSession)
-        await hydrate(nextSession)
+        await hydrate(nextSession, { interactive: true })
       },
       async verifyLoginOtp(payload: VerifyLoginOTPRequest) {
         setState('loading')
         await client.verifyLoginOtp(payload)
         const nextSession = client.loadStoredSession()
         setSession(nextSession)
-        await hydrate(nextSession)
+        await hydrate(nextSession, { interactive: true })
       },
       async resendLoginOtp() {
         if (!otpChallenge) return
@@ -150,14 +201,14 @@ export function AuthProvider({
       async bootstrapRole(payload: AuthBootstrapRequest) {
         await client.bootstrapRole(client.loadStoredSession(), payload)
         setSession(client.loadStoredSession())
-        await hydrate(client.loadStoredSession())
+        await hydrate(client.loadStoredSession(), { interactive: true })
       },
       async logout() {
-        await client.logout(client.loadStoredSession())
-        setSession(null)
-        setAuthMe(null)
-        setOtpChallenge(null)
-        setState('anonymous')
+        try {
+          await client.logout(client.loadStoredSession())
+        } finally {
+          resetAuthState()
+        }
       },
       async requestTwa<T>(path: string, init?: RequestInit) {
         return client.requestTwa<T>(path, client.loadStoredSession(), init)
@@ -166,7 +217,7 @@ export function AuthProvider({
         return client.streamTwa(path, client.loadStoredSession(), init)
       },
     }),
-    [authMe, client, hydrate, otpChallenge, session, state]
+    [authMe, client, hydrate, otpChallenge, resetAuthState, session, state]
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

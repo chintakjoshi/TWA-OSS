@@ -74,6 +74,7 @@ test('auth screen removes shared-auth copy and toggles password visibility', asy
   expect(passwordInput.type).toBe('password')
   expect(screen.queryByText(/shared auth/i)).not.toBeInTheDocument()
   expect(screen.queryByText(/staff portal/i)).not.toBeInTheDocument()
+  expect(screen.queryByText(/linked to the/i)).not.toBeInTheDocument()
   expect(
     screen.queryByRole('button', { name: /manual reset/i })
   ).not.toBeInTheDocument()
@@ -86,4 +87,25 @@ test('auth screen removes shared-auth copy and toggles password visibility', asy
 
   const employerLink = screen.getByRole('link', { name: 'Employer Portal' })
   expect(employerLink).toHaveAttribute('href')
+})
+
+test('jobseeker auth clears wrong-portal sessions without leaking the linked role', async () => {
+  const { client, spies } = createMockAuthClient({
+    authMe: buildAuthMe({ role: 'employer' }),
+    portal: 'jobseeker',
+  })
+
+  render(
+    <MemoryRouter>
+      <AuthProvider client={client}>
+        <JobseekerAuthPage />
+      </AuthProvider>
+    </MemoryRouter>
+  )
+
+  await screen.findByText('Jobseeker portal access')
+
+  expect(spies.logout).toHaveBeenCalled()
+  expect(screen.queryByText(/linked to the/i)).not.toBeInTheDocument()
+  expect(screen.queryByText(/workspace stays locked/i)).not.toBeInTheDocument()
 })

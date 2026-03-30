@@ -1,4 +1,6 @@
+import { useState } from 'react'
 import { render, screen, waitFor } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, expect, test, vi } from 'vitest'
 
@@ -31,6 +33,35 @@ function AuthStateProbe() {
     <div>
       <p>state:{auth.state}</p>
       <p>email:{auth.authMe?.app_user?.email ?? 'none'}</p>
+    </div>
+  )
+}
+
+function AuthLoginProbe() {
+  const auth = useAuth()
+  const [error, setError] = useState('none')
+
+  return (
+    <div>
+      <p>state:{auth.state}</p>
+      <p>error:{error}</p>
+      <button
+        type="button"
+        onClick={() => {
+          void auth
+            .login({
+              email: 'jobseeker@example.com',
+              password: 'Password123!',
+            })
+            .catch((nextError) => {
+              setError(
+                nextError instanceof Error ? nextError.message : 'unknown error'
+              )
+            })
+        }}
+      >
+        Trigger login
+      </button>
     </div>
   )
 }
@@ -187,4 +218,93 @@ test('auth provider rehydrates authenticated state on reload without a stored to
   expect(
     screen.getByText(`email:${authMe.app_user?.email}`)
   ).toBeInTheDocument()
+})
+
+test('auth provider clears a wrong-portal session during rehydration', async () => {
+  const { client, spies } = createMockAuthClient({
+    authMe: buildAuthMe({ role: 'employer' }),
+    portal: 'jobseeker',
+  })
+
+  render(
+    <MemoryRouter>
+      <AuthProvider client={client}>
+        <AuthStateProbe />
+      </AuthProvider>
+    </MemoryRouter>
+  )
+
+  await waitFor(() => {
+    expect(screen.getByText('state:anonymous')).toBeInTheDocument()
+  })
+  expect(screen.getByText('email:none')).toBeInTheDocument()
+  expect(spies.logout).toHaveBeenCalled()
+})
+
+test('auth provider turns portal denial into a generic login failure', async () => {
+  const user = userEvent.setup()
+  const { client, spies } = createMockAuthClient({
+    portal: 'jobseeker',
+    onLogin: (_payload, state) => {
+      state.authMe = buildAuthMe({ role: 'employer' })
+    },
+  })
+
+  render(
+    <MemoryRouter>
+      <AuthProvider client={client}>
+        <AuthLoginProbe />
+      </AuthProvider>
+    </MemoryRouter>
+  )
+
+  await screen.findByText('state:anonymous')
+  await user.click(screen.getByRole('button', { name: 'Trigger login' }))
+
+  await waitFor(() => {
+    expect(
+      screen.getByText('error:Invalid email or password.')
+    ).toBeInTheDocument()
+  })
+  expect(spies.login).toHaveBeenCalledWith({
+    email: 'jobseeker@example.com',
+    password: 'Password123!',
+  })
+  expect(spies.logout).toHaveBeenCalled()
+})
+
+test('fetchAuthMe includes the configured portal scope in the TWA auth request', async () => {
+  const fetchMock = vi.fn().mockResolvedValueOnce(
+    jsonResponse({
+      app_user: {
+        id: 'jobseeker-app-user',
+        auth_user_id: 'jobseeker-auth-user',
+        email: 'jobseeker@example.com',
+        auth_provider_role: 'user',
+        app_role: 'jobseeker',
+        is_active: true,
+      },
+      profile_complete: true,
+      employer_review_status: null,
+      next_step: null,
+    })
+  )
+  vi.stubGlobal('fetch', fetchMock)
+
+  const client = createAuthClient({
+    authBaseUrl: 'http://app.local/_auth',
+    twaApiUrl: 'http://app.local',
+    audience: 'twa-api',
+    portal: 'jobseeker',
+    storageKey: 'twa-fetch-auth-me-test',
+  })
+
+  await client.fetchAuthMe({ sessionTransport: 'cookie' })
+
+  expect(fetchMock).toHaveBeenCalledWith(
+    'http://app.local/api/v1/auth/me?portal=jobseeker',
+    expect.objectContaining({
+      credentials: 'include',
+    })
+  )
 })
