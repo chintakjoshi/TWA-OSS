@@ -51,3 +51,8 @@ class NotificationReadResultPayload(BaseModel):
 
 class NotificationReadResponse(BaseModel):
     notification: NotificationReadResultPayload
+
+
+class NotificationBulkReadResponse(BaseModel):
+    notifications: list[NotificationReadResultPayload]
+    marked_count: int

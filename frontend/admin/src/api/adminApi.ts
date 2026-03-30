@@ -2,6 +2,7 @@ import type {
   AdminApplication,
   AdminDashboard,
   AdminNotification,
+  AdminNotificationBulkReadResponse,
   AdminJobseekerDetailResponse,
   ApplicationUpdateInput,
   AuditLogEntry,
@@ -240,6 +241,13 @@ export function markMyNotificationRead(
 ) {
   return requestTwa<{ notification: { id: string; read_at: string | null } }>(
     `/api/v1/notifications/me/${notificationId}/read`,
+    { method: 'PATCH' }
+  )
+}
+
+export function markAllMyNotificationsRead(requestTwa: RequestTwa) {
+  return requestTwa<AdminNotificationBulkReadResponse>(
+    '/api/v1/notifications/me/read-all',
     { method: 'PATCH' }
   )
 }
