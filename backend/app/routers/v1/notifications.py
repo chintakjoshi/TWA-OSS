@@ -13,11 +13,16 @@ from app.core.auth import AuthContext, get_auth_context
 from app.core.config import get_settings
 from app.core.responses import PaginatedResponse
 from app.db.session import get_db_session
-from app.schemas.notifications import NotificationPayload, NotificationReadResponse
+from app.schemas.notifications import (
+    NotificationBulkReadResponse,
+    NotificationPayload,
+    NotificationReadResponse,
+)
 from app.services.common import PaginationParams, ensure_found, get_pagination_params
 from app.services.notifications import (
     get_notification_for_user,
     list_notifications_for_user,
+    mark_all_notifications_read,
     mark_notification_read,
     notification_stream_broker,
     serialize_notification_read_result,
@@ -122,6 +127,23 @@ async def stream_my_notifications(
             "Connection": "keep-alive",
             "X-Accel-Buffering": "no",
         },
+    )
+
+
+@router.patch("/me/read-all", response_model=NotificationBulkReadResponse)
+def patch_all_notifications_read(
+    auth_context: AuthContext = Depends(get_auth_context),
+    session: Session = Depends(get_db_session),
+) -> NotificationBulkReadResponse:
+    notifications = mark_all_notifications_read(
+        session, app_user_id=auth_context.app_user_id
+    )
+    return NotificationBulkReadResponse(
+        notifications=[
+            serialize_notification_read_result(notification)
+            for notification in notifications
+        ],
+        marked_count=len(notifications),
     )
 
 

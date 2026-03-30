@@ -1,10 +1,15 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { BellRing, ChevronUp, Menu, Plus, Settings2, X } from 'lucide-react'
+import { toast } from 'sonner'
 
 import { useAuth } from '@shared/auth/AuthProvider'
 
-import { listMyNotifications, markMyNotificationRead } from '../../api/adminApi'
+import {
+  listMyNotifications,
+  markAllMyNotificationsRead,
+  markMyNotificationRead,
+} from '../../api/adminApi'
 import { announceComingSoon } from '../../lib/comingSoon'
 import { cn } from '../../lib/cn'
 import { formatRelativeTime } from '../../lib/formatting'
@@ -62,6 +67,18 @@ function applyReadResult(
       ? { ...notification, read_at: result.read_at }
       : notification
   )
+}
+
+function applyReadResults(
+  current: AdminNotification[],
+  results: AdminNotificationReadResult[]
+) {
+  if (results.length === 0) return current
+  const readLookup = new Map(results.map((result) => [result.id, result.read_at]))
+  return current.map((notification) => {
+    const readAt = readLookup.get(notification.id)
+    return readAt === undefined ? notification : { ...notification, read_at: readAt }
+  })
 }
 
 function parseSseBlock(block: string) {
@@ -132,6 +149,8 @@ export function AdminWorkspaceLayout({
   const [notificationsError, setNotificationsError] = useState<string | null>(
     null
   )
+  const [markingAllNotificationsRead, setMarkingAllNotificationsRead] =
+    useState(false)
 
   const notificationMenuRef = useRef<HTMLDivElement | null>(null)
   const profileMenuRef = useRef<HTMLDivElement | null>(null)
@@ -177,6 +196,7 @@ export function AdminWorkspaceLayout({
       setUnreadCount(0)
       setNotificationsLoading(false)
       setNotificationsError(null)
+      setMarkingAllNotificationsRead(false)
       return
     }
 
@@ -313,11 +333,7 @@ export function AdminWorkspaceLayout({
     try {
       const response = await markMyNotificationRead(requestTwa, notificationId)
       setNotifications((current) =>
-        current.map((notification) =>
-          notification.id === notificationId
-            ? { ...notification, read_at: response.notification.read_at }
-            : notification
-        )
+        applyReadResult(current, response.notification)
       )
     } catch (error) {
       setNotificationsError(
@@ -325,6 +341,32 @@ export function AdminWorkspaceLayout({
           ? error.message
           : 'Unable to update that notification right now.'
       )
+    }
+  }
+
+  async function handleMarkAllNotificationsRead() {
+    if (unreadCount === 0 || markingAllNotificationsRead) return
+
+    setMarkingAllNotificationsRead(true)
+    setNotificationsError(null)
+
+    try {
+      const response = await markAllMyNotificationsRead(requestTwa)
+      setNotifications((current) =>
+        applyReadResults(current, response.notifications)
+      )
+      setUnreadCount(0)
+      if (response.marked_count > 0) {
+        toast.success('All notifications marked as read.')
+      }
+    } catch (error) {
+      setNotificationsError(
+        error instanceof Error
+          ? error.message
+          : 'Unable to mark all notifications as read right now.'
+      )
+    } finally {
+      setMarkingAllNotificationsRead(false)
     }
   }
 
@@ -380,17 +422,29 @@ export function AdminWorkspaceLayout({
                             : 'All caught up'}
                         </p>
                       </div>
-                      <button
-                        aria-label="Notification settings"
-                        className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-[#eadfce] bg-white text-[#b77712] transition hover:border-[#d9ccb6] hover:bg-[#faf7f1] hover:text-[#8f5b08] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d0922c]/60"
-                        type="button"
-                        onClick={() => {
-                          setNotificationsOpen(false)
-                          navigate('/notifications')
-                        }}
-                      >
-                        <Settings2 className="h-4 w-4" strokeWidth={1.9} />
-                      </button>
+                      <div className="flex items-center gap-2">
+                        <button
+                          className="inline-flex h-9 items-center justify-center rounded-xl border border-[#eadfce] px-3 text-xs font-semibold text-[#b77712] transition hover:border-[#d9ccb6] hover:bg-[#faf7f1] hover:text-[#8f5b08] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d0922c]/60 disabled:cursor-not-allowed disabled:border-[#efe6d8] disabled:text-slate-300 disabled:hover:bg-transparent"
+                          type="button"
+                          disabled={unreadCount === 0 || markingAllNotificationsRead}
+                          onClick={() => void handleMarkAllNotificationsRead()}
+                        >
+                          {markingAllNotificationsRead
+                            ? 'Marking...'
+                            : 'Mark all read'}
+                        </button>
+                        <button
+                          aria-label="Notification settings"
+                          className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-[#eadfce] bg-white text-[#b77712] transition hover:border-[#d9ccb6] hover:bg-[#faf7f1] hover:text-[#8f5b08] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d0922c]/60"
+                          type="button"
+                          onClick={() => {
+                            setNotificationsOpen(false)
+                            navigate('/notifications')
+                          }}
+                        >
+                          <Settings2 className="h-4 w-4" strokeWidth={1.9} />
+                        </button>
+                      </div>
                     </div>
                   </div>
 

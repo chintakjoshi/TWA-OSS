@@ -140,6 +140,11 @@ export interface AdminNotificationReadResult {
   read_at: string | null
 }
 
+export interface AdminNotificationBulkReadResponse {
+  notifications: AdminNotificationReadResult[]
+  marked_count: number
+}
+
 export interface AuditLogEntry {
   id: string
   actor_id: string | null

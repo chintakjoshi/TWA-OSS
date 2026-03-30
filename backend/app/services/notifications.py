@@ -271,6 +271,44 @@ def mark_notification_read(
     return notification
 
 
+def mark_all_notifications_read(
+    session: Session, *, app_user_id: UUID
+) -> list[Notification]:
+    unread_notifications = (
+        session.execute(
+            select(Notification).where(
+                Notification.app_user_id == app_user_id,
+                Notification.channel == NotificationChannel.IN_APP,
+                Notification.read_at.is_(None),
+            )
+        )
+        .scalars()
+        .all()
+    )
+    if not unread_notifications:
+        return []
+
+    read_at = datetime.now(timezone.utc)
+    for notification in unread_notifications:
+        notification.read_at = read_at
+
+    session.commit()
+
+    for notification in unread_notifications:
+        session.refresh(notification)
+        notification_stream_broker.publish(
+            app_user_id=notification.app_user_id,
+            event="notification.read",
+            payload={
+                "notification": serialize_notification_read_result(
+                    notification
+                ).model_dump(mode="json")
+            },
+        )
+
+    return unread_notifications
+
+
 def _recipient_from_app_user(app_user: AppUser | None) -> NotificationRecipient | None:
     if app_user is None or not app_user.is_active:
         return None

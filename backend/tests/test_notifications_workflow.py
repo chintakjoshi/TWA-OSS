@@ -524,6 +524,60 @@ def test_employer_review_and_listing_review_notifications_are_readable(
     assert {email["recipient"] for email in sent_emails} == {employer_user.email}
 
 
+def test_user_can_mark_all_notifications_as_read(notifications_env) -> None:
+    client, state, session_factory, sent_emails = notifications_env
+    staff = seed_staff(
+        session_factory, auth_user_id=uuid.UUID("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb")
+    )
+    employer_user, employer = seed_employer(
+        session_factory,
+        auth_user_id=uuid.UUID("cccccccc-cccc-cccc-cccc-cccccccccccc"),
+        review_status=EmployerReviewStatus.PENDING,
+    )
+    listing = seed_listing(
+        session_factory,
+        employer_id=employer.id,
+        title="Office Assistant",
+        review_status=ListingReviewStatus.PENDING,
+    )
+
+    switch_identity(
+        state,
+        auth_user_id=staff.auth_user_id,
+        email=staff.email,
+        auth_provider_role="admin",
+    )
+    employer_review = client.patch(
+        f"/api/v1/admin/employers/{employer.id}",
+        json={"review_status": "approved"},
+    )
+    assert employer_review.status_code == 200
+
+    listing_review = client.patch(
+        f"/api/v1/admin/listings/{listing.id}",
+        json={"review_status": "approved"},
+    )
+    assert listing_review.status_code == 200
+
+    switch_identity(
+        state,
+        auth_user_id=employer_user.auth_user_id,
+        email=employer_user.email,
+        auth_provider_role="user",
+    )
+    read_all_response = client.patch("/api/v1/notifications/me/read-all")
+    assert read_all_response.status_code == 200
+    payload = read_all_response.json()
+    assert payload["marked_count"] == 2
+    assert len(payload["notifications"]) == 2
+    assert all(notification["read_at"] is not None for notification in payload["notifications"])
+
+    unread = client.get("/api/v1/notifications/me", params={"unread_only": "true"})
+    assert unread.status_code == 200
+    assert unread.json()["meta"]["total_items"] == 0
+    assert {email["recipient"] for email in sent_emails} == {employer_user.email}
+
+
 def test_application_status_updates_notify_jobseeker(notifications_env) -> None:
     client, state, session_factory, sent_emails = notifications_env
     staff = seed_staff(
