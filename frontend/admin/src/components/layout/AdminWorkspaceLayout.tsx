@@ -74,10 +74,14 @@ function applyReadResults(
   results: AdminNotificationReadResult[]
 ) {
   if (results.length === 0) return current
-  const readLookup = new Map(results.map((result) => [result.id, result.read_at]))
+  const readLookup = new Map(
+    results.map((result) => [result.id, result.read_at])
+  )
   return current.map((notification) => {
     const readAt = readLookup.get(notification.id)
-    return readAt === undefined ? notification : { ...notification, read_at: readAt }
+    return readAt === undefined
+      ? notification
+      : { ...notification, read_at: readAt }
   })
 }
 
@@ -426,7 +430,9 @@ export function AdminWorkspaceLayout({
                         <button
                           className="inline-flex h-9 items-center justify-center rounded-xl border border-[#eadfce] px-3 text-xs font-semibold text-[#b77712] transition hover:border-[#d9ccb6] hover:bg-[#faf7f1] hover:text-[#8f5b08] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d0922c]/60 disabled:cursor-not-allowed disabled:border-[#efe6d8] disabled:text-slate-300 disabled:hover:bg-transparent"
                           type="button"
-                          disabled={unreadCount === 0 || markingAllNotificationsRead}
+                          disabled={
+                            unreadCount === 0 || markingAllNotificationsRead
+                          }
                           onClick={() => void handleMarkAllNotificationsRead()}
                         >
                           {markingAllNotificationsRead
