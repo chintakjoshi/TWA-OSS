@@ -30,8 +30,8 @@ from app.services.jobseeker import is_jobseeker_profile_complete, serialize_char
 from app.services.notifications import (
     get_notification_config,
     notify_employer_review_decision,
-    notify_staff_employer_pending_review,
     notify_listing_review_decision,
+    notify_staff_employer_pending_review,
     notify_staff_listing_pending_review,
 )
 from app.services.transit import compute_transit_accessibility
