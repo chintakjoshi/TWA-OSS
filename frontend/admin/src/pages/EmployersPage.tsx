@@ -4,6 +4,7 @@ import { toast } from 'sonner'
 import { useAuth } from '@shared/auth/AuthProvider'
 
 import { listEmployerQueue, reviewEmployer } from '../api/adminApi'
+import { EmployerProfileChanges } from '../components/EmployerProfileChanges'
 import { AdminWorkspaceLayout } from '../components/layout/AdminWorkspaceLayout'
 import { useAdminShell } from '../components/layout/AdminShellProvider'
 import {
@@ -144,8 +145,17 @@ export function AdminEmployersPage() {
                       <tbody>
                         {items.map((employer) => (
                           <tr key={employer.id}>
-                            <TableCell className="font-semibold text-slate-950">
-                              {employer.org_name}
+                            <TableCell>
+                              <div className="space-y-1">
+                                <p className="font-semibold text-slate-950">
+                                  {employer.org_name}
+                                </p>
+                                {employer.profile_changes ? (
+                                  <p className="text-xs font-semibold text-[#b87200]">
+                                    {`${employer.profile_changes.changes.length} changes awaiting review`}
+                                  </p>
+                                ) : null}
+                              </div>
                             </TableCell>
                             <TableCell>
                               {employer.contact_name ?? 'No contact'}
@@ -262,6 +272,7 @@ export function AdminEmployersPage() {
                 },
               ]}
             />
+            <EmployerProfileChanges summary={selected.profile_changes} />
 
             <div className="grid gap-5 md:grid-cols-2">
               <div>

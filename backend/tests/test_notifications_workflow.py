@@ -423,6 +423,56 @@ def test_employer_bootstrap_notifies_staff_of_pending_review(notifications_env) 
     assert {email["recipient"] for email in sent_emails} == {staff.email}
 
 
+def test_employer_profile_update_notifies_staff_of_pending_review(
+    notifications_env,
+) -> None:
+    client, state, session_factory, sent_emails = notifications_env
+    staff = seed_staff(
+        session_factory, auth_user_id=uuid.UUID("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb")
+    )
+    employer_user, employer = seed_employer(
+        session_factory,
+        auth_user_id=uuid.UUID("cccccccc-cccc-cccc-cccc-cccccccccccc"),
+        review_status=EmployerReviewStatus.APPROVED,
+    )
+
+    switch_identity(
+        state,
+        auth_user_id=employer_user.auth_user_id,
+        email=employer_user.email,
+        auth_provider_role="user",
+    )
+    response = client.patch(
+        "/api/v1/employers/me",
+        json={"address": "500 Market St", "city": "St. Louis", "zip": "63101"},
+    )
+    assert response.status_code == 200
+
+    with session_factory() as session:
+        refreshed_employer = session.execute(
+            select(Employer).where(Employer.id == employer.id)
+        ).scalar_one()
+        notifications = (
+            session.execute(
+                select(Notification).where(
+                    Notification.type == "employer_review_requested"
+                )
+            )
+            .scalars()
+            .all()
+        )
+
+    assert refreshed_employer.review_status == EmployerReviewStatus.PENDING
+    assert len(notifications) == 1
+    assert notifications[0].app_user_id == staff.id
+    assert notifications[0].channel == NotificationChannel.IN_APP
+    assert notifications[0].title == "Employer awaiting review"
+    assert notifications[0].body == (
+        "Northside Logistics updated their employer profile and is awaiting staff review."
+    )
+    assert {email["recipient"] for email in sent_emails} == {staff.email}
+
+
 def test_listing_submission_notifies_staff_of_pending_review(notifications_env) -> None:
     client, state, session_factory, sent_emails = notifications_env
     staff = seed_staff(

@@ -55,7 +55,7 @@ def get_my_employer_profile(
 @router.patch("/api/v1/employers/me", response_model=EmployerProfileResponse)
 def patch_my_employer_profile(
     payload: EmployerProfileUpdateRequest,
-    auth_context: AuthContext = Depends(require_approved_employer),
+    auth_context: AuthContext = Depends(require_employer),
     session: Session = Depends(get_db_session),
 ) -> EmployerProfileResponse:
     employer = ensure_found(

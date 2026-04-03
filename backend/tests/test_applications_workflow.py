@@ -301,6 +301,37 @@ def test_rejected_employer_listings_are_hidden_from_jobseekers(
     assert create.json()["error"]["code"] == "NOT_FOUND"
 
 
+def test_pending_employer_listings_remain_visible_to_jobseekers(
+    applications_env,
+) -> None:
+    client, _, session_factory = applications_env
+    bootstrap_completed_jobseeker(client)
+    listing_ids = seed_employer_and_listings(
+        session_factory,
+        employer_review_status=EmployerReviewStatus.PENDING,
+    )
+
+    jobs = client.get("/api/v1/jobs", params={"sort": "title"})
+    assert jobs.status_code == 200
+    assert jobs.json()["meta"]["total_items"] == 3
+    assert [item["job"]["title"] for item in jobs.json()["items"]] == [
+        "Cash Office Clerk",
+        "Packaging Associate",
+        "Warehouse Associate",
+    ]
+
+    detail = client.get(f"/api/v1/jobs/{listing_ids['eligible']}")
+    assert detail.status_code == 200
+    assert detail.json()["job"]["review_status"] == "approved"
+    assert detail.json()["job"]["lifecycle_status"] == "open"
+
+    create = client.post(
+        "/api/v1/applications", json={"job_listing_id": str(listing_ids["eligible"])}
+    )
+    assert create.status_code == 200
+    assert create.json()["application"]["status"] == "submitted"
+
+
 def test_incomplete_jobseeker_is_blocked_from_jobs_and_applications(
     applications_env,
 ) -> None:

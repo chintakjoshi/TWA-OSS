@@ -28,6 +28,9 @@ export interface EmployerBootstrapProfile {
   org_name: string
   contact_name?: string | null
   phone?: string | null
+  address?: string | null
+  city?: string | null
+  zip?: string | null
 }
 
 export interface AuthBootstrapRequest {

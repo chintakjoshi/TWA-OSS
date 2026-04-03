@@ -157,6 +157,9 @@ def bootstrap_user(
                 org_name=employer_profile.org_name,
                 contact_name=employer_profile.contact_name,
                 phone=employer_profile.phone,
+                address=employer_profile.address,
+                city=employer_profile.city,
+                zip=employer_profile.zip,
                 review_status=EmployerReviewStatus.PENDING,
             )
             session.add(profile)

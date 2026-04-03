@@ -41,6 +41,19 @@ export interface EmployerProfile {
   reviewed_at: string | null
   created_at: string | null
   updated_at: string | null
+  profile_changes?: EmployerProfileChangeSummary | null
+}
+
+export interface EmployerProfileFieldChange {
+  field: 'org_name' | 'contact_name' | 'phone' | 'address' | 'city' | 'zip'
+  label: string
+  previous_value: string | null
+  current_value: string | null
+}
+
+export interface EmployerProfileChangeSummary {
+  changed_at: string
+  changes: EmployerProfileFieldChange[]
 }
 
 export interface JobListing {

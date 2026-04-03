@@ -101,6 +101,42 @@ export function EmployerProfileForm({
             }
           />
         </div>
+        <div>
+          <FieldLabel>Address</FieldLabel>
+          <input
+            aria-label="Address"
+            className={fieldClassName}
+            disabled={controlsDisabled}
+            value={values.address}
+            onChange={(event) =>
+              setValues({ ...values, address: event.target.value })
+            }
+          />
+        </div>
+        <div>
+          <FieldLabel>City</FieldLabel>
+          <input
+            aria-label="City"
+            className={fieldClassName}
+            disabled={controlsDisabled}
+            value={values.city}
+            onChange={(event) =>
+              setValues({ ...values, city: event.target.value })
+            }
+          />
+        </div>
+        <div>
+          <FieldLabel>ZIP Code</FieldLabel>
+          <input
+            aria-label="ZIP code"
+            className={fieldClassName}
+            disabled={controlsDisabled}
+            value={values.zip}
+            onChange={(event) =>
+              setValues({ ...values, zip: event.target.value })
+            }
+          />
+        </div>
         {mode === 'full' ? (
           <>
             <div>
@@ -116,18 +152,6 @@ export function EmployerProfileForm({
               </button>
             </div>
             <div>
-              <FieldLabel>Address</FieldLabel>
-              <input
-                aria-label="Address"
-                className={fieldClassName}
-                disabled={controlsDisabled}
-                value={values.address}
-                onChange={(event) =>
-                  setValues({ ...values, address: event.target.value })
-                }
-              />
-            </div>
-            <div>
               <FieldLabel>Industry</FieldLabel>
               <button
                 aria-label="Industry"
@@ -140,18 +164,6 @@ export function EmployerProfileForm({
               </button>
             </div>
             <div>
-              <FieldLabel>City</FieldLabel>
-              <input
-                aria-label="City"
-                className={fieldClassName}
-                disabled={controlsDisabled}
-                value={values.city}
-                onChange={(event) =>
-                  setValues({ ...values, city: event.target.value })
-                }
-              />
-            </div>
-            <div>
               <FieldLabel>Organization Size</FieldLabel>
               <button
                 aria-label="Organization size"
@@ -162,18 +174,6 @@ export function EmployerProfileForm({
               >
                 Track company headcount
               </button>
-            </div>
-            <div>
-              <FieldLabel>ZIP Code</FieldLabel>
-              <input
-                aria-label="ZIP code"
-                className={fieldClassName}
-                disabled={controlsDisabled}
-                value={values.zip}
-                onChange={(event) =>
-                  setValues({ ...values, zip: event.target.value })
-                }
-              />
             </div>
           </>
         ) : null}

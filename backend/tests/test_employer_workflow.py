@@ -164,6 +164,41 @@ def test_employer_review_and_listing_workflow(employer_workflow_env) -> None:
     )
     assert patch_me.status_code == 200
     assert patch_me.json()["employer"]["address"] == "500 Market St"
+    assert patch_me.json()["employer"]["review_status"] == "pending"
+    assert patch_me.json()["employer"]["review_note"] is None
+
+    blocked_listing = client.post(
+        "/api/v1/employer/listings",
+        json={"title": "Warehouse Associate", "transit_required": "any"},
+    )
+    assert blocked_listing.status_code == 403
+    assert blocked_listing.json()["error"]["code"] == "EMPLOYER_REVIEW_PENDING"
+
+    state["identity"] = AuthProviderIdentity(
+        auth_user_id=staff.auth_user_id,
+        email=staff.email,
+        auth_provider_role="admin",
+    )
+
+    employer_queue = client.get("/api/v1/admin/queue/employers")
+    assert employer_queue.status_code == 200
+    assert employer_queue.json()["meta"]["total_items"] == 1
+
+    reapprove_employer = client.patch(
+        f"/api/v1/admin/employers/{employer_id}",
+        json={
+            "review_status": "approved",
+            "review_note": "Approved after profile update review.",
+        },
+    )
+    assert reapprove_employer.status_code == 200
+    assert reapprove_employer.json()["employer"]["review_status"] == "approved"
+
+    state["identity"] = AuthProviderIdentity(
+        auth_user_id=uuid.UUID("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"),
+        email="employer@example.com",
+        auth_provider_role="user",
+    )
 
     create_listing = client.post(
         "/api/v1/employer/listings",
@@ -223,7 +258,152 @@ def test_employer_review_and_listing_workflow(employer_workflow_env) -> None:
     assert employer.review_status == EmployerReviewStatus.APPROVED
     assert listing.review_status == ListingReviewStatus.APPROVED
     assert listing.lifecycle_status == ListingLifecycleStatus.CLOSED
-    assert len(audits) >= 3
+    assert len(audits) >= 4
+
+
+def test_profile_update_requeues_review_but_keeps_existing_listing_active(
+    employer_workflow_env,
+) -> None:
+    client, state, session_factory = employer_workflow_env
+
+    bootstrap = client.post(
+        "/api/v1/auth/bootstrap",
+        json={
+            "role": "employer",
+            "employer_profile": {
+                "org_name": "Northside Logistics",
+                "contact_name": "Sam Carter",
+                "phone": "3145550199",
+            },
+        },
+    )
+    assert bootstrap.status_code == 200
+
+    staff = seed_staff(
+        session_factory, auth_user_id=uuid.UUID("f0f0f0f0-f0f0-f0f0-f0f0-f0f0f0f0f0f0")
+    )
+    state["identity"] = AuthProviderIdentity(
+        auth_user_id=staff.auth_user_id,
+        email=staff.email,
+        auth_provider_role="admin",
+    )
+
+    employer_id = client.get("/api/v1/admin/queue/employers").json()["items"][0]["id"]
+    approved_employer = client.patch(
+        f"/api/v1/admin/employers/{employer_id}",
+        json={"review_status": "approved", "review_note": "Approved."},
+    )
+    assert approved_employer.status_code == 200
+
+    state["identity"] = AuthProviderIdentity(
+        auth_user_id=uuid.UUID("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"),
+        email="employer@example.com",
+        auth_provider_role="user",
+    )
+    created_listing = client.post(
+        "/api/v1/employer/listings",
+        json={
+            "title": "Warehouse Associate",
+            "description": "Loading and inventory assistance.",
+            "location_address": "2000 North Broadway",
+            "city": "St. Louis",
+            "zip": "63102",
+            "transit_required": "any",
+        },
+    )
+    assert created_listing.status_code == 200
+    listing_id = created_listing.json()["listing"]["id"]
+
+    state["identity"] = AuthProviderIdentity(
+        auth_user_id=staff.auth_user_id,
+        email=staff.email,
+        auth_provider_role="admin",
+    )
+    approved_listing = client.patch(
+        f"/api/v1/admin/listings/{listing_id}",
+        json={"review_status": "approved", "review_note": "Approved."},
+    )
+    assert approved_listing.status_code == 200
+
+    state["identity"] = AuthProviderIdentity(
+        auth_user_id=uuid.UUID("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"),
+        email="employer@example.com",
+        auth_provider_role="user",
+    )
+    patch_me = client.patch(
+        "/api/v1/employers/me",
+        json={"address": "500 Market St", "city": "St. Louis", "zip": "63101"},
+    )
+    assert patch_me.status_code == 200
+    assert patch_me.json()["employer"]["review_status"] == "pending"
+    assert patch_me.json()["employer"]["review_note"] is None
+    assert patch_me.json()["employer"]["reviewed_by"] is None
+    assert patch_me.json()["employer"]["reviewed_at"] is None
+
+    state["identity"] = AuthProviderIdentity(
+        auth_user_id=staff.auth_user_id,
+        email=staff.email,
+        auth_provider_role="admin",
+    )
+    employer_queue = client.get("/api/v1/admin/queue/employers")
+    assert employer_queue.status_code == 200
+    assert employer_queue.json()["meta"]["total_items"] == 1
+    queue_item = employer_queue.json()["items"][0]
+    assert queue_item["profile_changes"]["changed_at"] is not None
+    assert queue_item["profile_changes"]["changes"] == [
+        {
+            "field": "address",
+            "label": "Address",
+            "previous_value": None,
+            "current_value": "500 Market St",
+        },
+        {
+            "field": "city",
+            "label": "City",
+            "previous_value": None,
+            "current_value": "St. Louis",
+        },
+        {
+            "field": "zip",
+            "label": "ZIP code",
+            "previous_value": None,
+            "current_value": "63101",
+        },
+    ]
+
+    state["identity"] = AuthProviderIdentity(
+        auth_user_id=uuid.UUID("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"),
+        email="employer@example.com",
+        auth_provider_role="user",
+    )
+    my_listings = client.get("/api/v1/employer/listings")
+    assert my_listings.status_code == 200
+    assert my_listings.json()["meta"]["total_items"] == 1
+    assert my_listings.json()["items"][0]["review_status"] == "approved"
+    assert my_listings.json()["items"][0]["lifecycle_status"] == "open"
+
+    listing_detail = client.get(f"/api/v1/employer/listings/{listing_id}")
+    assert listing_detail.status_code == 200
+    assert listing_detail.json()["listing"]["review_status"] == "approved"
+    assert listing_detail.json()["listing"]["lifecycle_status"] == "open"
+
+    create_listing = client.post(
+        "/api/v1/employer/listings",
+        json={"title": "Second Listing", "transit_required": "any"},
+    )
+    assert create_listing.status_code == 403
+    assert create_listing.json()["error"]["code"] == "EMPLOYER_REVIEW_PENDING"
+
+    with session_factory() as session:
+        employer = session.execute(select(Employer)).scalar_one()
+        listing = session.execute(select(JobListing)).scalar_one()
+
+    assert employer.review_status == EmployerReviewStatus.PENDING
+    assert employer.review_note is None
+    assert employer.reviewed_by is None
+    assert employer.reviewed_at is None
+    assert listing.review_status == ListingReviewStatus.APPROVED
+    assert listing.lifecycle_status == ListingLifecycleStatus.OPEN
 
 
 def test_staff_can_reassess_rejected_employer_and_listing(

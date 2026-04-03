@@ -35,11 +35,16 @@ test('employer setup submits bootstrap data without patching the profile', async
   expect(
     await screen.findByText('Set up your employer profile')
   ).toBeInTheDocument()
-  expect(screen.queryByLabelText('Address')).not.toBeInTheDocument()
+  expect(screen.getByLabelText('Address')).toBeInTheDocument()
+  expect(screen.getByLabelText('City')).toBeInTheDocument()
+  expect(screen.getByLabelText('ZIP code')).toBeInTheDocument()
 
   await user.type(screen.getByLabelText('Organization name'), 'Acme Logistics')
   await user.type(screen.getByLabelText('Contact name'), 'Jordan Rivers')
   await user.type(screen.getByLabelText('Phone'), '314-555-0199')
+  await user.type(screen.getByLabelText('Address'), '500 Market St')
+  await user.type(screen.getByLabelText('City'), 'St. Louis')
+  await user.type(screen.getByLabelText('ZIP code'), '63101')
   await user.click(screen.getByRole('button', { name: 'Submit for review' }))
 
   await waitFor(() => {
@@ -49,6 +54,9 @@ test('employer setup submits bootstrap data without patching the profile', async
         org_name: 'Acme Logistics',
         contact_name: 'Jordan Rivers',
         phone: '314-555-0199',
+        address: '500 Market St',
+        city: 'St. Louis',
+        zip: '63101',
       },
     })
   })
