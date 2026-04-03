@@ -18,7 +18,6 @@
     "erasableSyntaxOnly": true,
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true,
-    "baseUrl": ".",
     "paths": {
       "@shared/*": ["../../shared/frontend/*"],
       "react": ["./node_modules/@types/react"],

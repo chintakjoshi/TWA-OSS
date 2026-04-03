@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session, joinedload
 
 from app.audit import write_audit
 from app.core.exceptions import AppError
-from app.models import Application, AppUser, Employer, JobListing, Jobseeker
+from app.models import Application, AppUser, AuditLog, Employer, JobListing, Jobseeker
 from app.models.enums import (
     EmployerReviewStatus,
     ListingLifecycleStatus,
@@ -30,6 +30,7 @@ from app.services.jobseeker import is_jobseeker_profile_complete, serialize_char
 from app.services.notifications import (
     get_notification_config,
     notify_employer_review_decision,
+    notify_staff_employer_pending_review,
     notify_listing_review_decision,
     notify_staff_listing_pending_review,
 )
@@ -102,6 +103,14 @@ ALLOWED_LISTING_LIFECYCLE_TRANSITIONS = {
     },
     ListingLifecycleStatus.CLOSED: {ListingLifecycleStatus.CLOSED},
 }
+EMPLOYER_PROFILE_CHANGE_FIELDS = (
+    ("org_name", "Organization"),
+    ("contact_name", "Contact name"),
+    ("phone", "Phone"),
+    ("address", "Address"),
+    ("city", "City"),
+    ("zip", "ZIP code"),
+)
 
 
 def _charge_flags_payload(
@@ -123,7 +132,7 @@ def _charge_flags_payload(
     )
 
 
-def serialize_employer(employer: Employer):
+def serialize_employer(employer: Employer, *, profile_changes=None):
     from app.schemas.employer import EmployerProfilePayload
 
     return EmployerProfilePayload(
@@ -142,6 +151,7 @@ def serialize_employer(employer: Employer):
         reviewed_at=employer.reviewed_at,
         created_at=employer.created_at,
         updated_at=employer.updated_at,
+        profile_changes=profile_changes,
     )
 
 
@@ -341,13 +351,133 @@ def get_listing_by_id(session: Session, listing_id: UUID) -> JobListing | None:
 
 
 def update_employer_profile(session: Session, employer: Employer, payload) -> Employer:
+    if employer.review_status != EmployerReviewStatus.APPROVED:
+        raise AppError(
+            status_code=403,
+            code="EMPLOYER_REVIEW_PENDING",
+            detail="This employer account is not approved for employer features yet.",
+        )
+
+    old_value = serialize_employer(employer).model_dump(mode="json")
+    changed = False
+    requested_fields = payload.model_fields_set
+
     for field in ("org_name", "contact_name", "phone", "address", "city", "zip"):
+        if field not in requested_fields:
+            continue
+
         value = getattr(payload, field)
-        if value is not None:
-            setattr(employer, field, value)
+        if field == "org_name" and value is None:
+            continue
+        if getattr(employer, field) == value:
+            continue
+
+        setattr(employer, field, value)
+        changed = True
+
+    if not changed:
+        return employer
+
+    employer.review_status = EmployerReviewStatus.PENDING
+    employer.review_note = None
+    employer.reviewed_by = None
+    employer.reviewed_at = None
+    session.flush()
+    write_audit(
+        session,
+        actor_id=employer.app_user_id,
+        action="employer.profile_updated",
+        entity_type="employer",
+        entity_id=employer.id,
+        old_value=old_value,
+        new_value=serialize_employer(employer).model_dump(mode="json"),
+    )
     session.commit()
-    session.refresh(employer)
+    employer = ensure_found(
+        get_employer_by_id(session, employer.id), entity_name="Employer"
+    )
+    notify_staff_employer_pending_review(session, employer=employer, reason="updated")
     return employer
+
+
+def _normalize_employer_change_value(value: object) -> str | None:
+    if value is None:
+        return None
+    return str(value)
+
+
+def _build_employer_profile_change_summary(
+    employer: Employer, audit_entry: AuditLog | None
+):
+    from app.schemas.employer import (
+        EmployerProfileChangeSummaryPayload,
+        EmployerProfileFieldChangePayload,
+    )
+
+    if (
+        employer.review_status != EmployerReviewStatus.PENDING
+        or audit_entry is None
+        or (employer.reviewed_at and audit_entry.timestamp <= employer.reviewed_at)
+    ):
+        return None
+
+    old_value = audit_entry.old_value or {}
+    new_value = audit_entry.new_value or {}
+    changes = [
+        EmployerProfileFieldChangePayload(
+            field=field,
+            label=label,
+            previous_value=_normalize_employer_change_value(old_value.get(field)),
+            current_value=_normalize_employer_change_value(new_value.get(field)),
+        )
+        for field, label in EMPLOYER_PROFILE_CHANGE_FIELDS
+        if old_value.get(field) != new_value.get(field)
+    ]
+    if not changes:
+        return None
+
+    return EmployerProfileChangeSummaryPayload(
+        changed_at=audit_entry.timestamp,
+        changes=changes,
+    )
+
+
+def _get_latest_employer_profile_change_map(
+    session: Session, employers: list[Employer]
+) -> dict[UUID, object]:
+    if not employers:
+        return {}
+
+    employer_ids = [employer.id for employer in employers]
+    audit_entries = (
+        session.execute(
+            select(AuditLog)
+            .where(
+                AuditLog.entity_type == "employer",
+                AuditLog.action == "employer.profile_updated",
+                AuditLog.entity_id.in_(employer_ids),
+            )
+            .order_by(AuditLog.timestamp.desc())
+        )
+        .scalars()
+        .all()
+    )
+
+    latest_by_employer_id: dict[UUID, AuditLog] = {}
+    for audit_entry in audit_entries:
+        if (
+            audit_entry.entity_id is None
+            or audit_entry.entity_id in latest_by_employer_id
+        ):
+            continue
+        latest_by_employer_id[audit_entry.entity_id] = audit_entry
+
+    return {
+        employer.id: _build_employer_profile_change_summary(
+            employer, latest_by_employer_id.get(employer.id)
+        )
+        for employer in employers
+    }
 
 
 def create_listing(session: Session, employer: Employer, payload) -> JobListing:
@@ -456,8 +586,12 @@ def list_employers(
     )
     statement = apply_pagination(statement, pagination)
     items = session.execute(statement).unique().scalars().all()
+    profile_change_map = _get_latest_employer_profile_change_map(session, items)
     return build_paginated_response(
-        items=[serialize_employer(item) for item in items],
+        items=[
+            serialize_employer(item, profile_changes=profile_change_map.get(item.id))
+            for item in items
+        ],
         total_items=total_items,
         pagination=pagination,
     )

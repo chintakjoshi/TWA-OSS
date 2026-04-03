@@ -432,14 +432,19 @@ def notify_application_submitted(session: Session, *, application: Application) 
 
 
 def notify_staff_employer_pending_review(
-    session: Session, *, employer: Employer
+    session: Session, *, employer: Employer, reason: str = "registered"
 ) -> None:
+    body = (
+        f"{employer.org_name} updated their employer profile and is awaiting staff review."
+        if reason == "updated"
+        else f"{employer.org_name} registered and is awaiting staff review."
+    )
     safe_dispatch_notification(
         session,
         event_type="employer_review_requested",
         recipients=_get_staff_recipients(session),
         title="Employer awaiting review",
-        body=f"{employer.org_name} registered and is awaiting staff review.",
+        body=body,
     )
 
 

@@ -26,6 +26,23 @@ const employer: EmployerProfile = {
   reviewed_at: null,
   created_at: '2026-03-18T12:00:00Z',
   updated_at: '2026-03-18T12:00:00Z',
+  profile_changes: {
+    changed_at: '2026-03-18T12:00:00Z',
+    changes: [
+      {
+        field: 'address',
+        label: 'Address',
+        previous_value: '500 Market St',
+        current_value: '700 Olive St',
+      },
+      {
+        field: 'zip',
+        label: 'ZIP code',
+        previous_value: '63101',
+        current_value: '63102',
+      },
+    ],
+  },
 }
 
 test('staff can review an employer from the queue and persist the review action', async () => {
@@ -70,8 +87,14 @@ test('staff can review an employer from the queue and persist the review action'
   )
 
   expect((await screen.findAllByText('Pending Org')).length).toBeGreaterThan(0)
+  expect(screen.getByText('2 changes awaiting review')).toBeInTheDocument()
 
   await user.click(screen.getByRole('button', { name: 'Open review' }))
+  expect(await screen.findByText('Recent profile changes')).toBeInTheDocument()
+  expect(
+    screen.getByText('Address: 500 Market St -> 700 Olive St')
+  ).toBeInTheDocument()
+  expect(screen.getByText('ZIP code: 63101 -> 63102')).toBeInTheDocument()
   await user.selectOptions(
     await screen.findByLabelText('Review status'),
     'approved'

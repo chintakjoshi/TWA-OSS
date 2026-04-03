@@ -16,6 +16,18 @@ class ChargeFlagsPayload(BaseModel):
     theft: bool = False
 
 
+class EmployerProfileFieldChangePayload(BaseModel):
+    field: Literal["org_name", "contact_name", "phone", "address", "city", "zip"]
+    label: str
+    previous_value: str | None
+    current_value: str | None
+
+
+class EmployerProfileChangeSummaryPayload(BaseModel):
+    changed_at: datetime
+    changes: list[EmployerProfileFieldChangePayload]
+
+
 class EmployerProfilePayload(BaseModel):
     id: UUID
     app_user_id: UUID
@@ -32,6 +44,7 @@ class EmployerProfilePayload(BaseModel):
     reviewed_at: datetime | None
     created_at: datetime | None
     updated_at: datetime | None
+    profile_changes: EmployerProfileChangeSummaryPayload | None = None
 
 
 class EmployerProfileResponse(BaseModel):

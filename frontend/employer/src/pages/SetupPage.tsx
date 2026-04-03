@@ -75,6 +75,9 @@ export function EmployerSetupPage() {
                       org_name: values.org_name,
                       contact_name: values.contact_name || null,
                       phone: values.phone || null,
+                      address: values.address || null,
+                      city: values.city || null,
+                      zip: values.zip || null,
                     },
                   })
                   navigate('/dashboard', { replace: true })

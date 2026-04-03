@@ -11,6 +11,7 @@ import { EmployerProfileForm } from '../components/EmployerProfileForm'
 import { ErrorState, LoadingState } from '../components/PageState'
 import {
   InlineNotice,
+  Modal,
   PanelBody,
   PortalBadge,
   PortalButton,
@@ -26,6 +27,9 @@ export function EmployerProfilePage() {
   const [isSaving, setIsSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
+  const [pendingValues, setPendingValues] = useState<
+    Parameters<typeof updateMyEmployerProfile>[1] | null
+  >(null)
   const reviewStatus =
     profile?.review_status ?? auth.authMe?.employer_review_status ?? 'pending'
   const readOnly = reviewStatus !== 'approved'
@@ -64,7 +68,7 @@ export function EmployerProfilePage() {
       setProfile(response.employer)
       await auth.reload()
       setSuccess(
-        'Employer profile saved. Staff can review the latest details from here.'
+        'Employer profile updated. Your account is back in staff review, and existing approved listings stay active while TWA reviews the changes.'
       )
     } catch (nextError) {
       setError(
@@ -147,7 +151,7 @@ export function EmployerProfilePage() {
               >
                 {reviewStatus === 'rejected'
                   ? 'Your employer account is awaiting re-approval. You can review your current profile here, but edits stay locked until staff approves the account again.'
-                  : 'Your employer account is still under review. You can review your current profile here, but edits stay locked until staff approves the account.'}
+                  : 'Your employer account is under review. You can review your current profile here, but edits stay locked until staff approves the account. Existing approved listings stay active while staff reviews the latest changes.'}
               </InlineNotice>
             ) : null}
             {profile?.review_note ? (
@@ -171,14 +175,16 @@ export function EmployerProfilePage() {
                   </h2>
                   <p className="mt-3 max-w-[760px] text-sm leading-7 text-slate-500">
                     {readOnly
-                      ? 'Your current organization details remain visible while staff review the account. Editing unlocks again after approval.'
+                      ? 'Your current organization details remain visible while staff review the account. Existing approved listings remain live, and editing unlocks again after approval.'
                       : 'Update the core organization details TWA staff use to review and maintain your employer account.'}
                   </p>
                 </div>
                 <div className="mt-6">
                   <EmployerProfileForm
                     isSubmitting={isSaving}
-                    onSubmit={handleSubmit}
+                    onSubmit={async (values) => {
+                      setPendingValues(values)
+                    }}
                     profile={profile}
                     readOnly={readOnly}
                   />
@@ -231,6 +237,43 @@ export function EmployerProfilePage() {
           </>
         ) : null}
       </main>
+
+      <Modal
+        open={pendingValues !== null}
+        title="Save employer profile changes?"
+        onClose={() => {
+          if (isSaving) return
+          setPendingValues(null)
+        }}
+      >
+        <div className="space-y-6">
+          <p className="text-sm leading-7 text-slate-600">
+            Are you sure you want to make changes, making changes will set the
+            employer profile to pending review and you won't be able to submit
+            new job listings.
+          </p>
+          <div className="flex justify-end gap-3">
+            <PortalButton
+              disabled={isSaving}
+              variant="secondary"
+              onClick={() => setPendingValues(null)}
+            >
+              Cancel
+            </PortalButton>
+            <PortalButton
+              disabled={isSaving}
+              onClick={() => {
+                if (!pendingValues) return
+                void handleSubmit(pendingValues).finally(() =>
+                  setPendingValues(null)
+                )
+              }}
+            >
+              {isSaving ? 'Saving...' : 'Yes, save changes'}
+            </PortalButton>
+          </div>
+        </div>
+      </Modal>
     </div>
   )
 }

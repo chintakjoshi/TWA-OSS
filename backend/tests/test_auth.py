@@ -152,6 +152,9 @@ def test_bootstrap_employer_creates_pending_employer_profile(
                 "org_name": "Northside Logistics",
                 "contact_name": "Sam Carter",
                 "phone": "3145550199",
+                "address": "500 Market St",
+                "city": "St. Louis",
+                "zip": "63101",
             },
         },
     )
@@ -163,6 +166,9 @@ def test_bootstrap_employer_creates_pending_employer_profile(
 
     employer = session.execute(select(Employer)).scalar_one()
     assert employer.org_name == "Northside Logistics"
+    assert employer.address == "500 Market St"
+    assert employer.city == "St. Louis"
+    assert employer.zip == "63101"
     assert employer.review_status.value == "pending"
 
 

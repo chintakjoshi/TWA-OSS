@@ -87,7 +87,12 @@ def _visible_jobs_statement():
         .join(JobListing.employer)
         .options(joinedload(JobListing.employer).joinedload(Employer.app_user))
         .where(
-            Employer.review_status == EmployerReviewStatus.APPROVED,
+            Employer.review_status.in_(
+                (
+                    EmployerReviewStatus.PENDING,
+                    EmployerReviewStatus.APPROVED,
+                )
+            ),
             JobListing.review_status == ListingReviewStatus.APPROVED,
             JobListing.lifecycle_status == ListingLifecycleStatus.OPEN,
         )
