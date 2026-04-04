@@ -253,12 +253,12 @@ test('logout surfaces authSDK failures and preserves the cookie-session marker',
   })
   expect(client.loadStoredSession()).toEqual({ sessionTransport: 'cookie' })
 
-  await expect(
-    client.logout(client.loadStoredSession())
-  ).rejects.toMatchObject({
-    message: 'authSDK logout failed.',
-    status: 500,
-  })
+  await expect(client.logout(client.loadStoredSession())).rejects.toMatchObject(
+    {
+      message: 'authSDK logout failed.',
+      status: 500,
+    }
+  )
 
   expect(client.loadStoredSession()).toEqual({ sessionTransport: 'cookie' })
   expect(client.hasSessionHint()).toBe(true)

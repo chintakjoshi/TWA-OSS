@@ -131,6 +131,8 @@ test('jobseeker auth surfaces logout failures for authenticated users', async ()
   await waitFor(() => {
     expect(screen.getByText('Logout failed.')).toBeInTheDocument()
   })
-  expect(screen.getByText('Your jobseeker workspace is unlocked.')).toBeInTheDocument()
+  expect(
+    screen.getByText('Your jobseeker workspace is unlocked.')
+  ).toBeInTheDocument()
   expect(spies.logout).toHaveBeenCalled()
 })
