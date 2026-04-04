@@ -5,6 +5,7 @@ import { HttpError } from '@shared/lib/http'
 
 import { listEmployerApplicants } from '../api/employerApi'
 import { announceComingSoon } from '../lib/comingSoon'
+import { isEmployerApplicantVisibilityEnabled } from '../lib/capabilities'
 import {
   formatChargeFlags,
   formatDate,
@@ -32,6 +33,9 @@ export function ApplicantsPanel({
   description?: string
 }) {
   const auth = useAuth()
+  const applicantVisibilityEnabled = isEmployerApplicantVisibilityEnabled(
+    auth.authMe
+  )
   const reviewStatus = auth.authMe?.employer_review_status ?? 'pending'
   const reviewLocked = reviewStatus !== 'approved'
   const [page, setPage] = useState(1)
@@ -51,6 +55,16 @@ export function ApplicantsPanel({
     if (reviewLocked) {
       setApplicants([])
       setTotalPages(0)
+      setIsLoading(false)
+      return () => {
+        active = false
+      }
+    }
+
+    if (!applicantVisibilityEnabled) {
+      setApplicants([])
+      setTotalPages(0)
+      setApplicantVisibilityDisabled(true)
       setIsLoading(false)
       return () => {
         active = false
@@ -92,7 +106,13 @@ export function ApplicantsPanel({
     return () => {
       active = false
     }
-  }, [auth.requestTwa, listingId, page, reviewLocked])
+  }, [
+    applicantVisibilityEnabled,
+    auth.requestTwa,
+    listingId,
+    page,
+    reviewLocked,
+  ])
 
   return (
     <PortalPanel>

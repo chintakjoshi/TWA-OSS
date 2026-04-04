@@ -2,17 +2,21 @@ import type { ReactNode } from 'react'
 import { Navigate, Route, Routes } from 'react-router-dom'
 
 import { AuthProvider, useAuth } from '@shared/auth/AuthProvider'
+import type { AuthClient } from '@shared/lib/auth-client'
 import { RequireRole } from '@shared/auth/RouteGuards'
+import { RouteSuspense } from '@shared/routing/LazyRoute'
 
 import { employerAuthClient } from './authClient'
-import { EmployerApplicantsPage } from '../pages/ApplicantsPage'
+import {
+  LazyEmployerApplicantsPage,
+  LazyEmployerDashboardPage,
+  LazyEmployerListingDetailPage,
+  LazyEmployerListingsPage,
+  LazyEmployerNewListingPage,
+  LazyEmployerProfilePage,
+  LazyEmployerSetupPage,
+} from './routeModules'
 import { EmployerAuthPage } from '../pages/AuthPage'
-import { EmployerDashboardPage } from '../pages/DashboardPage'
-import { EmployerListingDetailPage } from '../pages/ListingDetailPage'
-import { EmployerListingsPage } from '../pages/ListingsPage'
-import { EmployerNewListingPage } from '../pages/NewListingPage'
-import { EmployerProfilePage } from '../pages/ProfilePage'
-import { EmployerSetupPage } from '../pages/SetupPage'
 
 function EmployerHomeRoute() {
   const auth = useAuth()
@@ -60,57 +64,71 @@ function EmployerRoutes() {
       <Route
         path="/setup"
         element={
-          <RequireAuthenticatedWithoutRole>
-            <EmployerSetupPage />
-          </RequireAuthenticatedWithoutRole>
+          <RouteSuspense>
+            <RequireAuthenticatedWithoutRole>
+              <LazyEmployerSetupPage />
+            </RequireAuthenticatedWithoutRole>
+          </RouteSuspense>
         }
       />
       <Route
         path="/dashboard"
         element={
-          <RequireRole role="employer">
-            <EmployerDashboardPage />
-          </RequireRole>
+          <RouteSuspense>
+            <RequireRole role="employer">
+              <LazyEmployerDashboardPage />
+            </RequireRole>
+          </RouteSuspense>
         }
       />
       <Route
         path="/profile"
         element={
-          <RequireRole role="employer">
-            <EmployerProfilePage />
-          </RequireRole>
+          <RouteSuspense>
+            <RequireRole role="employer">
+              <LazyEmployerProfilePage />
+            </RequireRole>
+          </RouteSuspense>
         }
       />
       <Route
         path="/my-listings"
         element={
-          <RequireRole role="employer">
-            <EmployerListingsPage />
-          </RequireRole>
+          <RouteSuspense>
+            <RequireRole role="employer">
+              <LazyEmployerListingsPage />
+            </RequireRole>
+          </RouteSuspense>
         }
       />
       <Route
         path="/submit-listing"
         element={
-          <RequireRole role="employer">
-            <EmployerNewListingPage />
-          </RequireRole>
+          <RouteSuspense>
+            <RequireRole role="employer">
+              <LazyEmployerNewListingPage />
+            </RequireRole>
+          </RouteSuspense>
         }
       />
       <Route
         path="/my-listings/:listingId"
         element={
-          <RequireRole role="employer">
-            <EmployerListingDetailPage />
-          </RequireRole>
+          <RouteSuspense>
+            <RequireRole role="employer">
+              <LazyEmployerListingDetailPage />
+            </RequireRole>
+          </RouteSuspense>
         }
       />
       <Route
         path="/applicants"
         element={
-          <RequireRole role="employer">
-            <EmployerApplicantsPage />
-          </RequireRole>
+          <RouteSuspense>
+            <RequireRole role="employer">
+              <LazyEmployerApplicantsPage />
+            </RequireRole>
+          </RouteSuspense>
         }
       />
       <Route
@@ -124,17 +142,21 @@ function EmployerRoutes() {
       <Route
         path="/listings/:listingId"
         element={
-          <RequireRole role="employer">
-            <EmployerListingDetailPage />
-          </RequireRole>
+          <RouteSuspense>
+            <RequireRole role="employer">
+              <LazyEmployerListingDetailPage />
+            </RequireRole>
+          </RouteSuspense>
         }
       />
       <Route
         path="/listings/:listingId/applicants"
         element={
-          <RequireRole role="employer">
-            <EmployerApplicantsPage />
-          </RequireRole>
+          <RouteSuspense>
+            <RequireRole role="employer">
+              <LazyEmployerApplicantsPage />
+            </RequireRole>
+          </RouteSuspense>
         }
       />
       <Route path="/workspace" element={<Navigate replace to="/dashboard" />} />
@@ -143,9 +165,13 @@ function EmployerRoutes() {
   )
 }
 
-export function EmployerPortalApp() {
+export function EmployerPortalApp({
+  client = employerAuthClient,
+}: {
+  client?: AuthClient
+}) {
   return (
-    <AuthProvider client={employerAuthClient}>
+    <AuthProvider client={client}>
       <EmployerRoutes />
     </AuthProvider>
   )

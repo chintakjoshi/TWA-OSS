@@ -95,6 +95,7 @@ def test_auth_me_returns_bootstrap_step_for_unbootstrapped_user(
         "app_user": None,
         "profile_complete": False,
         "employer_review_status": None,
+        "employer_capabilities": None,
         "next_step": "bootstrap_role",
     }
 
@@ -235,7 +236,55 @@ def test_auth_me_returns_employer_review_context(client: TestClient) -> None:
     assert payload["app_user"]["app_role"] == "employer"
     assert payload["profile_complete"] is True
     assert payload["employer_review_status"] == "pending"
+    assert payload["employer_capabilities"] == {"applicant_visibility_enabled": False}
     assert payload["next_step"] == "await_staff_approval"
+
+
+def test_auth_me_defaults_employer_capabilities_without_creating_notification_config(
+    client: TestClient, session: Session
+) -> None:
+    bootstrap = client.post(
+        "/api/v1/auth/bootstrap",
+        json={
+            "role": "employer",
+            "employer_profile": {"org_name": "Northside Logistics"},
+        },
+    )
+    assert bootstrap.status_code == 200
+
+    assert session.get(NotificationConfig, 1) is None
+
+    response = client.get("/api/v1/auth/me")
+
+    assert response.status_code == 200
+    assert response.json()["employer_capabilities"] == {
+        "applicant_visibility_enabled": False
+    }
+    session.expire_all()
+    assert session.get(NotificationConfig, 1) is None
+
+
+def test_auth_me_returns_employer_capabilities_from_notification_config(
+    client: TestClient, session: Session
+) -> None:
+    bootstrap = client.post(
+        "/api/v1/auth/bootstrap",
+        json={
+            "role": "employer",
+            "employer_profile": {"org_name": "Northside Logistics"},
+        },
+    )
+    assert bootstrap.status_code == 200
+
+    session.add(NotificationConfig(id=1, share_applicants_with_employer=True))
+    session.commit()
+
+    response = client.get("/api/v1/auth/me")
+
+    assert response.status_code == 200
+    assert response.json()["employer_capabilities"] == {
+        "applicant_visibility_enabled": True
+    }
 
 
 def test_auth_me_rejects_cross_portal_access_without_leaking_role(

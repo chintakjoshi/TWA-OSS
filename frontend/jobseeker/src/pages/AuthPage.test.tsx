@@ -14,6 +14,7 @@ test('jobseeker auth automatically bootstraps first-login users into the local T
       app_user: null,
       profile_complete: false,
       employer_review_status: null,
+      employer_capabilities: null,
       next_step: 'bootstrap_role',
     },
     onBootstrap: (_payload, state) => {

@@ -60,6 +60,7 @@ function unbootstrappedAuthMe(): AuthMeResponse {
     app_user: null,
     profile_complete: false,
     employer_review_status: null,
+    employer_capabilities: null,
     next_step: 'bootstrap_role',
   }
 }
@@ -80,11 +81,13 @@ export function buildAuthMe({
   email = `${role}@example.com`,
   profileComplete = role !== 'jobseeker',
   employerReviewStatus = role === 'employer' ? 'approved' : null,
+  applicantVisibilityEnabled = role === 'employer' ? true : null,
 }: {
   role: 'jobseeker' | 'employer' | 'staff'
   email?: string
   profileComplete?: boolean
   employerReviewStatus?: 'pending' | 'approved' | 'rejected' | null
+  applicantVisibilityEnabled?: boolean | null
 }): AuthMeResponse {
   return {
     app_user: {
@@ -99,6 +102,12 @@ export function buildAuthMe({
     },
     profile_complete: profileComplete,
     employer_review_status: employerReviewStatus,
+    employer_capabilities:
+      role === 'employer'
+        ? {
+            applicant_visibility_enabled: applicantVisibilityEnabled ?? false,
+          }
+        : null,
     next_step:
       role === 'jobseeker' && !profileComplete
         ? 'complete_jobseeker_profile'

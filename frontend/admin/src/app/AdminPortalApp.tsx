@@ -1,22 +1,26 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
 
 import { AuthProvider, useAuth } from '@shared/auth/AuthProvider'
+import type { AuthClient } from '@shared/lib/auth-client'
 import { RequireRole } from '@shared/auth/RouteGuards'
+import { RouteSuspense } from '@shared/routing/LazyRoute'
 
 import { adminAuthClient } from './authClient'
-import { AdminApplicationsPage } from '../pages/ApplicationsPage'
-import { AdminAuditLogPage } from '../pages/AuditLogPage'
+import {
+  LazyAdminApplicationsPage,
+  LazyAdminAuditLogPage,
+  LazyAdminDashboardPage,
+  LazyAdminEmployersDirectoryPage,
+  LazyAdminEmployersPage,
+  LazyAdminJobseekersPage,
+  LazyAdminListingMatchesPage,
+  LazyAdminListingQueuePage,
+  LazyAdminListingsPage,
+  LazyAdminMatchesPage,
+  LazyAdminNotificationsPage,
+} from './routeModules'
 import { AdminAuthPage } from '../pages/AuthPage'
-import { AdminDashboardPage } from '../pages/DashboardPage'
-import { AdminEmployersDirectoryPage } from '../pages/EmployersDirectoryPage'
-import { AdminEmployersPage } from '../pages/EmployersPage'
-import { AdminJobseekersPage } from '../pages/JobseekersPage'
 import { AdminLandingPage } from '../pages/LandingPage'
-import { AdminListingMatchesPage } from '../pages/ListingMatchesPage'
-import { AdminListingQueuePage } from '../pages/ListingQueuePage'
-import { AdminListingsPage } from '../pages/ListingsPage'
-import { AdminMatchesPage } from '../pages/MatchesPage'
-import { AdminNotificationsPage } from '../pages/NotificationsPage'
 import { AdminShellProvider } from '../components/layout/AdminShellProvider'
 
 function AdminRoutes() {
@@ -39,89 +43,111 @@ function AdminRoutes() {
       <Route
         path="/dashboard"
         element={
-          <RequireRole role="staff">
-            <AdminDashboardPage />
-          </RequireRole>
+          <RouteSuspense>
+            <RequireRole role="staff">
+              <LazyAdminDashboardPage />
+            </RequireRole>
+          </RouteSuspense>
         }
       />
       <Route
         path="/employers/queue"
         element={
-          <RequireRole role="staff">
-            <AdminEmployersPage />
-          </RequireRole>
+          <RouteSuspense>
+            <RequireRole role="staff">
+              <LazyAdminEmployersPage />
+            </RequireRole>
+          </RouteSuspense>
         }
       />
       <Route
         path="/listings"
         element={
-          <RequireRole role="staff">
-            <AdminListingsPage />
-          </RequireRole>
+          <RouteSuspense>
+            <RequireRole role="staff">
+              <LazyAdminListingsPage />
+            </RequireRole>
+          </RouteSuspense>
         }
       />
       <Route
         path="/employers"
         element={
-          <RequireRole role="staff">
-            <AdminEmployersDirectoryPage />
-          </RequireRole>
+          <RouteSuspense>
+            <RequireRole role="staff">
+              <LazyAdminEmployersDirectoryPage />
+            </RequireRole>
+          </RouteSuspense>
         }
       />
       <Route
         path="/listings/queue"
         element={
-          <RequireRole role="staff">
-            <AdminListingQueuePage />
-          </RequireRole>
+          <RouteSuspense>
+            <RequireRole role="staff">
+              <LazyAdminListingQueuePage />
+            </RequireRole>
+          </RouteSuspense>
         }
       />
       <Route
         path="/jobseekers"
         element={
-          <RequireRole role="staff">
-            <AdminJobseekersPage />
-          </RequireRole>
+          <RouteSuspense>
+            <RequireRole role="staff">
+              <LazyAdminJobseekersPage />
+            </RequireRole>
+          </RouteSuspense>
         }
       />
       <Route
         path="/matches/jobseekers"
         element={
-          <RequireRole role="staff">
-            <AdminMatchesPage />
-          </RequireRole>
+          <RouteSuspense>
+            <RequireRole role="staff">
+              <LazyAdminMatchesPage />
+            </RequireRole>
+          </RouteSuspense>
         }
       />
       <Route
         path="/matches/listings"
         element={
-          <RequireRole role="staff">
-            <AdminListingMatchesPage />
-          </RequireRole>
+          <RouteSuspense>
+            <RequireRole role="staff">
+              <LazyAdminListingMatchesPage />
+            </RequireRole>
+          </RouteSuspense>
         }
       />
       <Route
         path="/applications"
         element={
-          <RequireRole role="staff">
-            <AdminApplicationsPage />
-          </RequireRole>
+          <RouteSuspense>
+            <RequireRole role="staff">
+              <LazyAdminApplicationsPage />
+            </RequireRole>
+          </RouteSuspense>
         }
       />
       <Route
         path="/notifications"
         element={
-          <RequireRole role="staff">
-            <AdminNotificationsPage />
-          </RequireRole>
+          <RouteSuspense>
+            <RequireRole role="staff">
+              <LazyAdminNotificationsPage />
+            </RequireRole>
+          </RouteSuspense>
         }
       />
       <Route
         path="/audit"
         element={
-          <RequireRole role="staff">
-            <AdminAuditLogPage />
-          </RequireRole>
+          <RouteSuspense>
+            <RequireRole role="staff">
+              <LazyAdminAuditLogPage />
+            </RequireRole>
+          </RouteSuspense>
         }
       />
       <Route
@@ -134,9 +160,13 @@ function AdminRoutes() {
   )
 }
 
-export function AdminPortalApp() {
+export function AdminPortalApp({
+  client = adminAuthClient,
+}: {
+  client?: AuthClient
+}) {
   return (
-    <AuthProvider client={adminAuthClient}>
+    <AuthProvider client={client}>
       <AdminShellProvider>
         <AdminRoutes />
       </AdminShellProvider>

@@ -47,8 +47,13 @@ class AuthBootstrapResponse(BaseModel):
     next_step: str | None
 
 
+class EmployerCapabilitiesPayload(BaseModel):
+    applicant_visibility_enabled: bool
+
+
 class AuthMeResponse(BaseModel):
     app_user: AppUserPayload | None
     profile_complete: bool
     employer_review_status: Literal["pending", "approved", "rejected"] | None
+    employer_capabilities: EmployerCapabilitiesPayload | None = None
     next_step: str | None
