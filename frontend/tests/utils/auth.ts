@@ -32,6 +32,7 @@ type MockAuthClientOptions = {
   authMe?: AuthMeResponse | null
   portal?: AppRole
   loginError?: Error
+  logoutError?: Error
   loginResult?: LoginOTPChallengeResponse | CookieSessionResponse
   verifyOtpResult?: CookieSessionResponse
   fetchAuthMeError?: Error
@@ -209,6 +210,7 @@ export function createMockAuthClient(options: MockAuthClientOptions = {}) {
 
   const logout = vi.fn(async (session: StoredSession | null): Promise<void> => {
     void session
+    if (options.logoutError) throw options.logoutError
     state.session = null
     state.authMe = null
     state.otpChallenge = null

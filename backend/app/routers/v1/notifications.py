@@ -42,6 +42,17 @@ def build_sse_message(*, event: str, data: dict[str, object]) -> str:
     return f"event: {event}\ndata: {json.dumps(data)}\n\n"
 
 
+def build_snapshot_message(*, session: Session, app_user_id: UUID) -> str:
+    # End the read transaction before yielding back into the long-lived SSE loop.
+    session.expire_all()
+    try:
+        snapshot = serialize_notification_snapshot(session, app_user_id=app_user_id)
+    finally:
+        if session.in_transaction():
+            session.rollback()
+    return build_sse_message(event="snapshot", data=snapshot)
+
+
 @router.get("/me", response_model=PaginatedResponse[NotificationPayload])
 def get_my_notifications(
     unread_only: bool = Query(default=False),
@@ -72,12 +83,9 @@ async def stream_my_notifications(
     async def event_stream():
         idle_seconds = 0
         try:
-            session.expire_all()
-            yield build_sse_message(
-                event="snapshot",
-                data=serialize_notification_snapshot(
-                    session, app_user_id=auth_context.app_user_id
-                ),
+            yield build_snapshot_message(
+                session=session,
+                app_user_id=auth_context.app_user_id,
             )
 
             while True:
@@ -101,12 +109,9 @@ async def stream_my_notifications(
 
                 idle_seconds += STREAM_POLL_INTERVAL_SECONDS
                 if idle_seconds >= STREAM_RECONCILE_INTERVAL_SECONDS:
-                    session.expire_all()
-                    yield build_sse_message(
-                        event="snapshot",
-                        data=serialize_notification_snapshot(
-                            session, app_user_id=auth_context.app_user_id
-                        ),
+                    yield build_snapshot_message(
+                        session=session,
+                        app_user_id=auth_context.app_user_id,
                     )
                     idle_seconds = 0
                 else:

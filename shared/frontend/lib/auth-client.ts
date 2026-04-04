@@ -330,7 +330,7 @@ export function createAuthClient(config: AuthClientConfig): AuthClient {
         '/auth/logout',
         { method: 'POST' },
         { cookieTransport: true }
-      ).catch(() => undefined)
+      )
       store.clear()
       csrfTokenCache = null
     },

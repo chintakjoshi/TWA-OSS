@@ -180,7 +180,9 @@ export function JobseekerAuthPage() {
                 </Link>
                 <PortalButton
                   variant="secondary"
-                  onClick={() => void auth.logout()}
+                  onClick={() => {
+                    void run(() => auth.logout())
+                  }}
                 >
                   Sign out
                 </PortalButton>

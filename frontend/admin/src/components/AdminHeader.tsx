@@ -1,4 +1,5 @@
 import { NavLink } from 'react-router-dom'
+import { toast } from 'sonner'
 
 import { useAuth } from '@shared/auth/AuthProvider'
 import { Badge, Button, Card, CardBody } from '@shared/ui/primitives'
@@ -74,7 +75,18 @@ export function AdminHeader() {
               Audit
             </NavLink>
           </nav>
-          <Button tone="ghost" onClick={() => void auth.logout()}>
+          <Button
+            tone="ghost"
+            onClick={() => {
+              void auth.logout().catch((nextError) => {
+                toast.error(
+                  nextError instanceof Error
+                    ? nextError.message
+                    : 'Unable to sign out right now.'
+                )
+              })
+            }}
+          >
             Sign out
           </Button>
         </div>

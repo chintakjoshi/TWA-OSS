@@ -204,11 +204,8 @@ export function AuthProvider({
         await hydrate(client.loadStoredSession(), { interactive: true })
       },
       async logout() {
-        try {
-          await client.logout(client.loadStoredSession())
-        } finally {
-          resetAuthState()
-        }
+        await client.logout(client.loadStoredSession())
+        resetAuthState()
       },
       async requestTwa<T>(path: string, init?: RequestInit) {
         return client.requestTwa<T>(path, client.loadStoredSession(), init)

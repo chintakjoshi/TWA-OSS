@@ -66,6 +66,31 @@ function AuthLoginProbe() {
   )
 }
 
+function AuthLogoutProbe() {
+  const auth = useAuth()
+  const [error, setError] = useState('none')
+
+  return (
+    <div>
+      <p>state:{auth.state}</p>
+      <p>email:{auth.authMe?.app_user?.email ?? 'none'}</p>
+      <p>error:{error}</p>
+      <button
+        type="button"
+        onClick={() => {
+          void auth.logout().catch((nextError) => {
+            setError(
+              nextError instanceof Error ? nextError.message : 'unknown error'
+            )
+          })
+        }}
+      >
+        Trigger logout
+      </button>
+    </div>
+  )
+}
+
 function clearCookies() {
   for (const entry of document.cookie.split(';')) {
     const [name] = entry.split('=')
@@ -197,6 +222,48 @@ test('cookie-backed requests refresh through /auth/token without raw refresh tok
   expect(refreshHeaders.get('X-CSRF-Token')).toBe('bootstrap-csrf-token')
 })
 
+test('logout surfaces authSDK failures and preserves the cookie-session marker', async () => {
+  document.cookie = 'twa_auth_csrf=existing-csrf-token; path=/'
+
+  const fetchMock = vi
+    .fn()
+    .mockResolvedValueOnce(
+      jsonResponse({ authenticated: true, session_transport: 'cookie' })
+    )
+    .mockResolvedValueOnce(
+      jsonResponse(
+        { detail: 'authSDK logout failed.' },
+        {
+          status: 500,
+        }
+      )
+    )
+  vi.stubGlobal('fetch', fetchMock)
+
+  const client = createAuthClient({
+    authBaseUrl: 'http://app.local/_auth',
+    twaApiUrl: 'http://app.local',
+    audience: 'twa-api',
+    storageKey: 'twa-cookie-logout-failure-test',
+  })
+
+  await client.login({
+    email: 'jobseeker@example.com',
+    password: 'Password123!',
+  })
+  expect(client.loadStoredSession()).toEqual({ sessionTransport: 'cookie' })
+
+  await expect(
+    client.logout(client.loadStoredSession())
+  ).rejects.toMatchObject({
+    message: 'authSDK logout failed.',
+    status: 500,
+  })
+
+  expect(client.loadStoredSession()).toEqual({ sessionTransport: 'cookie' })
+  expect(client.hasSessionHint()).toBe(true)
+})
+
 test('auth provider rehydrates authenticated state on reload without a stored token pair', async () => {
   const authMe = buildAuthMe({ role: 'jobseeker', profileComplete: true })
   const { client } = createMockAuthClient({
@@ -238,6 +305,35 @@ test('auth provider clears a wrong-portal session during rehydration', async () 
     expect(screen.getByText('state:anonymous')).toBeInTheDocument()
   })
   expect(screen.getByText('email:none')).toBeInTheDocument()
+  expect(spies.logout).toHaveBeenCalled()
+})
+
+test('auth provider keeps the user authenticated when logout fails', async () => {
+  const user = userEvent.setup()
+  const authMe = buildAuthMe({ role: 'jobseeker', profileComplete: true })
+  const { client, spies } = createMockAuthClient({
+    authMe,
+    logoutError: new Error('Logout failed.'),
+  })
+
+  render(
+    <MemoryRouter>
+      <AuthProvider client={client}>
+        <AuthLogoutProbe />
+      </AuthProvider>
+    </MemoryRouter>
+  )
+
+  await screen.findByText('state:authenticated')
+  await user.click(screen.getByRole('button', { name: 'Trigger logout' }))
+
+  await waitFor(() => {
+    expect(screen.getByText('error:Logout failed.')).toBeInTheDocument()
+  })
+  expect(screen.getByText('state:authenticated')).toBeInTheDocument()
+  expect(
+    screen.getByText(`email:${authMe.app_user?.email}`)
+  ).toBeInTheDocument()
   expect(spies.logout).toHaveBeenCalled()
 })
 
