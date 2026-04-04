@@ -635,7 +635,15 @@ export function AdminWorkspaceLayout({
                   <button
                     className="flex w-full items-center justify-between border-t border-white/8 px-4 py-3 text-left text-sm font-medium text-white transition hover:bg-white/6"
                     type="button"
-                    onClick={() => void logout()}
+                    onClick={() => {
+                      void logout().catch((nextError) => {
+                        toast.error(
+                          nextError instanceof Error
+                            ? nextError.message
+                            : 'Unable to sign out right now.'
+                        )
+                      })
+                    }}
                   >
                     <span>Sign out</span>
                   </button>

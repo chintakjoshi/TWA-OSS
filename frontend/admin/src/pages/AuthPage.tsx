@@ -141,7 +141,9 @@ export function AdminAuthPage() {
                 </Link>
                 <AdminButton
                   variant="secondary"
-                  onClick={() => void auth.logout()}
+                  onClick={() => {
+                    void run(() => auth.logout())
+                  }}
                 >
                   Sign out
                 </AdminButton>

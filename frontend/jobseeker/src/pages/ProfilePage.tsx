@@ -401,7 +401,15 @@ export function JobseekerProfilePage() {
                   </PortalButton>
                   <PortalButton
                     variant="secondary"
-                    onClick={() => void auth.logout()}
+                    onClick={() => {
+                      void auth.logout().catch((nextError) => {
+                        toast.error(
+                          nextError instanceof Error
+                            ? nextError.message
+                            : 'Unable to sign out right now.'
+                        )
+                      })
+                    }}
                   >
                     Sign Out
                   </PortalButton>

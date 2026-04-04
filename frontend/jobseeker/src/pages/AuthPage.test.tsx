@@ -109,3 +109,28 @@ test('jobseeker auth clears wrong-portal sessions without leaking the linked rol
   expect(screen.queryByText(/linked to the/i)).not.toBeInTheDocument()
   expect(screen.queryByText(/workspace stays locked/i)).not.toBeInTheDocument()
 })
+
+test('jobseeker auth surfaces logout failures for authenticated users', async () => {
+  const user = userEvent.setup()
+  const { client, spies } = createMockAuthClient({
+    authMe: buildAuthMe({ role: 'jobseeker', profileComplete: true }),
+    logoutError: new Error('Logout failed.'),
+  })
+
+  render(
+    <MemoryRouter>
+      <AuthProvider client={client}>
+        <JobseekerAuthPage />
+      </AuthProvider>
+    </MemoryRouter>
+  )
+
+  await screen.findByText('Your jobseeker workspace is unlocked.')
+  await user.click(screen.getByRole('button', { name: 'Sign out' }))
+
+  await waitFor(() => {
+    expect(screen.getByText('Logout failed.')).toBeInTheDocument()
+  })
+  expect(screen.getByText('Your jobseeker workspace is unlocked.')).toBeInTheDocument()
+  expect(spies.logout).toHaveBeenCalled()
+})

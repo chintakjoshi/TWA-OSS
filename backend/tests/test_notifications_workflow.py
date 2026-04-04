@@ -5,11 +5,13 @@ import uuid
 from collections.abc import Generator
 from pathlib import Path
 
+import anyio
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine, select
 from sqlalchemy.orm import Session, sessionmaker
 
+from app.core.auth import AuthContext
 from app.core.config import get_settings
 from app.db.session import get_db_session
 from app.main import create_app
@@ -34,6 +36,7 @@ from app.models.enums import (
     TransitRequirement,
     TransitType,
 )
+from app.routers.v1.notifications import stream_my_notifications
 from app.services import notifications as notifications_service
 from app.services.auth import AuthProviderIdentity, get_auth_provider_identity
 
@@ -715,3 +718,43 @@ def test_notification_broker_publishes_new_events(notifications_env) -> None:
             app_user_id=staff.id,
             subscriber_id=subscriber_id,
         )
+
+
+def test_notification_stream_does_not_leave_request_session_in_transaction(
+    notifications_env,
+) -> None:
+    _, _, session_factory, _ = notifications_env
+    jobseeker_user, _ = seed_jobseeker(
+        session_factory, auth_user_id=uuid.UUID("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")
+    )
+
+    class FakeRequest:
+        async def is_disconnected(self) -> bool:
+            return False
+
+    async def read_first_stream_chunk(session: Session) -> str:
+        response = await stream_my_notifications(
+            request=FakeRequest(),
+            auth_context=AuthContext(
+                auth_user_id=jobseeker_user.auth_user_id,
+                email=jobseeker_user.email,
+                auth_provider_role="user",
+                app_user_id=jobseeker_user.id,
+                app_role="jobseeker",
+                is_active=True,
+            ),
+            session=session,
+        )
+        body_iterator = response.body_iterator
+        assert body_iterator is not None
+
+        try:
+            return await anext(body_iterator)
+        finally:
+            await body_iterator.aclose()
+
+    with session_factory() as session:
+        first_chunk = anyio.run(read_first_stream_chunk, session)
+
+        assert "event: snapshot" in first_chunk
+        assert not session.in_transaction()

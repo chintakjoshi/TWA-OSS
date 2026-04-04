@@ -133,7 +133,17 @@ export function EmployerProfilePage() {
                 <div className="flex flex-wrap gap-3">
                   <PortalButton
                     variant="secondary"
-                    onClick={() => void auth.logout()}
+                    onClick={() => {
+                      setError(null)
+                      setSuccess(null)
+                      void auth.logout().catch((nextError) => {
+                        setError(
+                          nextError instanceof Error
+                            ? nextError.message
+                            : 'Unable to sign out right now.'
+                        )
+                      })
+                    }}
                   >
                     Sign Out
                   </PortalButton>
