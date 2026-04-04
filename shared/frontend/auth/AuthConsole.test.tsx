@@ -33,6 +33,7 @@ test('login form hands off to authSDK and unlocks authenticated content', async 
       app_user: null,
       profile_complete: false,
       employer_review_status: null,
+      employer_capabilities: null,
       next_step: 'bootstrap_role',
     },
   })

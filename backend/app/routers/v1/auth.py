@@ -8,6 +8,7 @@ from app.schemas.auth import (
     AuthBootstrapRequest,
     AuthBootstrapResponse,
     AuthMeResponse,
+    EmployerCapabilitiesPayload,
     PortalScope,
 )
 from app.services.auth import (
@@ -58,5 +59,10 @@ def get_auth_me(
         ),
         profile_complete=result.profile_complete,
         employer_review_status=result.employer_review_status,
+        employer_capabilities=(
+            EmployerCapabilitiesPayload(**result.employer_capabilities)
+            if result.employer_capabilities
+            else None
+        ),
         next_step=result.next_step,
     )

@@ -382,6 +382,7 @@ test('fetchAuthMe includes the configured portal scope in the TWA auth request',
       },
       profile_complete: true,
       employer_review_status: null,
+      employer_capabilities: null,
       next_step: null,
     })
   )

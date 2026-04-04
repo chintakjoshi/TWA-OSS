@@ -21,6 +21,7 @@ import {
   Surface,
 } from '../components/ui/EmployerUi'
 import { announceComingSoon } from '../lib/comingSoon'
+import { isEmployerApplicantVisibilityEnabled } from '../lib/capabilities'
 import {
   formatChargeFlags,
   formatDate,
@@ -46,6 +47,9 @@ const PAGE_SIZE = 12
 
 export function EmployerApplicantsPage() {
   const auth = useAuth()
+  const applicantVisibilityEnabled = isEmployerApplicantVisibilityEnabled(
+    auth.authMe
+  )
   const { listingId } = useParams()
   const [searchParams, setSearchParams] = useSearchParams()
   const [page, setPage] = useState(1)
@@ -114,6 +118,15 @@ export function EmployerApplicantsPage() {
       setListingTotal(listingsResponse.meta.total_items)
       setListingOptions(listingsResponse.items.filter(isListingVisible))
       if (reviewLocked) {
+        setGroups([])
+        setTotalItems(0)
+        setTotalPages(0)
+        hasLoadedOnceRef.current = true
+        return
+      }
+
+      if (!applicantVisibilityEnabled) {
+        setSharingDisabled(true)
         setGroups([])
         setTotalItems(0)
         setTotalPages(0)
@@ -214,6 +227,7 @@ export function EmployerApplicantsPage() {
     listingFilter,
     listingId,
     page,
+    applicantVisibilityEnabled,
     reviewLocked,
     searchQuery,
     statusFilter,

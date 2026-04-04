@@ -9,7 +9,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.core.exceptions import AppError
-from app.models import AppUser, Employer, Jobseeker
+from app.models import AppUser, Employer, Jobseeker, NotificationConfig
 from app.models.enums import AppRole, EmployerReviewStatus
 from app.schemas.auth import PortalScope
 from app.services.jobseeker import is_jobseeker_profile_complete
@@ -29,6 +29,7 @@ class AuthMeResult:
     app_user: AppUser | None
     profile_complete: bool
     employer_review_status: str | None
+    employer_capabilities: dict[str, bool] | None
     next_step: str | None
 
 
@@ -181,6 +182,7 @@ def build_auth_me(*, session: Session, identity: AuthProviderIdentity) -> AuthMe
             app_user=None,
             profile_complete=False,
             employer_review_status=None,
+            employer_capabilities=None,
             next_step=next_step,
         )
 
@@ -191,6 +193,7 @@ def build_auth_me(*, session: Session, identity: AuthProviderIdentity) -> AuthMe
 
     profile_complete = True
     employer_review_status = None
+    employer_capabilities = None
     next_step = None
 
     if app_user.app_role == AppRole.JOBSEEKER:
@@ -204,6 +207,12 @@ def build_auth_me(*, session: Session, identity: AuthProviderIdentity) -> AuthMe
             select(Employer).where(Employer.app_user_id == app_user.id)
         ).scalar_one_or_none()
         employer_review_status = employer.review_status.value if employer else None
+        config = session.get(NotificationConfig, 1)
+        employer_capabilities = {
+            "applicant_visibility_enabled": (
+                config.share_applicants_with_employer if config is not None else False
+            )
+        }
         next_step = (
             None
             if employer_review_status == EmployerReviewStatus.APPROVED.value
@@ -214,6 +223,7 @@ def build_auth_me(*, session: Session, identity: AuthProviderIdentity) -> AuthMe
         app_user=app_user,
         profile_complete=profile_complete,
         employer_review_status=employer_review_status,
+        employer_capabilities=employer_capabilities,
         next_step=next_step,
     )
 

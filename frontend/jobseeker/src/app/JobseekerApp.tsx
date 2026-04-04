@@ -1,16 +1,20 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
 
 import { AuthProvider, useAuth } from '@shared/auth/AuthProvider'
+import type { AuthClient } from '@shared/lib/auth-client'
 import { RequireRole } from '@shared/auth/RouteGuards'
+import { RouteSuspense } from '@shared/routing/LazyRoute'
 
 import { jobseekerAuthClient } from './authClient'
+import {
+  LazyJobseekerApplicationsPage,
+  LazyJobseekerJobDetailPage,
+  LazyJobseekerJobsPage,
+  LazyJobseekerProfilePage,
+} from './routeModules'
 import { RequireCompleteProfile } from '../guards/RequireCompleteProfile'
-import { JobseekerApplicationsPage } from '../pages/ApplicationsPage'
 import { JobseekerAuthPage } from '../pages/AuthPage'
-import { JobseekerJobDetailPage } from '../pages/JobDetailPage'
-import { JobseekerJobsPage } from '../pages/JobsPage'
 import { JobseekerLandingPage } from '../pages/LandingPage'
-import { JobseekerProfilePage } from '../pages/ProfilePage'
 
 function JobseekerRoutes() {
   const auth = useAuth()
@@ -37,39 +41,47 @@ function JobseekerRoutes() {
       <Route
         path="/profile"
         element={
-          <RequireRole role="jobseeker">
-            <JobseekerProfilePage />
-          </RequireRole>
+          <RouteSuspense>
+            <RequireRole role="jobseeker">
+              <LazyJobseekerProfilePage />
+            </RequireRole>
+          </RouteSuspense>
         }
       />
       <Route
         path="/jobs"
         element={
-          <RequireRole role="jobseeker">
-            <RequireCompleteProfile>
-              <JobseekerJobsPage />
-            </RequireCompleteProfile>
-          </RequireRole>
+          <RouteSuspense>
+            <RequireRole role="jobseeker">
+              <RequireCompleteProfile>
+                <LazyJobseekerJobsPage />
+              </RequireCompleteProfile>
+            </RequireRole>
+          </RouteSuspense>
         }
       />
       <Route
         path="/jobs/:jobId"
         element={
-          <RequireRole role="jobseeker">
-            <RequireCompleteProfile>
-              <JobseekerJobDetailPage />
-            </RequireCompleteProfile>
-          </RequireRole>
+          <RouteSuspense>
+            <RequireRole role="jobseeker">
+              <RequireCompleteProfile>
+                <LazyJobseekerJobDetailPage />
+              </RequireCompleteProfile>
+            </RequireRole>
+          </RouteSuspense>
         }
       />
       <Route
         path="/applications"
         element={
-          <RequireRole role="jobseeker">
-            <RequireCompleteProfile>
-              <JobseekerApplicationsPage />
-            </RequireCompleteProfile>
-          </RequireRole>
+          <RouteSuspense>
+            <RequireRole role="jobseeker">
+              <RequireCompleteProfile>
+                <LazyJobseekerApplicationsPage />
+              </RequireCompleteProfile>
+            </RequireRole>
+          </RouteSuspense>
         }
       />
       <Route path="*" element={<Navigate replace to="/" />} />
@@ -77,9 +89,13 @@ function JobseekerRoutes() {
   )
 }
 
-export function JobseekerApp() {
+export function JobseekerApp({
+  client = jobseekerAuthClient,
+}: {
+  client?: AuthClient
+}) {
   return (
-    <AuthProvider client={jobseekerAuthClient}>
+    <AuthProvider client={client}>
       <JobseekerRoutes />
     </AuthProvider>
   )

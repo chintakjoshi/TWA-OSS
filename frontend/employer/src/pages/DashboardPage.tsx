@@ -27,6 +27,7 @@ import {
   Surface,
 } from '../components/ui/EmployerUi'
 import { announceComingSoon } from '../lib/comingSoon'
+import { isEmployerApplicantVisibilityEnabled } from '../lib/capabilities'
 import { formatDate, getStatusTone, isListingVisible } from '../lib/formatting'
 import type { EmployerProfile, JobListing } from '../types/employer'
 
@@ -38,6 +39,9 @@ type ApplicantMetrics = {
 
 export function EmployerDashboardPage() {
   const auth = useAuth()
+  const applicantVisibilityEnabled = isEmployerApplicantVisibilityEnabled(
+    auth.authMe
+  )
   const [profile, setProfile] = useState<EmployerProfile | null>(null)
   const [listings, setListings] = useState<JobListing[]>([])
   const [listingTotal, setListingTotal] = useState(0)
@@ -67,7 +71,10 @@ export function EmployerDashboardPage() {
         setListings(nextListings)
         setListingTotal(listingResponse.meta.total_items)
 
-        if (nextProfile.review_status !== 'approved') {
+        if (
+          nextProfile.review_status !== 'approved' ||
+          !applicantVisibilityEnabled
+        ) {
           setMetrics({ applicants: null, hires: null, sharingEnabled: false })
           return
         }
@@ -125,7 +132,7 @@ export function EmployerDashboardPage() {
     return () => {
       active = false
     }
-  }, [auth])
+  }, [applicantVisibilityEnabled, auth.authMe, auth.requestTwa])
 
   const reviewStatus =
     profile?.review_status ?? auth.authMe?.employer_review_status ?? 'pending'

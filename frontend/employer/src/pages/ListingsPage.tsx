@@ -19,6 +19,7 @@ import {
   Surface,
 } from '../components/ui/EmployerUi'
 import { announceComingSoon } from '../lib/comingSoon'
+import { isEmployerApplicantVisibilityEnabled } from '../lib/capabilities'
 import { formatDate, getStatusTone } from '../lib/formatting'
 import type { JobListing } from '../types/employer'
 
@@ -27,6 +28,9 @@ const DEFAULT_SORT = 'created_at:desc'
 
 export function EmployerListingsPage() {
   const auth = useAuth()
+  const applicantVisibilityEnabled = isEmployerApplicantVisibilityEnabled(
+    auth.authMe
+  )
   const [page, setPage] = useState(1)
   const [searchDraft, setSearchDraft] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
@@ -82,6 +86,12 @@ export function EmployerListingsPage() {
 
       const reviewGate = auth.authMe?.employer_review_status ?? 'pending'
       if (reviewGate !== 'approved') {
+        setApplicantCounts({})
+        hasLoadedOnceRef.current = true
+        return
+      }
+
+      if (!applicantVisibilityEnabled) {
         setApplicantCounts({})
         hasLoadedOnceRef.current = true
         return
@@ -146,6 +156,7 @@ export function EmployerListingsPage() {
   }, [
     auth.authMe?.employer_review_status,
     auth.requestTwa,
+    applicantVisibilityEnabled,
     lifecycleStatus,
     page,
     reviewStatus,

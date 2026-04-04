@@ -16,6 +16,9 @@ export interface AuthMeResponse {
   app_user: AppUserPayload | null
   profile_complete: boolean
   employer_review_status: EmployerReviewStatus | null
+  employer_capabilities: {
+    applicant_visibility_enabled: boolean
+  } | null
   next_step: string | null
 }
 
