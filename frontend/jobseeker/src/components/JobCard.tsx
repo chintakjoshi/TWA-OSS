@@ -68,6 +68,12 @@ export function JobCard({ item }: { item: JobListItem }) {
           </span>
         </div>
 
+        {item.eligibility_note ? (
+          <p className="rounded-2xl border border-[#eadfce] bg-[#fcfaf6] px-4 py-3 text-sm leading-6 text-slate-600">
+            {item.eligibility_note}
+          </p>
+        ) : null}
+
         <div className="mt-auto flex items-center gap-3">
           <button
             aria-label={`Save ${item.job.title}`}

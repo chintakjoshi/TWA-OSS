@@ -123,7 +123,6 @@ def _build_listing_ineligibility_condition(jobseeker: Jobseeker):
             or_(
                 JobListing.transit_required == TransitRequirement.OWN_CAR,
                 JobListing.transit_accessible.is_(False),
-                JobListing.transit_accessible.is_(None),
             )
         )
 
@@ -167,6 +166,7 @@ def serialize_job_with_eligibility(
         job=serialize_listing(listing),
         is_eligible=result.is_eligible,
         ineligibility_tag=result.ineligibility_tag,
+        eligibility_note=result.eligibility_note,
         has_applied=has_applied,
     )
 
@@ -180,6 +180,7 @@ def build_job_detail_for_jobseeker(
         eligibility=JobEligibilityPayload(
             is_eligible=result.is_eligible,
             ineligibility_tag=result.ineligibility_tag,
+            eligibility_note=result.eligibility_note,
             has_applied=has_applied,
         ),
     )

@@ -212,6 +212,11 @@ export function JobseekerJobDetailPage() {
                 >
                   {buildEligibilityMessage(detail, alreadyApplied)}
                 </InlineNotice>
+                {detail.eligibility.eligibility_note ? (
+                  <InlineNotice tone="info">
+                    {detail.eligibility.eligibility_note}
+                  </InlineNotice>
+                ) : null}
 
                 <div className="grid gap-6 lg:grid-cols-2">
                   <div className="space-y-3">
