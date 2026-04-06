@@ -24,6 +24,11 @@ import {
   PortalPanel,
 } from '../components/ui/JobseekerUi'
 import { announceComingSoon } from '../lib/comingSoon'
+import {
+  formatTransitAccessibilityDescription,
+  formatTransitRequirementDescription,
+  formatTransitRequirementLabel,
+} from '../lib/formatting'
 import type { JobDetailPayload } from '../types/jobseeker'
 
 function buildEligibilityMessage(
@@ -170,9 +175,9 @@ export function JobseekerJobDetailPage() {
                       </span>
                       <span className="inline-flex items-center gap-2">
                         <Navigation className="h-4 w-4 text-[#3569c7]" />
-                        {detail.job.transit_required === 'own_car'
-                          ? 'Own car required'
-                          : 'Transit friendly'}
+                        {formatTransitRequirementLabel(
+                          detail.job.transit_required
+                        )}
                       </span>
                     </div>
                   </div>
@@ -250,9 +255,9 @@ export function JobseekerJobDetailPage() {
                           Requirement
                         </p>
                         <p className="mt-2 text-sm leading-7 text-slate-500">
-                          {detail.job.transit_required === 'own_car'
-                            ? 'This listing requires access to a personal vehicle.'
-                            : 'This listing accepts public transit and other reachable options.'}
+                          {formatTransitRequirementDescription(
+                            detail.job.transit_required
+                          )}
                         </p>
                       </div>
                       <div className="rounded-2xl border border-[#eadfce] bg-white px-4 py-4">
@@ -260,11 +265,9 @@ export function JobseekerJobDetailPage() {
                           Accessibility
                         </p>
                         <p className="mt-2 text-sm leading-7 text-slate-500">
-                          {detail.job.transit_accessible === null
-                            ? 'Transit accessibility has not been computed yet.'
-                            : detail.job.transit_accessible
-                              ? 'Transit access has been marked available for this listing.'
-                              : 'Transit access is not currently available for this listing.'}
+                          {formatTransitAccessibilityDescription(
+                            detail.job.transit_accessible
+                          )}
                         </p>
                       </div>
                     </div>

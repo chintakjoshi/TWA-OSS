@@ -3,6 +3,7 @@ import type { ChargeFlags } from '../types/admin'
 type ReviewStatus = 'pending' | 'approved' | 'rejected'
 type LifecycleStatus = 'open' | 'closed'
 type ApplicationStatus = 'submitted' | 'reviewed' | 'hired'
+type TransitAccessibilityTone = 'neutral' | 'success' | 'danger'
 
 const chargeLabels: Array<{ key: keyof ChargeFlags; label: string }> = [
   { key: 'sex_offense', label: 'Sex offense' },
@@ -69,6 +70,18 @@ export function applicationTone(value: ApplicationStatus) {
   return 'info' as const
 }
 
+export function formatTransitAccessibilityLabel(value: boolean | null) {
+  if (value === null) return 'Unknown'
+  return value ? 'Yes' : 'No'
+}
+
+export function transitAccessibilityTone(
+  value: boolean | null
+): TransitAccessibilityTone {
+  if (value === null) return 'neutral'
+  return value ? 'success' : 'danger'
+}
+
 export function describeMatchReason(reason: string) {
   const mapped: Record<string, string> = {
     charge_sex_offense_disqualified: 'Disqualified by sex offense restriction',
@@ -81,6 +94,7 @@ export function describeMatchReason(reason: string) {
     transit_unreachable: 'Transit route unavailable',
     transit_data_unavailable: 'Transit data unavailable',
     profile_incomplete: 'Jobseeker profile incomplete',
+    requires_own_car: 'Job requires own vehicle',
     own_car_required: 'Job requires own vehicle',
   }
   return mapped[reason] ?? formatStatusLabel(reason)

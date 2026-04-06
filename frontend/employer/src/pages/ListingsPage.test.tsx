@@ -71,6 +71,8 @@ test('approved employers skip applicant count probes when applicant sharing is d
   )
 
   expect(await screen.findByText('My listings')).toBeInTheDocument()
+  expect(screen.getByText('No personal vehicle required')).toBeInTheDocument()
+  expect(screen.queryByText(/^Yes$/)).not.toBeInTheDocument()
   expect(await screen.findByText('Locked')).toBeInTheDocument()
 
   await waitFor(() => {

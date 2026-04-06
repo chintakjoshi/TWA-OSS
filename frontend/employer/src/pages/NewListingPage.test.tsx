@@ -67,8 +67,18 @@ test('approved employers can submit a listing and navigate to the listing detail
     </MemoryRouter>
   )
 
+  expect(
+    await screen.findByText('No personal vehicle required')
+  ).toBeInTheDocument()
+  expect(
+    screen.getByText(
+      'Candidates do not need a personal vehicle for this role.'
+    )
+  ).toBeInTheDocument()
+  expect(screen.queryByText('Transit accessible')).not.toBeInTheDocument()
+
   await user.type(
-    await screen.findByLabelText('Job title'),
+    screen.getByLabelText('Job title'),
     'Warehouse Associate'
   )
   await user.type(

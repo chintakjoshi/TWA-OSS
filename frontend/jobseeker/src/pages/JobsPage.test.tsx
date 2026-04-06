@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { expect, test } from 'vitest'
 
@@ -111,6 +111,40 @@ const jobs: JobListItem[] = [
     eligibility_note: 'Unable to provide distance for this listing right now.',
     has_applied: false,
   },
+  {
+    job: {
+      id: 'listing-4',
+      employer_id: 'employer-1',
+      title: 'Neighborhood Outreach Role',
+      description: 'Field outreach in areas with limited route access.',
+      location_address: '900 Pine St',
+      city: 'St. Louis',
+      zip: '63102',
+      transit_required: 'any',
+      disqualifying_charges: {
+        sex_offense: false,
+        violent: false,
+        armed: false,
+        children: false,
+        drug: false,
+        theft: false,
+      },
+      transit_accessible: false,
+      job_lat: null,
+      job_lon: null,
+      review_status: 'approved',
+      lifecycle_status: 'open',
+      review_note: null,
+      reviewed_by: null,
+      reviewed_at: null,
+      created_at: null,
+      updated_at: null,
+    },
+    is_eligible: false,
+    ineligibility_tag: '12.3 miles from your zip code',
+    eligibility_note: null,
+    has_applied: false,
+  },
 ]
 
 test('job board renders eligible and ineligible listings with their status labels', async () => {
@@ -145,10 +179,17 @@ test('job board renders eligible and ineligible listings with their status label
   expect(alreadyAppliedBadge).toBeInTheDocument()
   expect(alreadyAppliedBadge.closest('span')).toHaveClass('whitespace-nowrap')
   expect(screen.getByText('Transit mismatch')).toBeInTheDocument()
+  expect(screen.getAllByText('No car required').length).toBeGreaterThan(0)
   expect(screen.getAllByText('Own car required').length).toBeGreaterThan(0)
+  const outreachCard = screen
+    .getByText('Neighborhood Outreach Role')
+    .closest('section')
+  expect(outreachCard).not.toBeNull()
+  expect(within(outreachCard as HTMLElement).getByText('Transit unavailable')).toBeInTheDocument()
   expect(
     screen.getByText('Unable to provide distance for this listing right now.')
   ).toBeInTheDocument()
+  expect(screen.queryByText('Any transit option')).not.toBeInTheDocument()
   expect(screen.queryByText('Profile complete')).not.toBeInTheDocument()
   expect(spies.requestTwa).toHaveBeenCalledWith(
     expect.stringContaining('/api/v1/jobs?page=1'),
