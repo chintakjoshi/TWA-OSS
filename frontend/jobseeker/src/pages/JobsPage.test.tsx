@@ -185,7 +185,9 @@ test('job board renders eligible and ineligible listings with their status label
     .getByText('Neighborhood Outreach Role')
     .closest('section')
   expect(outreachCard).not.toBeNull()
-  expect(within(outreachCard as HTMLElement).getByText('Transit unavailable')).toBeInTheDocument()
+  expect(
+    within(outreachCard as HTMLElement).getByText('Transit unavailable')
+  ).toBeInTheDocument()
   expect(
     screen.getByText('Unable to provide distance for this listing right now.')
   ).toBeInTheDocument()

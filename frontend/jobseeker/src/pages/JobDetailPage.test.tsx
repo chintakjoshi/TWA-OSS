@@ -193,13 +193,19 @@ test('job detail separates car requirement from transit availability', async () 
     </MemoryRouter>
   )
 
-  expect(await screen.findByText('Neighborhood Outreach Role')).toBeInTheDocument()
+  expect(
+    await screen.findByText('Neighborhood Outreach Role')
+  ).toBeInTheDocument()
   expect(screen.getByText('No car required')).toBeInTheDocument()
   expect(
-    screen.getByText('This listing does not require access to a personal vehicle.')
+    screen.getByText(
+      'This listing does not require access to a personal vehicle.'
+    )
   ).toBeInTheDocument()
   expect(
-    screen.getByText('Transit access is not currently available for this listing.')
+    screen.getByText(
+      'Transit access is not currently available for this listing.'
+    )
   ).toBeInTheDocument()
   expect(
     screen.getByRole('button', { name: 'Apply for This Job' })
