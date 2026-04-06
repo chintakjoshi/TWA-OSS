@@ -37,7 +37,9 @@ export function getInitials(value: string | null | undefined) {
   return initials || 'TW'
 }
 
-export function formatTransitRequirementLabel(value: 'own_car' | 'any'): string {
+export function formatTransitRequirementLabel(
+  value: 'own_car' | 'any'
+): string {
   return value === 'own_car' ? 'Own car required' : 'No car required'
 }
 
@@ -49,9 +51,7 @@ export function formatTransitRequirementDescription(
     : 'This listing does not require access to a personal vehicle.'
 }
 
-export function formatTransitAccessibilityLabel(
-  value: boolean | null
-): string {
+export function formatTransitAccessibilityLabel(value: boolean | null): string {
   if (value === true) return 'Transit accessible'
   if (value === false) return 'Transit unavailable'
   return 'Transit info pending'

@@ -71,16 +71,11 @@ test('approved employers can submit a listing and navigate to the listing detail
     await screen.findByText('No personal vehicle required')
   ).toBeInTheDocument()
   expect(
-    screen.getByText(
-      'Candidates do not need a personal vehicle for this role.'
-    )
+    screen.getByText('Candidates do not need a personal vehicle for this role.')
   ).toBeInTheDocument()
   expect(screen.queryByText('Transit accessible')).not.toBeInTheDocument()
 
-  await user.type(
-    screen.getByLabelText('Job title'),
-    'Warehouse Associate'
-  )
+  await user.type(screen.getByLabelText('Job title'), 'Warehouse Associate')
   await user.type(
     screen.getByLabelText('Description'),
     'Day shift warehouse work.'

@@ -96,6 +96,8 @@ test('listing queue shows unknown transit status when accessibility has not been
 
   await user.click(screen.getByRole('button', { name: 'Review' }))
 
-  expect(await screen.findByText('Review Community Support Role')).toBeInTheDocument()
+  expect(
+    await screen.findByText('Review Community Support Role')
+  ).toBeInTheDocument()
   expect(screen.getAllByText('Unknown').length).toBeGreaterThan(0)
 })
