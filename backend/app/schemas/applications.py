@@ -13,12 +13,14 @@ class JobWithEligibilityPayload(BaseModel):
     job: JobListingPayload
     is_eligible: bool
     ineligibility_tag: str | None
+    eligibility_note: str | None = None
     has_applied: bool = False
 
 
 class JobEligibilityPayload(BaseModel):
     is_eligible: bool
     ineligibility_tag: str | None
+    eligibility_note: str | None = None
     has_applied: bool = False
 
 

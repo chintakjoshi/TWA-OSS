@@ -115,6 +115,7 @@ def seed_employer_and_listings(
     session_factory,
     *,
     employer_review_status: EmployerReviewStatus = EmployerReviewStatus.APPROVED,
+    include_missing_distance_listing: bool = False,
 ) -> dict[str, uuid.UUID]:
     with session_factory() as session:
         employer_user = AppUser(
@@ -201,14 +202,33 @@ def seed_employer_and_listings(
                 pending_listing,
             ]
         )
+
+        missing_distance_listing = None
+        if include_missing_distance_listing:
+            missing_distance_listing = JobListing(
+                employer_id=employer.id,
+                title="Distance Unavailable Listing",
+                city="St. Louis",
+                zip="63103",
+                transit_required=TransitRequirement.ANY,
+                transit_accessible=None,
+                job_lat=None,
+                job_lon=None,
+                review_status=ListingReviewStatus.APPROVED,
+                lifecycle_status=ListingLifecycleStatus.OPEN,
+            )
+            session.add(missing_distance_listing)
         session.commit()
-        return {
+        listing_ids = {
             "eligible": eligible_listing.id,
             "disqualified": disqualified_listing.id,
             "second_eligible": second_eligible_listing.id,
             "closed": closed_listing.id,
             "pending": pending_listing.id,
         }
+        if missing_distance_listing is not None:
+            listing_ids["missing_distance"] = missing_distance_listing.id
+        return listing_ids
 
 
 def test_jobseeker_can_browse_jobs_and_apply(applications_env) -> None:
@@ -327,6 +347,54 @@ def test_pending_employer_listings_remain_visible_to_jobseekers(
 
     create = client.post(
         "/api/v1/applications", json={"job_listing_id": str(listing_ids["eligible"])}
+    )
+    assert create.status_code == 200
+    assert create.json()["application"]["status"] == "submitted"
+
+
+def test_jobseeker_can_still_apply_when_distance_is_unavailable(
+    applications_env,
+) -> None:
+    client, _, session_factory = applications_env
+    bootstrap_completed_jobseeker(client)
+    listing_ids = seed_employer_and_listings(
+        session_factory, include_missing_distance_listing=True
+    )
+
+    jobs = client.get("/api/v1/jobs", params={"sort": "title"})
+    assert jobs.status_code == 200
+    missing_distance = next(
+        item
+        for item in jobs.json()["items"]
+        if item["job"]["title"] == "Distance Unavailable Listing"
+    )
+    assert missing_distance["is_eligible"] is True
+    assert (
+        missing_distance["eligibility_note"]
+        == "Unable to provide distance for this listing right now."
+    )
+
+    eligible_only = client.get(
+        "/api/v1/jobs", params={"is_eligible": True, "sort": "title"}
+    )
+    assert eligible_only.status_code == 200
+    assert [item["job"]["title"] for item in eligible_only.json()["items"]] == [
+        "Distance Unavailable Listing",
+        "Packaging Associate",
+        "Warehouse Associate",
+    ]
+
+    detail = client.get(f"/api/v1/jobs/{listing_ids['missing_distance']}")
+    assert detail.status_code == 200
+    assert detail.json()["eligibility"]["is_eligible"] is True
+    assert (
+        detail.json()["eligibility"]["eligibility_note"]
+        == "Unable to provide distance for this listing right now."
+    )
+
+    create = client.post(
+        "/api/v1/applications",
+        json={"job_listing_id": str(listing_ids["missing_distance"])},
     )
     assert create.status_code == 200
     assert create.json()["application"]["status"] == "submitted"

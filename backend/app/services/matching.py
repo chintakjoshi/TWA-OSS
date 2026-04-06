@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session, joinedload
 
 from app.models import Employer, JobListing, Jobseeker
 from app.models.enums import (
+    EmployerReviewStatus,
     JobseekerStatus,
     ListingLifecycleStatus,
     ListingReviewStatus,
@@ -32,6 +33,7 @@ CHARGE_REASON_RULES = [
     ("charge_drug", "disq_drug", "charge_drug_disqualified"),
     ("charge_theft", "disq_theft", "charge_theft_disqualified"),
 ]
+DISTANCE_UNAVAILABLE_NOTE = "Unable to provide distance for this listing right now."
 
 
 @dataclass(slots=True)
@@ -39,6 +41,7 @@ class EligibilityResult:
     is_eligible: bool
     ineligibility_reasons: list[str]
     ineligibility_tag: str | None = None
+    eligibility_note: str | None = None
 
 
 def charges_overlap(jobseeker: Jobseeker, listing: JobListing) -> list[str]:
@@ -58,9 +61,13 @@ def check_transit_compat(jobseeker: Jobseeker, listing: JobListing) -> list[str]
             reasons.append("requires_own_car")
         if listing.transit_accessible is False:
             reasons.append("transit_unreachable")
-        elif listing.transit_accessible is None:
-            reasons.append("transit_data_unavailable")
     return reasons
+
+
+def build_jobseeker_eligibility_note(listing: JobListing) -> str | None:
+    if listing.transit_accessible is None:
+        return DISTANCE_UNAVAILABLE_NOTE
+    return None
 
 
 def build_jobseeker_ineligibility_tag(
@@ -68,10 +75,7 @@ def build_jobseeker_ineligibility_tag(
 ) -> str | None:
     if not reasons:
         return None
-    if not any(
-        reason in {"transit_unreachable", "transit_data_unavailable"}
-        for reason in reasons
-    ):
+    if not any(reason == "transit_unreachable" for reason in reasons):
         return None
     distance_miles = zip_to_job_distance_miles(
         jobseeker.zip, job_lat=listing.job_lat, job_lon=listing.job_lon
@@ -96,6 +100,7 @@ def evaluate_jobseeker_listing_match(
         ineligibility_tag=build_jobseeker_ineligibility_tag(
             jobseeker, listing, unique_reasons
         ),
+        eligibility_note=build_jobseeker_eligibility_note(listing),
     )
 
 
@@ -107,8 +112,15 @@ def get_eligible_jobs_for_jobseeker(
     )
     statement = (
         select(JobListing)
+        .join(JobListing.employer)
         .options(joinedload(JobListing.employer).joinedload(Employer.app_user))
         .where(
+            Employer.review_status.in_(
+                (
+                    EmployerReviewStatus.PENDING,
+                    EmployerReviewStatus.APPROVED,
+                )
+            ),
             JobListing.review_status == ListingReviewStatus.APPROVED,
             JobListing.lifecycle_status == ListingLifecycleStatus.OPEN,
         )

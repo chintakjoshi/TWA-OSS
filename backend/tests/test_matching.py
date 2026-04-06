@@ -298,10 +298,58 @@ def test_get_eligible_jobs_for_jobseeker_returns_expected_reason_sets(
         "transit_unreachable",
     }
 
-    assert by_title["Missing Transit Data Listing"].is_eligible is False
-    assert by_title["Missing Transit Data Listing"].ineligibility_reasons == [
-        "transit_data_unavailable"
-    ]
+    assert by_title["Missing Transit Data Listing"].is_eligible is True
+    assert by_title["Missing Transit Data Listing"].ineligibility_reasons == []
+
+
+def test_get_eligible_jobs_for_jobseeker_excludes_rejected_employer_listings(
+    session_factory,
+) -> None:
+    with session_factory() as session:
+        jobseeker, _ = seed_employer_and_listing_set(session)
+
+        rejected_employer_user = AppUser(
+            auth_user_id=uuid.uuid4(),
+            email="rejected-employer@example.com",
+            auth_provider_role="user",
+            app_role=AppRole.EMPLOYER,
+            is_active=True,
+        )
+        session.add(rejected_employer_user)
+        session.flush()
+        rejected_employer = Employer(
+            app_user_id=rejected_employer_user.id,
+            org_name="Rejected Logistics",
+            review_status=EmployerReviewStatus.REJECTED,
+        )
+        session.add(rejected_employer)
+        session.flush()
+        session.add(
+            JobListing(
+                employer_id=rejected_employer.id,
+                title="Rejected Employer Listing",
+                city="St. Louis",
+                zip="63102",
+                transit_required=TransitRequirement.ANY,
+                transit_accessible=True,
+                job_lat=38.6270,
+                job_lon=-90.1994,
+                review_status=ListingReviewStatus.APPROVED,
+                lifecycle_status=ListingLifecycleStatus.OPEN,
+            )
+        )
+        session.commit()
+        session.refresh(jobseeker)
+
+        items = get_eligible_jobs_for_jobseeker(session, jobseeker.id)
+
+    assert {item.job.title for item in items} == {
+        "Eligible Listing",
+        "Charge Mismatch Listing",
+        "Transit Mismatch Listing",
+        "Both Mismatch Listing",
+        "Missing Transit Data Listing",
+    }
 
 
 def test_get_eligible_jobseekers_for_job_returns_expected_reason_sets(
