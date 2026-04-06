@@ -28,8 +28,10 @@ import { announceComingSoon } from '../lib/comingSoon'
 import {
   formatChargeFlags,
   formatDateTime,
+  formatTransitAccessibilityLabel,
   lifecycleTone,
   reviewTone,
+  transitAccessibilityTone,
 } from '../lib/formatting'
 import type { EmployerProfile, JobListing } from '../types/admin'
 
@@ -230,11 +232,15 @@ export function AdminListingsPage() {
                             </TableCell>
                             <TableCell>{listing.city ?? 'Unknown'}</TableCell>
                             <TableCell>
-                              {listing.transit_accessible === null
-                                ? 'Unknown'
-                                : listing.transit_accessible
-                                  ? 'Yes'
-                                  : 'No'}
+                              <StatusBadge
+                                tone={transitAccessibilityTone(
+                                  listing.transit_accessible
+                                )}
+                              >
+                                {formatTransitAccessibilityLabel(
+                                  listing.transit_accessible
+                                )}
+                              </StatusBadge>
                             </TableCell>
                             <TableCell>
                               <StatusBadge
@@ -322,12 +328,9 @@ export function AdminListingsPage() {
                 },
                 {
                   label: 'Transit accessible',
-                  value:
-                    selected.transit_accessible === null
-                      ? 'Unknown'
-                      : selected.transit_accessible
-                        ? 'Yes'
-                        : 'No',
+                  value: formatTransitAccessibilityLabel(
+                    selected.transit_accessible
+                  ),
                 },
                 {
                   label: 'Charges',

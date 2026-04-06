@@ -20,7 +20,11 @@ import {
 } from '../components/ui/EmployerUi'
 import { announceComingSoon } from '../lib/comingSoon'
 import { isEmployerApplicantVisibilityEnabled } from '../lib/capabilities'
-import { formatDate, getStatusTone } from '../lib/formatting'
+import {
+  formatDate,
+  formatTransitRequirement,
+  getStatusTone,
+} from '../lib/formatting'
 import type { JobListing } from '../types/employer'
 
 const PAGE_SIZE = 20
@@ -356,9 +360,7 @@ export function EmployerListingsPage() {
                           {listing.city || 'Location pending'}
                         </td>
                         <td className="px-6 py-4 text-slate-600">
-                          {listing.transit_required === 'any'
-                            ? 'Yes'
-                            : 'Own car'}
+                          {formatTransitRequirement(listing.transit_required)}
                         </td>
                         <td className="px-6 py-4 text-slate-600">
                           {applicantCounts[listing.id] === null ||

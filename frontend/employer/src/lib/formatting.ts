@@ -45,7 +45,15 @@ export function formatDateTime(value: string | null | undefined): string {
 }
 
 export function formatTransitRequirement(value: 'own_car' | 'any'): string {
-  return value === 'own_car' ? 'Own vehicle required' : 'Transit accessible'
+  return value === 'own_car'
+    ? 'Own vehicle required'
+    : 'No personal vehicle required'
+}
+
+export function describeTransitRequirement(value: 'own_car' | 'any'): string {
+  return value === 'own_car'
+    ? 'Candidates need reliable personal transportation.'
+    : 'Candidates do not need a personal vehicle for this role.'
 }
 
 export function formatTransitAccessibility(value: boolean | null): string {

@@ -2,12 +2,12 @@ import { Link } from 'react-router-dom'
 import { Heart, MapPin, Navigation, ShieldCheck } from 'lucide-react'
 
 import { announceComingSoon } from '../lib/comingSoon'
+import {
+  formatTransitAccessibilityLabel,
+  formatTransitRequirementLabel,
+} from '../lib/formatting'
 import type { JobListItem } from '../types/jobseeker'
 import { PanelBody, PortalBadge, PortalPanel } from './ui/JobseekerUi'
-
-function formatTransitLabel(value: 'own_car' | 'any'): string {
-  return value === 'own_car' ? 'Own car required' : 'Any transit option'
-}
 
 export function JobCard({ item }: { item: JobListItem }) {
   const statusTone = item.has_applied
@@ -58,13 +58,11 @@ export function JobCard({ item }: { item: JobListItem }) {
           </span>
           <span className="inline-flex items-center gap-2 rounded-full bg-[#f6f2ea] px-3 py-1.5 text-slate-700">
             <Navigation className="h-4 w-4 text-[#2458b8]" />
-            {formatTransitLabel(item.job.transit_required)}
+            {formatTransitRequirementLabel(item.job.transit_required)}
           </span>
           <span className="inline-flex items-center gap-2 rounded-full bg-[#f6f2ea] px-3 py-1.5 text-slate-700">
             <ShieldCheck className="h-4 w-4 text-[#2f7d4b]" />
-            {item.job.transit_accessible
-              ? 'Transit accessible'
-              : 'Transit info pending'}
+            {formatTransitAccessibilityLabel(item.job.transit_accessible)}
           </span>
         </div>
 

@@ -28,8 +28,10 @@ import {
   formatChargeFlags,
   formatDate,
   formatDateTime,
+  formatTransitAccessibilityLabel,
   lifecycleTone,
   reviewTone,
+  transitAccessibilityTone,
 } from '../lib/formatting'
 import type { JobListing } from '../types/admin'
 
@@ -162,15 +164,15 @@ export function AdminListingQueuePage() {
                                 .join(', ') || 'Unknown'}
                             </TableCell>
                             <TableCell>
-                              <span
-                                className={
+                              <StatusBadge
+                                tone={transitAccessibilityTone(
                                   listing.transit_accessible
-                                    ? 'font-semibold text-[#2f7d4b]'
-                                    : 'font-semibold text-[#c7372e]'
-                                }
+                                )}
                               >
-                                {listing.transit_accessible ? 'Yes' : 'No'}
-                              </span>
+                                {formatTransitAccessibilityLabel(
+                                  listing.transit_accessible
+                                )}
+                              </StatusBadge>
                             </TableCell>
                             <TableCell>
                               <div className="flex flex-wrap gap-2">
@@ -299,12 +301,9 @@ export function AdminListingQueuePage() {
                 },
                 {
                   label: 'Transit accessible',
-                  value:
-                    selected.transit_accessible === null
-                      ? 'Unknown'
-                      : selected.transit_accessible
-                        ? 'Yes'
-                        : 'No',
+                  value: formatTransitAccessibilityLabel(
+                    selected.transit_accessible
+                  ),
                 },
                 {
                   label: 'Created',

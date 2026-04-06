@@ -7,6 +7,10 @@ import type {
 } from '../types/employer'
 import { announceComingSoon } from '../lib/comingSoon'
 import {
+  describeTransitRequirement,
+  formatTransitRequirement,
+} from '../lib/formatting'
+import {
   FieldLabel,
   InlineNotice,
   PortalButton,
@@ -204,9 +208,11 @@ export function ListingForm({
               type="radio"
               onChange={() => setValues({ ...values, transit_required: 'any' })}
             />
-            <p className="font-semibold text-slate-950">Transit accessible</p>
+            <p className="font-semibold text-slate-950">
+              {formatTransitRequirement('any')}
+            </p>
             <p className="mt-1 text-sm text-slate-500">
-              Reachable by MetroBus, MetroLink, or other transit options.
+              {describeTransitRequirement('any')}
             </p>
           </label>
           <label
@@ -225,9 +231,11 @@ export function ListingForm({
                 setValues({ ...values, transit_required: 'own_car' })
               }
             />
-            <p className="font-semibold text-slate-950">Own vehicle required</p>
+            <p className="font-semibold text-slate-950">
+              {formatTransitRequirement('own_car')}
+            </p>
             <p className="mt-1 text-sm text-slate-500">
-              Candidates need reliable personal transportation.
+              {describeTransitRequirement('own_car')}
             </p>
           </label>
         </div>
