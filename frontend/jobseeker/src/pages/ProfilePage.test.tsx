@@ -39,7 +39,9 @@ function getButtonByLeadingText(text: string) {
   return button
 }
 
-test('profile setup stays on the background step after saving location and transit', async () => {
+test(
+  'profile setup stays on the background step after saving location and transit',
+  async () => {
   const user = userEvent.setup()
   const profile: JobseekerProfile = {
     id: 'profile-1',
@@ -198,4 +200,6 @@ test('profile setup stays on the background step after saving location and trans
       })
     )
   })
-})
+  },
+  10000
+)

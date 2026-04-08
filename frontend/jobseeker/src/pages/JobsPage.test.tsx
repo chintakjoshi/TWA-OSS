@@ -149,6 +149,41 @@ const jobs: JobListItem[] = [
     eligibility_note: null,
     has_applied: false,
   },
+  {
+    job: {
+      id: 'listing-5',
+      employer_id: 'employer-1',
+      title: 'Transit Info Pending Listing',
+      description: 'Transit calculation is still pending for this role.',
+      location_address: '111 Delmar Blvd',
+      city: 'St. Louis',
+      zip: '63103',
+      transit_required: 'any',
+      disqualifying_charges: {
+        sex_offense: false,
+        violent: false,
+        armed: false,
+        children: false,
+        drug: false,
+        theft: false,
+      },
+      transit_accessible: null,
+      job_lat: null,
+      job_lon: null,
+      review_status: 'approved',
+      lifecycle_status: 'open',
+      review_note: null,
+      reviewed_by: null,
+      reviewed_at: null,
+      created_at: null,
+      updated_at: null,
+    },
+    is_eligible: true,
+    distance_miles: 7.9,
+    ineligibility_tag: null,
+    eligibility_note: null,
+    has_applied: false,
+  },
 ]
 
 test('job board renders eligible and ineligible listings with their status labels', async () => {
@@ -195,10 +230,23 @@ test('job board renders eligible and ineligible listings with their status label
   expect(screen.getByText('1.0 miles from your ZIP code')).toBeInTheDocument()
   expect(screen.getByText('8.2 miles from your ZIP code')).toBeInTheDocument()
   expect(screen.getByText('12.3 miles from your ZIP code')).toBeInTheDocument()
+  expect(screen.getByText('7.9 miles from your ZIP code')).toBeInTheDocument()
   expect(screen.getByText('Distance unavailable')).toBeInTheDocument()
   expect(
     screen.getByText('Unable to provide distance for this listing right now.')
   ).toBeInTheDocument()
+  const pendingTransitCard = screen
+    .getByText('Transit Info Pending Listing')
+    .closest('section')
+  expect(pendingTransitCard).not.toBeNull()
+  expect(
+    within(pendingTransitCard as HTMLElement).getByText('Transit info pending')
+  ).toBeInTheDocument()
+  expect(
+    within(pendingTransitCard as HTMLElement).queryByText(
+      'Unable to provide distance for this listing right now.'
+    )
+  ).not.toBeInTheDocument()
   expect(screen.queryByText('Any transit option')).not.toBeInTheDocument()
   expect(screen.queryByText('Profile complete')).not.toBeInTheDocument()
   expect(spies.requestTwa).toHaveBeenCalledWith(

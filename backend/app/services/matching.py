@@ -65,8 +65,8 @@ def check_transit_compat(jobseeker: Jobseeker, listing: JobListing) -> list[str]
     return reasons
 
 
-def build_jobseeker_eligibility_note(listing: JobListing) -> str | None:
-    if listing.transit_accessible is None:
+def build_jobseeker_eligibility_note(*, distance_miles: float | None) -> str | None:
+    if distance_miles is None:
         return DISTANCE_UNAVAILABLE_NOTE
     return None
 
@@ -108,7 +108,9 @@ def evaluate_jobseeker_listing_match(
         ineligibility_tag=build_jobseeker_ineligibility_tag(
             unique_reasons, distance_miles=distance_miles
         ),
-        eligibility_note=build_jobseeker_eligibility_note(listing),
+        eligibility_note=build_jobseeker_eligibility_note(
+            distance_miles=distance_miles
+        ),
     )
 
 

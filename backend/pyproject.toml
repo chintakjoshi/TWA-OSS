@@ -5,7 +5,7 @@ description = "FastAPI backend for the TWA application"
 requires-python = ">=3.12"
 dependencies = [
   "alembic>=1.16.4",
-  "auth-service-sdk @ git+https://github.com/chintakjoshi/authSDK.git@v1.3.0#subdirectory=sdk",
+  "auth-service-sdk @ git+https://github.com/chintakjoshi/authSDK.git@v1.4.1#subdirectory=sdk",
   "fastapi>=0.116.0",
   "httpx>=0.28.1",
   "pgeocode>=0.5.0",
