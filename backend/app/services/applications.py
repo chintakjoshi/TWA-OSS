@@ -165,6 +165,7 @@ def serialize_job_with_eligibility(
     return JobWithEligibilityPayload(
         job=serialize_listing(listing),
         is_eligible=result.is_eligible,
+        distance_miles=result.distance_miles,
         ineligibility_tag=result.ineligibility_tag,
         eligibility_note=result.eligibility_note,
         has_applied=has_applied,
@@ -179,6 +180,7 @@ def build_job_detail_for_jobseeker(
         job=serialize_listing(listing),
         eligibility=JobEligibilityPayload(
             is_eligible=result.is_eligible,
+            distance_miles=result.distance_miles,
             ineligibility_tag=result.ineligibility_tag,
             eligibility_note=result.eligibility_note,
             has_applied=has_applied,

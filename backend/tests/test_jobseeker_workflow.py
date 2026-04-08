@@ -265,3 +265,61 @@ def test_staff_can_list_view_and_update_jobseekers(jobseeker_workflow_env) -> No
             select(Jobseeker).where(Jobseeker.id == seeded_jobseeker.id)
         ).scalar_one()
     assert stored.status == JobseekerStatus.HIRED
+
+
+def test_jobseeker_profile_update_normalizes_address_fields(
+    jobseeker_workflow_env,
+) -> None:
+    client, _, _ = jobseeker_workflow_env
+
+    bootstrap = client.post("/api/v1/auth/bootstrap", json={"role": "jobseeker"})
+    assert bootstrap.status_code == 200
+
+    patch_me = client.patch(
+        "/api/v1/jobseekers/me",
+        json={
+            "full_name": "Jane Doe",
+            "phone": "3145550101",
+            "address": " 123   Main St Apt  4B ",
+            "city": "  St.   Louis ",
+            "zip": " 63103 4321 ",
+            "transit_type": "public_transit",
+        },
+    )
+    assert patch_me.status_code == 200
+
+    profile = client.get("/api/v1/jobseekers/me")
+    assert profile.status_code == 200
+    payload = profile.json()["profile"]
+    assert payload["address"] == "123 Main St Apt 4B"
+    assert payload["city"] == "St. Louis"
+    assert payload["zip"] == "63103-4321"
+
+
+def test_jobseeker_profile_update_rejects_unknown_zip_code(
+    jobseeker_workflow_env,
+) -> None:
+    client, _, _ = jobseeker_workflow_env
+
+    bootstrap = client.post("/api/v1/auth/bootstrap", json={"role": "jobseeker"})
+    assert bootstrap.status_code == 200
+
+    patch_me = client.patch(
+        "/api/v1/jobseekers/me",
+        json={
+            "full_name": "Jane Doe",
+            "phone": "3145550101",
+            "address": "123 Main St",
+            "city": "St. Louis",
+            "zip": "00000",
+            "transit_type": "public_transit",
+        },
+    )
+
+    assert patch_me.status_code == 422
+    assert patch_me.json()["error"]["code"] == "VALIDATION_ERROR"
+    assert any(
+        detail["loc"][-1] == "zip"
+        and "valid US ZIP code" in detail["msg"]
+        for detail in patch_me.json()["error"]["details"]
+    )

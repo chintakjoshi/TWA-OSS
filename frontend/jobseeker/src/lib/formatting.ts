@@ -68,3 +68,10 @@ export function formatTransitAccessibilityDescription(
   }
   return 'Transit accessibility has not been computed yet.'
 }
+
+export function formatDistanceLabel(value: number | null): string {
+  if (value === null || Number.isNaN(value)) {
+    return 'Distance unavailable'
+  }
+  return `${value.toFixed(1)} miles from your ZIP code`
+}

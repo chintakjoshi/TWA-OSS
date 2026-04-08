@@ -139,8 +139,28 @@ test('approved employers are returned to review after saving profile changes', a
   )
 
   await screen.findByText('Keep your employer record current')
+  expect(screen.getByLabelText('Address')).toHaveAttribute(
+    'autocomplete',
+    'street-address'
+  )
+  expect(screen.getByLabelText('City')).toHaveAttribute(
+    'autocomplete',
+    'address-level2'
+  )
+  expect(screen.getByLabelText('ZIP code')).toHaveAttribute(
+    'autocomplete',
+    'postal-code'
+  )
+  expect(screen.getByLabelText('ZIP code')).toHaveAttribute(
+    'inputmode',
+    'numeric'
+  )
   await user.clear(screen.getByLabelText('Address'))
-  await user.type(screen.getByLabelText('Address'), '500 Market St')
+  await user.type(screen.getByLabelText('Address'), '500   Market St ')
+  await user.clear(screen.getByLabelText('City'))
+  await user.type(screen.getByLabelText('City'), 'St.   Louis ')
+  await user.clear(screen.getByLabelText('ZIP code'))
+  await user.type(screen.getByLabelText('ZIP code'), '63103 1234')
   const callCountBeforeSave = spies.requestTwa.mock.calls.length
   await user.click(
     screen.getByRole('button', { name: /save employer profile/i })
@@ -166,7 +186,7 @@ test('approved employers are returned to review after saving profile changes', a
           phone: '314-555-0199',
           address: '500 Market St',
           city: 'St. Louis',
-          zip: '63103',
+          zip: '63103-1234',
         }),
       })
     )

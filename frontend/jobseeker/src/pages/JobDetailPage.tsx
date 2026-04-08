@@ -6,6 +6,7 @@ import {
   MapPin,
   Navigation,
   NotebookPen,
+  Route,
 } from 'lucide-react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
@@ -25,6 +26,7 @@ import {
 } from '../components/ui/JobseekerUi'
 import { announceComingSoon } from '../lib/comingSoon'
 import {
+  formatDistanceLabel,
   formatTransitAccessibilityDescription,
   formatTransitRequirementDescription,
   formatTransitRequirementLabel,
@@ -178,6 +180,10 @@ export function JobseekerJobDetailPage() {
                         {formatTransitRequirementLabel(
                           detail.job.transit_required
                         )}
+                      </span>
+                      <span className="inline-flex items-center gap-2">
+                        <Route className="h-4 w-4 text-[#c06c2f]" />
+                        {formatDistanceLabel(detail.eligibility.distance_miles)}
                       </span>
                     </div>
                   </div>

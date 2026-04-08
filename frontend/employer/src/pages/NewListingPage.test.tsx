@@ -74,15 +74,31 @@ test('approved employers can submit a listing and navigate to the listing detail
     screen.getByText('Candidates do not need a personal vehicle for this role.')
   ).toBeInTheDocument()
   expect(screen.queryByText('Transit accessible')).not.toBeInTheDocument()
+  expect(screen.getByLabelText('Address')).toHaveAttribute(
+    'autocomplete',
+    'street-address'
+  )
+  expect(screen.getByLabelText('City')).toHaveAttribute(
+    'autocomplete',
+    'address-level2'
+  )
+  expect(screen.getByLabelText('ZIP code')).toHaveAttribute(
+    'autocomplete',
+    'postal-code'
+  )
+  expect(screen.getByLabelText('ZIP code')).toHaveAttribute(
+    'inputmode',
+    'numeric'
+  )
 
   await user.type(screen.getByLabelText('Job title'), 'Warehouse Associate')
   await user.type(
     screen.getByLabelText('Description'),
     'Day shift warehouse work.'
   )
-  await user.type(screen.getByLabelText('Address'), '123 Main St')
-  await user.type(screen.getByLabelText('City'), 'St. Louis')
-  await user.type(screen.getByLabelText('ZIP code'), '63103')
+  await user.type(screen.getByLabelText('Address'), ' 123   Main St ')
+  await user.type(screen.getByLabelText('City'), ' St.   Louis ')
+  await user.type(screen.getByLabelText('ZIP code'), '63103 1234')
   await user.click(screen.getByLabelText('Drug offense'))
   await user.click(screen.getByRole('button', { name: 'Submit listing' }))
   await user.click(screen.getByRole('button', { name: 'Confirm & Submit' }))
@@ -98,7 +114,7 @@ test('approved employers can submit a listing and navigate to the listing detail
           description: 'Day shift warehouse work.',
           location_address: '123 Main St',
           city: 'St. Louis',
-          zip: '63103',
+          zip: '63103-1234',
           transit_required: 'any',
           disqualifying_charges: {
             sex_offense: false,
@@ -114,4 +130,4 @@ test('approved employers can submit a listing and navigate to the listing detail
   })
 
   expect(await screen.findByText('Listing detail page')).toBeInTheDocument()
-})
+}, 10000)

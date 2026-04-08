@@ -59,6 +59,7 @@ export interface PaginatedResponse<T> {
 export interface JobListItem {
   job: JobListing
   is_eligible: boolean
+  distance_miles: number | null
   ineligibility_tag: string | null
   eligibility_note: string | null
   has_applied: boolean
@@ -76,6 +77,7 @@ export interface JobDetailPayload {
   job: JobListing
   eligibility: {
     is_eligible: boolean
+    distance_miles: number | null
     ineligibility_tag: string | null
     eligibility_note: string | null
     has_applied: boolean

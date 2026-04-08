@@ -7,6 +7,10 @@ import type {
   ListingFormValues,
   PaginatedResponse,
 } from '../types/employer'
+import {
+  normalizeSingleLineText,
+  normalizeUsZipInput,
+} from '@shared/lib/address'
 
 type RequestTwa = <T>(path: string, init?: RequestInit) => Promise<T>
 
@@ -33,12 +37,12 @@ export function updateMyEmployerProfile(
   return requestTwa<{ employer: EmployerProfile }>('/api/v1/employers/me', {
     method: 'PATCH',
     body: JSON.stringify({
-      org_name: values.org_name,
-      contact_name: values.contact_name || null,
-      phone: values.phone || null,
-      address: values.address || null,
-      city: values.city || null,
-      zip: values.zip || null,
+      org_name: normalizeSingleLineText(values.org_name),
+      contact_name: normalizeSingleLineText(values.contact_name) || null,
+      phone: normalizeSingleLineText(values.phone) || null,
+      address: normalizeSingleLineText(values.address) || null,
+      city: normalizeSingleLineText(values.city) || null,
+      zip: normalizeUsZipInput(values.zip) || null,
     }),
   })
 }
@@ -89,7 +93,14 @@ export function createEmployerListing(
 ) {
   return requestTwa<{ listing: JobListing }>('/api/v1/employer/listings', {
     method: 'POST',
-    body: JSON.stringify(values),
+    body: JSON.stringify({
+      ...values,
+      title: normalizeSingleLineText(values.title),
+      location_address:
+        normalizeSingleLineText(values.location_address) || null,
+      city: normalizeSingleLineText(values.city) || null,
+      zip: normalizeUsZipInput(values.zip) || null,
+    }),
   })
 }
 

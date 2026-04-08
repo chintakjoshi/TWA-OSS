@@ -1,4 +1,8 @@
 import { useEffect, useState } from 'react'
+import {
+  normalizeSingleLineText,
+  normalizeUsZipInput,
+} from '@shared/lib/address'
 
 import type {
   ChargeFlags,
@@ -138,11 +142,19 @@ export function ListingForm({
             <FieldLabel>Address</FieldLabel>
             <input
               aria-label="Address"
+              autoComplete="street-address"
               className={inputClassName}
+              name="location_address"
               placeholder="1234 Industrial Blvd"
               value={values.location_address}
               onChange={(event) =>
                 setValues({ ...values, location_address: event.target.value })
+              }
+              onBlur={(event) =>
+                setValues({
+                  ...values,
+                  location_address: normalizeSingleLineText(event.target.value),
+                })
               }
             />
           </div>
@@ -150,11 +162,19 @@ export function ListingForm({
             <FieldLabel>City</FieldLabel>
             <input
               aria-label="City"
+              autoComplete="address-level2"
               className={inputClassName}
+              name="city"
               placeholder="St. Louis"
               value={values.city}
               onChange={(event) =>
                 setValues({ ...values, city: event.target.value })
+              }
+              onBlur={(event) =>
+                setValues({
+                  ...values,
+                  city: normalizeSingleLineText(event.target.value),
+                })
               }
             />
           </div>
@@ -172,11 +192,21 @@ export function ListingForm({
             <FieldLabel>ZIP Code</FieldLabel>
             <input
               aria-label="ZIP code"
+              autoComplete="postal-code"
               className={inputClassName}
+              inputMode="numeric"
+              maxLength={10}
+              name="zip"
               placeholder="63101"
               value={values.zip}
               onChange={(event) =>
                 setValues({ ...values, zip: event.target.value })
+              }
+              onBlur={(event) =>
+                setValues({
+                  ...values,
+                  zip: normalizeUsZipInput(event.target.value),
+                })
               }
             />
           </div>

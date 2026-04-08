@@ -6,16 +6,24 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field, model_validator
 
+from app.schemas.normalization import (
+    NormalizedOptionalSingleLineText,
+    NormalizedOptionalUsZipCode,
+    NormalizedRequiredSingleLineText,
+)
+
 PortalScope = Literal["jobseeker", "employer", "staff"]
 
 
 class EmployerBootstrapProfile(BaseModel):
-    org_name: str = Field(min_length=1, max_length=255)
-    contact_name: str | None = Field(default=None, max_length=255)
-    phone: str | None = Field(default=None, max_length=32)
-    address: str | None = Field(default=None, max_length=255)
-    city: str | None = Field(default=None, max_length=128)
-    zip: str | None = Field(default=None, max_length=16)
+    org_name: NormalizedRequiredSingleLineText = Field(min_length=1, max_length=255)
+    contact_name: NormalizedOptionalSingleLineText = Field(
+        default=None, max_length=255
+    )
+    phone: NormalizedOptionalSingleLineText = Field(default=None, max_length=32)
+    address: NormalizedOptionalSingleLineText = Field(default=None, max_length=255)
+    city: NormalizedOptionalSingleLineText = Field(default=None, max_length=128)
+    zip: NormalizedOptionalUsZipCode = Field(default=None, max_length=16)
 
 
 class AuthBootstrapRequest(BaseModel):

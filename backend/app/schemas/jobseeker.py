@@ -7,6 +7,10 @@ from uuid import UUID
 from pydantic import BaseModel, Field
 
 from app.schemas.employer import ChargeFlagsPayload
+from app.schemas.normalization import (
+    NormalizedOptionalSingleLineText,
+    NormalizedOptionalUsZipCode,
+)
 
 
 class JobseekerProfilePayload(BaseModel):
@@ -31,11 +35,13 @@ class JobseekerProfileResponse(BaseModel):
 
 
 class JobseekerProfileUpdateRequest(BaseModel):
-    full_name: str | None = Field(default=None, min_length=1, max_length=255)
-    phone: str | None = Field(default=None, max_length=32)
-    address: str | None = Field(default=None, max_length=255)
-    city: str | None = Field(default=None, max_length=128)
-    zip: str | None = Field(default=None, max_length=16)
+    full_name: NormalizedOptionalSingleLineText = Field(
+        default=None, min_length=1, max_length=255
+    )
+    phone: NormalizedOptionalSingleLineText = Field(default=None, max_length=32)
+    address: NormalizedOptionalSingleLineText = Field(default=None, max_length=255)
+    city: NormalizedOptionalSingleLineText = Field(default=None, max_length=128)
+    zip: NormalizedOptionalUsZipCode = Field(default=None, max_length=16)
     transit_type: Literal["own_car", "public_transit", "both"] | None = None
     charges: ChargeFlagsPayload | None = None
 
