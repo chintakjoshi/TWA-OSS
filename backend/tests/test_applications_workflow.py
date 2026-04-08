@@ -116,6 +116,7 @@ def seed_employer_and_listings(
     *,
     employer_review_status: EmployerReviewStatus = EmployerReviewStatus.APPROVED,
     include_missing_distance_listing: bool = False,
+    include_unknown_transit_listing: bool = False,
 ) -> dict[str, uuid.UUID]:
     with session_factory() as session:
         employer_user = AppUser(
@@ -218,6 +219,21 @@ def seed_employer_and_listings(
                 lifecycle_status=ListingLifecycleStatus.OPEN,
             )
             session.add(missing_distance_listing)
+        unknown_transit_listing = None
+        if include_unknown_transit_listing:
+            unknown_transit_listing = JobListing(
+                employer_id=employer.id,
+                title="Transit Info Pending Listing",
+                city="St. Louis",
+                zip="63103",
+                transit_required=TransitRequirement.ANY,
+                transit_accessible=None,
+                job_lat=38.7000,
+                job_lon=-90.2800,
+                review_status=ListingReviewStatus.APPROVED,
+                lifecycle_status=ListingLifecycleStatus.OPEN,
+            )
+            session.add(unknown_transit_listing)
         session.commit()
         listing_ids = {
             "eligible": eligible_listing.id,
@@ -228,6 +244,8 @@ def seed_employer_and_listings(
         }
         if missing_distance_listing is not None:
             listing_ids["missing_distance"] = missing_distance_listing.id
+        if unknown_transit_listing is not None:
+            listing_ids["unknown_transit"] = unknown_transit_listing.id
         return listing_ids
 
 
@@ -409,6 +427,35 @@ def test_jobseeker_can_still_apply_when_distance_is_unavailable(
     )
     assert create.status_code == 200
     assert create.json()["application"]["status"] == "submitted"
+
+
+def test_jobseeker_does_not_get_distance_warning_when_miles_are_available(
+    applications_env,
+) -> None:
+    client, _, session_factory = applications_env
+    bootstrap_completed_jobseeker(client)
+    listing_ids = seed_employer_and_listings(
+        session_factory, include_unknown_transit_listing=True
+    )
+
+    jobs = client.get("/api/v1/jobs", params={"sort": "title"})
+    assert jobs.status_code == 200
+    unknown_transit = next(
+        item
+        for item in jobs.json()["items"]
+        if item["job"]["title"] == "Transit Info Pending Listing"
+    )
+    assert unknown_transit["is_eligible"] is True
+    assert unknown_transit["distance_miles"] == pytest.approx(5.7510509461)
+    assert unknown_transit["eligibility_note"] is None
+
+    detail = client.get(f"/api/v1/jobs/{listing_ids['unknown_transit']}")
+    assert detail.status_code == 200
+    assert detail.json()["eligibility"]["is_eligible"] is True
+    assert detail.json()["eligibility"]["distance_miles"] == pytest.approx(
+        5.7510509461
+    )
+    assert detail.json()["eligibility"]["eligibility_note"] is None
 
 
 def test_incomplete_jobseeker_is_blocked_from_jobs_and_applications(

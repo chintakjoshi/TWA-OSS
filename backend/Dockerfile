@@ -14,6 +14,7 @@ RUN python -m pip install --no-cache-dir --upgrade pip uv
 
 COPY pyproject.toml uv.lock alembic.ini ./
 COPY app ./app
+COPY data ./data
 COPY migrations ./migrations
 
 RUN uv sync --frozen
