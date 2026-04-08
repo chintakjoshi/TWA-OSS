@@ -217,8 +217,7 @@ def test_bootstrap_employer_rejects_unknown_zip_code(client: TestClient) -> None
     assert response.status_code == 422
     assert response.json()["error"]["code"] == "VALIDATION_ERROR"
     assert any(
-        detail["loc"][-1] == "zip"
-        and "valid US ZIP code" in detail["msg"]
+        detail["loc"][-1] == "zip" and "valid US ZIP code" in detail["msg"]
         for detail in response.json()["error"]["details"]
     )
 

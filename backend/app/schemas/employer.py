@@ -61,9 +61,7 @@ class EmployerProfileUpdateRequest(BaseModel):
     org_name: NormalizedOptionalSingleLineText = Field(
         default=None, min_length=1, max_length=255
     )
-    contact_name: NormalizedOptionalSingleLineText = Field(
-        default=None, max_length=255
-    )
+    contact_name: NormalizedOptionalSingleLineText = Field(default=None, max_length=255)
     phone: NormalizedOptionalSingleLineText = Field(default=None, max_length=32)
     address: NormalizedOptionalSingleLineText = Field(default=None, max_length=255)
     city: NormalizedOptionalSingleLineText = Field(default=None, max_length=128)

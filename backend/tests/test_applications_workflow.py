@@ -267,16 +267,16 @@ def test_jobseeker_can_browse_jobs_and_apply(applications_env) -> None:
     assert payload["items"][0]["has_applied"] is False
 
     eligible_listing = next(
-        item for item in payload["items"] if item["job"]["title"] == "Warehouse Associate"
+        item
+        for item in payload["items"]
+        if item["job"]["title"] == "Warehouse Associate"
     )
     assert eligible_listing["distance_miles"] == pytest.approx(1.0126504778)
 
     detail = client.get(f"/api/v1/jobs/{listing_ids['eligible']}")
     assert detail.status_code == 200
     assert detail.json()["eligibility"]["is_eligible"] is True
-    assert detail.json()["eligibility"]["distance_miles"] == pytest.approx(
-        1.0126504778
-    )
+    assert detail.json()["eligibility"]["distance_miles"] == pytest.approx(1.0126504778)
     assert detail.json()["eligibility"]["has_applied"] is False
 
     closed_detail = client.get(f"/api/v1/jobs/{listing_ids['closed']}")
@@ -452,9 +452,7 @@ def test_jobseeker_does_not_get_distance_warning_when_miles_are_available(
     detail = client.get(f"/api/v1/jobs/{listing_ids['unknown_transit']}")
     assert detail.status_code == 200
     assert detail.json()["eligibility"]["is_eligible"] is True
-    assert detail.json()["eligibility"]["distance_miles"] == pytest.approx(
-        5.7510509461
-    )
+    assert detail.json()["eligibility"]["distance_miles"] == pytest.approx(5.7510509461)
     assert detail.json()["eligibility"]["eligibility_note"] is None
 
 
