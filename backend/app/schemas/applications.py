@@ -12,6 +12,7 @@ from app.schemas.employer import JobListingPayload
 class JobWithEligibilityPayload(BaseModel):
     job: JobListingPayload
     is_eligible: bool
+    distance_miles: float | None = None
     ineligibility_tag: str | None
     eligibility_note: str | None = None
     has_applied: bool = False
@@ -19,6 +20,7 @@ class JobWithEligibilityPayload(BaseModel):
 
 class JobEligibilityPayload(BaseModel):
     is_eligible: bool
+    distance_miles: float | None = None
     ineligibility_tag: str | None
     eligibility_note: str | None = None
     has_applied: bool = False

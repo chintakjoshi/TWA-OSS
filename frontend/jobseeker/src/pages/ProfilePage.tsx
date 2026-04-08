@@ -4,6 +4,10 @@ import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
 import { useAuth } from '@shared/auth/AuthProvider'
+import {
+  normalizeSingleLineText,
+  normalizeUsZipInput,
+} from '@shared/lib/address'
 
 import {
   getMyJobseekerProfile,
@@ -94,13 +98,16 @@ function toDraft(
 
 function toPayload(draft: ProfileDraft): JobseekerProfileFormValues {
   return {
-    full_name: [draft.first_name.trim(), draft.last_name.trim()]
+    full_name: [
+      normalizeSingleLineText(draft.first_name),
+      normalizeSingleLineText(draft.last_name),
+    ]
       .filter(Boolean)
       .join(' '),
-    phone: draft.phone.trim(),
-    address: draft.address.trim(),
-    city: draft.city.trim(),
-    zip: draft.zip.trim(),
+    phone: normalizeSingleLineText(draft.phone),
+    address: normalizeSingleLineText(draft.address),
+    city: normalizeSingleLineText(draft.city),
+    zip: normalizeUsZipInput(draft.zip),
     transit_type: draft.transit_type,
     charges: draft.charges,
   }
@@ -731,10 +738,20 @@ export function JobseekerProfilePage() {
                         Address
                       </label>
                       <input
+                        autoComplete="street-address"
                         className={inputClassName}
+                        name="address"
                         value={draft.address}
                         onChange={(event) =>
                           setDraft({ ...draft, address: event.target.value })
+                        }
+                        onBlur={(event) =>
+                          setDraft({
+                            ...draft,
+                            address: normalizeSingleLineText(
+                              event.target.value
+                            ),
+                          })
                         }
                       />
                     </div>
@@ -745,10 +762,18 @@ export function JobseekerProfilePage() {
                           City
                         </label>
                         <input
+                          autoComplete="address-level2"
                           className={inputClassName}
+                          name="city"
                           value={draft.city}
                           onChange={(event) =>
                             setDraft({ ...draft, city: event.target.value })
+                          }
+                          onBlur={(event) =>
+                            setDraft({
+                              ...draft,
+                              city: normalizeSingleLineText(event.target.value),
+                            })
                           }
                         />
                       </div>
@@ -757,10 +782,20 @@ export function JobseekerProfilePage() {
                           ZIP code
                         </label>
                         <input
+                          autoComplete="postal-code"
                           className={inputClassName}
+                          inputMode="numeric"
+                          maxLength={10}
+                          name="zip"
                           value={draft.zip}
                           onChange={(event) =>
                             setDraft({ ...draft, zip: event.target.value })
+                          }
+                          onBlur={(event) =>
+                            setDraft({
+                              ...draft,
+                              zip: normalizeUsZipInput(event.target.value),
+                            })
                           }
                         />
                       </div>

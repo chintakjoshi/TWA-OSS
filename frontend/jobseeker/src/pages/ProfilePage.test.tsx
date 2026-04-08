@@ -65,7 +65,7 @@ test('profile setup stays on the background step after saving location and trans
     updated_at: null,
   }
 
-  const { client } = createMockAuthClient({
+  const { client, spies } = createMockAuthClient({
     authMe: buildAuthMe({ role: 'jobseeker', profileComplete: false }),
     requestTwaImpl: async (path, init, state) => {
       if (path !== '/api/v1/jobseekers/me') {
@@ -140,9 +140,23 @@ test('profile setup stays on the background step after saving location and trans
   )
   await screen.findByText('Where can you realistically work from?')
 
-  await user.type(getFieldElement('Address'), '2300 OVERLOOK RD APT 410')
-  await user.type(getFieldElement('City'), 'Cleveland')
-  await user.type(getFieldElement('ZIP code'), '44106')
+  expect(getFieldElement('Address')).toHaveAttribute(
+    'autocomplete',
+    'street-address'
+  )
+  expect(getFieldElement('City')).toHaveAttribute(
+    'autocomplete',
+    'address-level2'
+  )
+  expect(getFieldElement('ZIP code')).toHaveAttribute(
+    'autocomplete',
+    'postal-code'
+  )
+  expect(getFieldElement('ZIP code')).toHaveAttribute('inputmode', 'numeric')
+
+  await user.type(getFieldElement('Address'), ' 2300   OVERLOOK RD APT 410 ')
+  await user.type(getFieldElement('City'), ' Cleveland ')
+  await user.type(getFieldElement('ZIP code'), '44106 1234')
   await user.click(getButtonByLeadingText('Public Transit'))
   await user.click(screen.getByRole('button', { name: 'Next: Background' }))
 
@@ -157,5 +171,31 @@ test('profile setup stays on the background step after saving location and trans
     expect(
       screen.queryByRole('button', { name: 'Edit Profile' })
     ).not.toBeInTheDocument()
+  })
+
+  await waitFor(() => {
+    expect(spies.requestTwa).toHaveBeenCalledWith(
+      '/api/v1/jobseekers/me',
+      expect.any(Object),
+      expect.objectContaining({
+        method: 'PATCH',
+        body: JSON.stringify({
+          full_name: 'Sam Ali',
+          phone: '3146003937',
+          address: '2300 OVERLOOK RD APT 410',
+          city: 'Cleveland',
+          zip: '44106-1234',
+          transit_type: 'public_transit',
+          charges: {
+            sex_offense: false,
+            violent: false,
+            armed: false,
+            children: false,
+            drug: false,
+            theft: false,
+          },
+        }),
+      })
+    )
   })
 })

@@ -697,6 +697,154 @@ def test_staff_cannot_reopen_closed_listing(employer_workflow_env) -> None:
     assert invalid_reopen.json()["error"]["code"] == "STATE_TRANSITION_NOT_ALLOWED"
 
 
+def test_employer_profile_update_normalizes_address_fields(
+    employer_workflow_env,
+) -> None:
+    client, state, session_factory = employer_workflow_env
+
+    bootstrap = client.post(
+        "/api/v1/auth/bootstrap",
+        json={
+            "role": "employer",
+            "employer_profile": {"org_name": "Northside Logistics"},
+        },
+    )
+    assert bootstrap.status_code == 200
+
+    staff = seed_staff(
+        session_factory, auth_user_id=uuid.UUID("99999999-9999-9999-9999-999999999999")
+    )
+    state["identity"] = AuthProviderIdentity(
+        auth_user_id=staff.auth_user_id,
+        email=staff.email,
+        auth_provider_role="admin",
+    )
+    employer_id = client.get("/api/v1/admin/queue/employers").json()["items"][0]["id"]
+    approve = client.patch(
+        f"/api/v1/admin/employers/{employer_id}",
+        json={"review_status": "approved", "review_note": "Approved."},
+    )
+    assert approve.status_code == 200
+
+    state["identity"] = AuthProviderIdentity(
+        auth_user_id=uuid.UUID("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"),
+        email="employer@example.com",
+        auth_provider_role="user",
+    )
+    patch_me = client.patch(
+        "/api/v1/employers/me",
+        json={
+            "address": " 500   Market St  ",
+            "city": "  St.   Louis ",
+            "zip": " 63101 1234 ",
+        },
+    )
+    assert patch_me.status_code == 200
+    payload = patch_me.json()["employer"]
+    assert payload["address"] == "500 Market St"
+    assert payload["city"] == "St. Louis"
+    assert payload["zip"] == "63101-1234"
+
+
+def test_listing_creation_normalizes_address_fields(employer_workflow_env) -> None:
+    client, state, session_factory = employer_workflow_env
+
+    bootstrap = client.post(
+        "/api/v1/auth/bootstrap",
+        json={
+            "role": "employer",
+            "employer_profile": {"org_name": "Northside Logistics"},
+        },
+    )
+    assert bootstrap.status_code == 200
+
+    staff = seed_staff(
+        session_factory, auth_user_id=uuid.UUID("88888888-8888-8888-8888-888888888888")
+    )
+    state["identity"] = AuthProviderIdentity(
+        auth_user_id=staff.auth_user_id,
+        email=staff.email,
+        auth_provider_role="admin",
+    )
+    employer_id = client.get("/api/v1/admin/queue/employers").json()["items"][0]["id"]
+    approve = client.patch(
+        f"/api/v1/admin/employers/{employer_id}",
+        json={"review_status": "approved", "review_note": "Approved."},
+    )
+    assert approve.status_code == 200
+
+    state["identity"] = AuthProviderIdentity(
+        auth_user_id=uuid.UUID("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"),
+        email="employer@example.com",
+        auth_provider_role="user",
+    )
+    create_listing = client.post(
+        "/api/v1/employer/listings",
+        json={
+            "title": "Warehouse Associate",
+            "location_address": " 2000   North Broadway ",
+            "city": " St.   Louis ",
+            "zip": " 63102 0001 ",
+        },
+    )
+    assert create_listing.status_code == 200
+    payload = create_listing.json()["listing"]
+    assert payload["location_address"] == "2000 North Broadway"
+    assert payload["city"] == "St. Louis"
+    assert payload["zip"] == "63102-0001"
+
+
+def test_listing_creation_rejects_unknown_zip_code(employer_workflow_env) -> None:
+    client, state, session_factory = employer_workflow_env
+
+    bootstrap = client.post(
+        "/api/v1/auth/bootstrap",
+        json={
+            "role": "employer",
+            "employer_profile": {"org_name": "Northside Logistics"},
+        },
+    )
+    assert bootstrap.status_code == 200
+
+    staff = seed_staff(
+        session_factory, auth_user_id=uuid.UUID("77777777-7777-7777-7777-777777777777")
+    )
+    state["identity"] = AuthProviderIdentity(
+        auth_user_id=staff.auth_user_id,
+        email=staff.email,
+        auth_provider_role="admin",
+    )
+    employer_id = client.get("/api/v1/admin/queue/employers").json()["items"][0]["id"]
+    approve = client.patch(
+        f"/api/v1/admin/employers/{employer_id}",
+        json={"review_status": "approved", "review_note": "Approved."},
+    )
+    assert approve.status_code == 200
+
+    state["identity"] = AuthProviderIdentity(
+        auth_user_id=uuid.UUID("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"),
+        email="employer@example.com",
+        auth_provider_role="user",
+    )
+    create_listing = client.post(
+        "/api/v1/employer/listings",
+        json={
+            "title": "Warehouse Associate",
+            "location_address": "2000 North Broadway",
+            "city": "St. Louis",
+            "zip": "00000",
+        },
+    )
+
+    assert create_listing.status_code == 422
+    assert create_listing.json()["error"]["code"] == "VALIDATION_ERROR"
+    assert any(
+        detail["loc"][-1] == "zip"
+        and "valid US ZIP code" in detail["msg"]
+        for detail in create_listing.json()["error"]["details"]
+    )
+
+
 def test_employer_listing_list_supports_search_and_sort(
     employer_workflow_env,
 ) -> None:

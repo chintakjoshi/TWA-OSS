@@ -40,6 +40,7 @@ DISTANCE_UNAVAILABLE_NOTE = "Unable to provide distance for this listing right n
 class EligibilityResult:
     is_eligible: bool
     ineligibility_reasons: list[str]
+    distance_miles: float | None = None
     ineligibility_tag: str | None = None
     eligibility_note: str | None = None
 
@@ -71,18 +72,23 @@ def build_jobseeker_eligibility_note(listing: JobListing) -> str | None:
 
 
 def build_jobseeker_ineligibility_tag(
-    jobseeker: Jobseeker, listing: JobListing, reasons: list[str]
+    reasons: list[str], *, distance_miles: float | None
 ) -> str | None:
     if not reasons:
         return None
     if not any(reason == "transit_unreachable" for reason in reasons):
         return None
-    distance_miles = zip_to_job_distance_miles(
-        jobseeker.zip, job_lat=listing.job_lat, job_lon=listing.job_lon
-    )
     if distance_miles is None:
         return None
     return f"{distance_miles:.1f} miles from your zip code"
+
+
+def build_jobseeker_distance_miles(
+    jobseeker: Jobseeker, listing: JobListing
+) -> float | None:
+    return zip_to_job_distance_miles(
+        jobseeker.zip, job_lat=listing.job_lat, job_lon=listing.job_lon
+    )
 
 
 def evaluate_jobseeker_listing_match(
@@ -94,11 +100,13 @@ def evaluate_jobseeker_listing_match(
     reasons.extend(charges_overlap(jobseeker, listing))
     reasons.extend(check_transit_compat(jobseeker, listing))
     unique_reasons = list(dict.fromkeys(reasons))
+    distance_miles = build_jobseeker_distance_miles(jobseeker, listing)
     return EligibilityResult(
         is_eligible=len(unique_reasons) == 0,
         ineligibility_reasons=unique_reasons,
+        distance_miles=distance_miles,
         ineligibility_tag=build_jobseeker_ineligibility_tag(
-            jobseeker, listing, unique_reasons
+            unique_reasons, distance_miles=distance_miles
         ),
         eligibility_note=build_jobseeker_eligibility_note(listing),
     )

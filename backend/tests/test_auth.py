@@ -173,6 +173,56 @@ def test_bootstrap_employer_creates_pending_employer_profile(
     assert employer.review_status.value == "pending"
 
 
+def test_bootstrap_employer_normalizes_address_fields(
+    client: TestClient, session: Session
+) -> None:
+    response = client.post(
+        "/api/v1/auth/bootstrap",
+        json={
+            "role": "employer",
+            "employer_profile": {
+                "org_name": "Northside Logistics",
+                "contact_name": " Sam   Carter ",
+                "phone": "3145550199",
+                "address": " 500   Market St  ",
+                "city": "  St.   Louis ",
+                "zip": " 63101 1234 ",
+            },
+        },
+    )
+
+    assert response.status_code == 200
+
+    employer = session.execute(select(Employer)).scalar_one()
+    assert employer.contact_name == "Sam Carter"
+    assert employer.address == "500 Market St"
+    assert employer.city == "St. Louis"
+    assert employer.zip == "63101-1234"
+
+
+def test_bootstrap_employer_rejects_unknown_zip_code(client: TestClient) -> None:
+    response = client.post(
+        "/api/v1/auth/bootstrap",
+        json={
+            "role": "employer",
+            "employer_profile": {
+                "org_name": "Northside Logistics",
+                "address": "500 Market St",
+                "city": "St. Louis",
+                "zip": "00000",
+            },
+        },
+    )
+
+    assert response.status_code == 422
+    assert response.json()["error"]["code"] == "VALIDATION_ERROR"
+    assert any(
+        detail["loc"][-1] == "zip"
+        and "valid US ZIP code" in detail["msg"]
+        for detail in response.json()["error"]["details"]
+    )
+
+
 def test_bootstrap_rejects_role_conflicts(client: TestClient) -> None:
     first = client.post("/api/v1/auth/bootstrap", json={"role": "jobseeker"})
     second = client.post(

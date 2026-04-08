@@ -1,8 +1,9 @@
 import { Link } from 'react-router-dom'
-import { Heart, MapPin, Navigation, ShieldCheck } from 'lucide-react'
+import { Heart, MapPin, Navigation, Route, ShieldCheck } from 'lucide-react'
 
 import { announceComingSoon } from '../lib/comingSoon'
 import {
+  formatDistanceLabel,
   formatTransitAccessibilityLabel,
   formatTransitRequirementLabel,
 } from '../lib/formatting'
@@ -63,6 +64,10 @@ export function JobCard({ item }: { item: JobListItem }) {
           <span className="inline-flex items-center gap-2 rounded-full bg-[#f6f2ea] px-3 py-1.5 text-slate-700">
             <ShieldCheck className="h-4 w-4 text-[#2f7d4b]" />
             {formatTransitAccessibilityLabel(item.job.transit_accessible)}
+          </span>
+          <span className="inline-flex items-center gap-2 rounded-full bg-[#f6f2ea] px-3 py-1.5 text-slate-700">
+            <Route className="h-4 w-4 text-[#c06c2f]" />
+            {formatDistanceLabel(item.distance_miles)}
           </span>
         </div>
 

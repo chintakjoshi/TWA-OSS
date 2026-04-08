@@ -1,4 +1,8 @@
 import { useEffect, useState } from 'react'
+import {
+  normalizeSingleLineText,
+  normalizeUsZipInput,
+} from '@shared/lib/address'
 
 import type {
   EmployerProfile,
@@ -105,11 +109,19 @@ export function EmployerProfileForm({
           <FieldLabel>Address</FieldLabel>
           <input
             aria-label="Address"
+            autoComplete="street-address"
             className={fieldClassName}
             disabled={controlsDisabled}
+            name="address"
             value={values.address}
             onChange={(event) =>
               setValues({ ...values, address: event.target.value })
+            }
+            onBlur={(event) =>
+              setValues({
+                ...values,
+                address: normalizeSingleLineText(event.target.value),
+              })
             }
           />
         </div>
@@ -117,11 +129,19 @@ export function EmployerProfileForm({
           <FieldLabel>City</FieldLabel>
           <input
             aria-label="City"
+            autoComplete="address-level2"
             className={fieldClassName}
             disabled={controlsDisabled}
+            name="city"
             value={values.city}
             onChange={(event) =>
               setValues({ ...values, city: event.target.value })
+            }
+            onBlur={(event) =>
+              setValues({
+                ...values,
+                city: normalizeSingleLineText(event.target.value),
+              })
             }
           />
         </div>
@@ -129,11 +149,21 @@ export function EmployerProfileForm({
           <FieldLabel>ZIP Code</FieldLabel>
           <input
             aria-label="ZIP code"
+            autoComplete="postal-code"
             className={fieldClassName}
             disabled={controlsDisabled}
+            inputMode="numeric"
+            maxLength={10}
+            name="zip"
             value={values.zip}
             onChange={(event) =>
               setValues({ ...values, zip: event.target.value })
+            }
+            onBlur={(event) =>
+              setValues({
+                ...values,
+                zip: normalizeUsZipInput(event.target.value),
+              })
             }
           />
         </div>

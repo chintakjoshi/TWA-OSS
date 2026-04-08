@@ -39,6 +39,7 @@ const jobs: JobListItem[] = [
       updated_at: null,
     },
     is_eligible: true,
+    distance_miles: 1.0,
     ineligibility_tag: null,
     eligibility_note: null,
     has_applied: true,
@@ -73,6 +74,7 @@ const jobs: JobListItem[] = [
       updated_at: null,
     },
     is_eligible: false,
+    distance_miles: 8.2,
     ineligibility_tag: 'Transit mismatch',
     eligibility_note: null,
     has_applied: false,
@@ -107,6 +109,7 @@ const jobs: JobListItem[] = [
       updated_at: null,
     },
     is_eligible: true,
+    distance_miles: null,
     ineligibility_tag: null,
     eligibility_note: 'Unable to provide distance for this listing right now.',
     has_applied: false,
@@ -141,6 +144,7 @@ const jobs: JobListItem[] = [
       updated_at: null,
     },
     is_eligible: false,
+    distance_miles: 12.3,
     ineligibility_tag: '12.3 miles from your zip code',
     eligibility_note: null,
     has_applied: false,
@@ -188,6 +192,10 @@ test('job board renders eligible and ineligible listings with their status label
   expect(
     within(outreachCard as HTMLElement).getByText('Transit unavailable')
   ).toBeInTheDocument()
+  expect(screen.getByText('1.0 miles from your ZIP code')).toBeInTheDocument()
+  expect(screen.getByText('8.2 miles from your ZIP code')).toBeInTheDocument()
+  expect(screen.getByText('12.3 miles from your ZIP code')).toBeInTheDocument()
+  expect(screen.getByText('Distance unavailable')).toBeInTheDocument()
   expect(
     screen.getByText('Unable to provide distance for this listing right now.')
   ).toBeInTheDocument()

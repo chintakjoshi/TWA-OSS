@@ -6,6 +6,12 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
+from app.schemas.normalization import (
+    NormalizedOptionalSingleLineText,
+    NormalizedOptionalUsZipCode,
+    NormalizedRequiredSingleLineText,
+)
+
 
 class ChargeFlagsPayload(BaseModel):
     sex_offense: bool = False
@@ -52,12 +58,16 @@ class EmployerProfileResponse(BaseModel):
 
 
 class EmployerProfileUpdateRequest(BaseModel):
-    org_name: str | None = Field(default=None, min_length=1, max_length=255)
-    contact_name: str | None = Field(default=None, max_length=255)
-    phone: str | None = Field(default=None, max_length=32)
-    address: str | None = Field(default=None, max_length=255)
-    city: str | None = Field(default=None, max_length=128)
-    zip: str | None = Field(default=None, max_length=16)
+    org_name: NormalizedOptionalSingleLineText = Field(
+        default=None, min_length=1, max_length=255
+    )
+    contact_name: NormalizedOptionalSingleLineText = Field(
+        default=None, max_length=255
+    )
+    phone: NormalizedOptionalSingleLineText = Field(default=None, max_length=32)
+    address: NormalizedOptionalSingleLineText = Field(default=None, max_length=255)
+    city: NormalizedOptionalSingleLineText = Field(default=None, max_length=128)
+    zip: NormalizedOptionalUsZipCode = Field(default=None, max_length=16)
 
 
 class JobListingPayload(BaseModel):
@@ -124,11 +134,13 @@ class EmployerApplicantPayload(EmployerListingApplicantPayload):
 
 
 class CreateJobListingRequest(BaseModel):
-    title: str = Field(min_length=1, max_length=255)
+    title: NormalizedRequiredSingleLineText = Field(min_length=1, max_length=255)
     description: str | None = None
-    location_address: str | None = Field(default=None, max_length=255)
-    city: str | None = Field(default=None, max_length=128)
-    zip: str | None = Field(default=None, max_length=16)
+    location_address: NormalizedOptionalSingleLineText = Field(
+        default=None, max_length=255
+    )
+    city: NormalizedOptionalSingleLineText = Field(default=None, max_length=128)
+    zip: NormalizedOptionalUsZipCode = Field(default=None, max_length=16)
     transit_required: Literal["own_car", "any"] = "any"
     disqualifying_charges: ChargeFlagsPayload = Field(
         default_factory=ChargeFlagsPayload

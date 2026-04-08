@@ -245,11 +245,20 @@ def test_jobseeker_can_browse_jobs_and_apply(applications_env) -> None:
     assert "ineligibility_reasons" not in payload["items"][0]
     assert payload["items"][0]["is_eligible"] is False
     assert payload["items"][0]["ineligibility_tag"] is None
+    assert payload["items"][0]["distance_miles"] == pytest.approx(1.0126504778)
     assert payload["items"][0]["has_applied"] is False
+
+    eligible_listing = next(
+        item for item in payload["items"] if item["job"]["title"] == "Warehouse Associate"
+    )
+    assert eligible_listing["distance_miles"] == pytest.approx(1.0126504778)
 
     detail = client.get(f"/api/v1/jobs/{listing_ids['eligible']}")
     assert detail.status_code == 200
     assert detail.json()["eligibility"]["is_eligible"] is True
+    assert detail.json()["eligibility"]["distance_miles"] == pytest.approx(
+        1.0126504778
+    )
     assert detail.json()["eligibility"]["has_applied"] is False
 
     closed_detail = client.get(f"/api/v1/jobs/{listing_ids['closed']}")
@@ -369,6 +378,7 @@ def test_jobseeker_can_still_apply_when_distance_is_unavailable(
         if item["job"]["title"] == "Distance Unavailable Listing"
     )
     assert missing_distance["is_eligible"] is True
+    assert missing_distance["distance_miles"] is None
     assert (
         missing_distance["eligibility_note"]
         == "Unable to provide distance for this listing right now."
@@ -387,6 +397,7 @@ def test_jobseeker_can_still_apply_when_distance_is_unavailable(
     detail = client.get(f"/api/v1/jobs/{listing_ids['missing_distance']}")
     assert detail.status_code == 200
     assert detail.json()["eligibility"]["is_eligible"] is True
+    assert detail.json()["eligibility"]["distance_miles"] is None
     assert (
         detail.json()["eligibility"]["eligibility_note"]
         == "Unable to provide distance for this listing right now."

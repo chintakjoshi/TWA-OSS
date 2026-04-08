@@ -46,6 +46,7 @@ test('job detail disables applying when the listing was already applied to', asy
         },
         eligibility: {
           is_eligible: true,
+          distance_miles: 1.0,
           ineligibility_tag: null,
           eligibility_note: null,
           has_applied: true,
@@ -67,6 +68,7 @@ test('job detail disables applying when the listing was already applied to', asy
   expect(await screen.findByText('Warehouse Associate')).toBeInTheDocument()
   expect(screen.getAllByText('Already applied').length).toBeGreaterThan(0)
   expect(screen.getByRole('button', { name: 'Already applied' })).toBeDisabled()
+  expect(screen.getByText('1.0 miles from your ZIP code')).toBeInTheDocument()
 })
 
 test('job detail keeps apply enabled when distance is unavailable', async () => {
@@ -108,6 +110,7 @@ test('job detail keeps apply enabled when distance is unavailable', async () => 
         },
         eligibility: {
           is_eligible: true,
+          distance_miles: null,
           ineligibility_tag: null,
           eligibility_note:
             'Unable to provide distance for this listing right now.',
@@ -131,6 +134,7 @@ test('job detail keeps apply enabled when distance is unavailable', async () => 
   expect(
     screen.getByText('Unable to provide distance for this listing right now.')
   ).toBeInTheDocument()
+  expect(screen.getByText('Distance unavailable')).toBeInTheDocument()
   expect(
     screen.getByRole('button', { name: 'Apply for This Job' })
   ).toBeEnabled()
@@ -175,6 +179,7 @@ test('job detail separates car requirement from transit availability', async () 
         },
         eligibility: {
           is_eligible: false,
+          distance_miles: 12.3,
           ineligibility_tag: '12.3 miles from your zip code',
           eligibility_note: null,
           has_applied: false,
@@ -207,6 +212,7 @@ test('job detail separates car requirement from transit availability', async () 
       'Transit access is not currently available for this listing.'
     )
   ).toBeInTheDocument()
+  expect(screen.getByText('12.3 miles from your ZIP code')).toBeInTheDocument()
   expect(
     screen.getByRole('button', { name: 'Apply for This Job' })
   ).toBeDisabled()
