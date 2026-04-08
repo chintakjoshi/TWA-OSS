@@ -319,7 +319,6 @@ def test_jobseeker_profile_update_rejects_unknown_zip_code(
     assert patch_me.status_code == 422
     assert patch_me.json()["error"]["code"] == "VALIDATION_ERROR"
     assert any(
-        detail["loc"][-1] == "zip"
-        and "valid US ZIP code" in detail["msg"]
+        detail["loc"][-1] == "zip" and "valid US ZIP code" in detail["msg"]
         for detail in patch_me.json()["error"]["details"]
     )

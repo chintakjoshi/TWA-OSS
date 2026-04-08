@@ -839,8 +839,7 @@ def test_listing_creation_rejects_unknown_zip_code(employer_workflow_env) -> Non
     assert create_listing.status_code == 422
     assert create_listing.json()["error"]["code"] == "VALIDATION_ERROR"
     assert any(
-        detail["loc"][-1] == "zip"
-        and "valid US ZIP code" in detail["msg"]
+        detail["loc"][-1] == "zip" and "valid US ZIP code" in detail["msg"]
         for detail in create_listing.json()["error"]["details"]
     )
 

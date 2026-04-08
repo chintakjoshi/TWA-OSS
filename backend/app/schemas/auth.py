@@ -17,9 +17,7 @@ PortalScope = Literal["jobseeker", "employer", "staff"]
 
 class EmployerBootstrapProfile(BaseModel):
     org_name: NormalizedRequiredSingleLineText = Field(min_length=1, max_length=255)
-    contact_name: NormalizedOptionalSingleLineText = Field(
-        default=None, max_length=255
-    )
+    contact_name: NormalizedOptionalSingleLineText = Field(default=None, max_length=255)
     phone: NormalizedOptionalSingleLineText = Field(default=None, max_length=32)
     address: NormalizedOptionalSingleLineText = Field(default=None, max_length=255)
     city: NormalizedOptionalSingleLineText = Field(default=None, max_length=128)
