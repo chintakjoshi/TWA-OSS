@@ -37,6 +37,7 @@ from app.services.common import (
     apply_sorting,
     build_paginated_response,
     ensure_found,
+    escape_like,
 )
 from app.services.employer import serialize_listing
 from app.services.matching import evaluate_jobseeker_listing_match
@@ -257,7 +258,7 @@ def list_visible_jobs_for_jobseeker(
 ):
     base_statement = _visible_jobs_statement()
     if search:
-        term = f"%{search.strip()}%"
+        term = f"%{escape_like(search.strip())}%"
         base_statement = base_statement.where(
             or_(
                 JobListing.title.ilike(term),

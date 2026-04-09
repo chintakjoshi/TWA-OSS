@@ -97,6 +97,15 @@ def build_paginated_response(
     )
 
 
+def escape_like(value: str) -> str:
+    """Escape SQL LIKE/ILIKE wildcard characters in user-provided search input.
+
+    Backslash is escaped first to prevent double-escaping of the escape
+    character that is then added before ``%`` and ``_``.
+    """
+    return value.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+
+
 def ensure_found(instance: T | None, *, entity_name: str = "Resource") -> T:
     if instance is None:
         raise AppError(

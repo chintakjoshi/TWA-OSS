@@ -16,6 +16,7 @@ class Settings(BaseSettings):
         validation_alias=AliasChoices("TWA_ENVIRONMENT", "ENVIRONMENT"),
     )
     debug: bool = Field(default=False, validation_alias="TWA_DEBUG")
+    docs_enabled: bool = Field(default=False, validation_alias="TWA_DOCS_ENABLED")
     auth_enabled: bool = Field(default=True, validation_alias="TWA_AUTH_ENABLED")
     log_level: str = Field(default="INFO", validation_alias="TWA_LOG_LEVEL")
     request_id_header: str = Field(
