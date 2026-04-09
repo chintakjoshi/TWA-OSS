@@ -18,9 +18,9 @@ def create_app() -> FastAPI:
         title=settings.app_name,
         version=settings.app_version,
         debug=settings.debug,
-        docs_url="/docs",
-        redoc_url="/redoc",
-        openapi_url="/openapi.json",
+        docs_url="/docs" if settings.docs_enabled else None,
+        redoc_url="/redoc" if settings.docs_enabled else None,
+        openapi_url="/openapi.json" if settings.docs_enabled else None,
     )
 
     if settings.auth_enabled:
@@ -29,19 +29,23 @@ def create_app() -> FastAPI:
             csrf_cookie_name=settings.auth_csrf_cookie_name,
             csrf_header_name=settings.auth_csrf_header_name,
         )
+        public_exact_paths = {
+            "/health",
+            settings.api_v1_prefix,
+            f"{settings.api_v1_prefix}/health",
+        }
+        public_path_prefixes: tuple[str, ...] = ()
+        if settings.docs_enabled:
+            public_exact_paths.add("/openapi.json")
+            public_path_prefixes = ("/docs", "/redoc")
         app.add_middleware(
             PathAwareJWTAuthMiddleware,
             auth_base_url=settings.auth_base_url,
             expected_audience=settings.twa_auth_audience,
             token_sources=["authorization", "cookie"],
             access_cookie_name=settings.auth_access_cookie_name,
-            public_exact_paths={
-                "/health",
-                settings.api_v1_prefix,
-                f"{settings.api_v1_prefix}/health",
-                "/openapi.json",
-            },
-            public_path_prefixes=("/docs", "/redoc"),
+            public_exact_paths=public_exact_paths,
+            public_path_prefixes=public_path_prefixes,
         )
 
     app.add_middleware(

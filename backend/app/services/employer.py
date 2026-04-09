@@ -24,6 +24,7 @@ from app.services.common import (
     apply_sorting,
     build_paginated_response,
     ensure_found,
+    escape_like,
 )
 from app.services.geocoding import geocode_address
 from app.services.jobseeker import is_jobseeker_profile_complete, serialize_charge_flags
@@ -533,7 +534,7 @@ def list_employer_listings(
 ):
     base_statement = select(JobListing).where(JobListing.employer_id == employer.id)
     if search:
-        term = f"%{search.strip()}%"
+        term = f"%{escape_like(search.strip())}%"
         base_statement = base_statement.where(
             or_(
                 JobListing.title.ilike(term),
@@ -613,7 +614,7 @@ def list_listings(
         joinedload(JobListing.employer).joinedload(Employer.app_user)
     )
     if search:
-        term = f"%{search.strip()}%"
+        term = f"%{escape_like(search.strip())}%"
         base_statement = base_statement.where(
             or_(
                 JobListing.title.ilike(term),
@@ -782,7 +783,7 @@ def list_employer_listing_applicants(
         .where(Application.job_listing_id == listing.id)
     )
     if search:
-        term = f"%{search.strip()}%"
+        term = f"%{escape_like(search.strip())}%"
         base_statement = base_statement.where(
             or_(
                 Jobseeker.full_name.ilike(term),
@@ -841,7 +842,7 @@ def list_employer_applicants(
         )
     )
     if search:
-        term = f"%{search.strip()}%"
+        term = f"%{escape_like(search.strip())}%"
         base_statement = base_statement.where(
             or_(
                 Jobseeker.full_name.ilike(term),

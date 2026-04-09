@@ -25,6 +25,7 @@ from app.services.common import (
     apply_sorting,
     build_paginated_response,
     ensure_found,
+    escape_like,
 )
 
 JOBSEEKER_ALLOWED_FILTERS = {
@@ -210,7 +211,7 @@ def list_jobseekers(
 ):
     base_statement = select(Jobseeker).options(joinedload(Jobseeker.app_user))
     if search:
-        term = f"%{search.strip()}%"
+        term = f"%{escape_like(search.strip())}%"
         base_statement = base_statement.join(Jobseeker.app_user).where(
             or_(
                 Jobseeker.full_name.ilike(term),
