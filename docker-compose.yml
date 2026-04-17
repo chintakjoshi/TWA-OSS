@@ -4,6 +4,7 @@ x-auth-service-env: &auth-service-env
   APP__HOST: 0.0.0.0
   APP__PORT: '8000'
   APP__LOG_LEVEL: ${AUTH_SERVICE_LOG_LEVEL:-INFO}
+  APP__EXPOSE_DOCS: '${AUTH_SERVICE_EXPOSE_DOCS:-false}'
   DATABASE__URL: ${AUTH_SERVICE_DATABASE_URL:-postgresql+asyncpg://postgres@auth-postgres:5432/auth_service}
   REDIS__URL: ${AUTH_SERVICE_REDIS_URL:-redis://auth-redis:6379/0}
   JWT__ALGORITHM: RS256
