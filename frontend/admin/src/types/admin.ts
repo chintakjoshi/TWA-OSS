@@ -17,6 +17,12 @@ export interface PaginatedResponse<T> {
   }
 }
 
+export interface CursorPageResponse<T> {
+  data: T[]
+  next_cursor: string | null
+  has_more: boolean
+}
+
 export interface AdminDashboard {
   pending_employers: number
   pending_listings: number
@@ -221,4 +227,97 @@ export interface NotificationConfigUpdateInput {
   notify_staff_on_apply: boolean
   notify_employer_on_apply: boolean
   share_applicants_with_employer: boolean
+}
+
+export interface AuthAdminUserListItem {
+  id: string
+  email: string
+  role: 'admin' | 'user' | string
+  is_active: boolean
+  email_verified: boolean
+  email_otp_enabled: boolean
+  locked: boolean
+  lock_retry_after: number | null
+  created_at: string
+  updated_at: string
+}
+
+export interface AuthAdminUserDetail extends AuthAdminUserListItem {
+  active_session_count: number
+}
+
+export interface AuthAdminSessionItem {
+  session_id: string
+  user_id: string
+  created_at: string
+  last_seen_at: string | null
+  expires_at: string
+  revoked_at: string | null
+  revoke_reason: string | null
+  ip_address: string | null
+  user_agent: string | null
+  device_label: string
+  is_suspicious: boolean
+  suspicious_reasons: string[]
+}
+
+export interface AuthAdminSuspiciousSessionItem extends AuthAdminSessionItem {
+  user_email: string
+  user_role: string
+}
+
+export interface AuthAdminSessionTimelineItem {
+  event_type: string
+  success: boolean
+  metadata: Record<string, unknown> | null
+  created_at: string
+}
+
+export interface AuthAdminSessionDetail extends AuthAdminSessionItem {
+  timeline: AuthAdminSessionTimelineItem[]
+}
+
+export interface AuthAdminSessionRevokeResponse {
+  user_id: string
+  session_id: string
+  revoke_reason: string
+}
+
+export interface AuthAdminUserSessionsRevokedResponse {
+  user_id: string
+  revoked_session_ids: string[]
+  revoked_session_count: number
+  revoke_reason: string
+}
+
+export interface AuthAdminSessionFilterRevokeInput {
+  is_suspicious?: boolean
+  created_before?: string
+  created_after?: string
+  last_seen_before?: string
+  last_seen_after?: string
+  ip_address?: string
+  user_agent_contains?: string
+  dry_run?: boolean
+  reason?: string
+}
+
+export interface AuthAdminSessionFilteredRevokeResponse {
+  user_id: string
+  matched_session_ids: string[]
+  matched_session_count: number
+  revoked_session_ids: string[]
+  revoked_session_count: number
+  dry_run: boolean
+  revoke_reason: string
+}
+
+export interface AuthActionOtpRequestResponse {
+  sent: true
+  action: string
+  expires_in: number
+}
+
+export interface AuthActionOtpVerifyResponse {
+  action_token: string
 }

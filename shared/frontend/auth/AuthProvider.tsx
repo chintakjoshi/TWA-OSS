@@ -41,6 +41,7 @@ interface AuthContextValue {
   bootstrapRole: (payload: AuthBootstrapRequest) => Promise<void>
   logout: () => Promise<void>
   requestTwa: <T>(path: string, init?: RequestInit) => Promise<T>
+  requestAuth: <T>(path: string, init?: RequestInit) => Promise<T>
   streamTwa: (path: string, init?: RequestInit) => Promise<Response>
 }
 
@@ -209,6 +210,9 @@ export function AuthProvider({
       },
       async requestTwa<T>(path: string, init?: RequestInit) {
         return client.requestTwa<T>(path, client.loadStoredSession(), init)
+      },
+      async requestAuth<T>(path: string, init?: RequestInit) {
+        return client.requestAuth<T>(path, client.loadStoredSession(), init)
       },
       async streamTwa(path: string, init?: RequestInit) {
         return client.streamTwa(path, client.loadStoredSession(), init)

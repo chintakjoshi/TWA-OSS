@@ -9,6 +9,7 @@ import {
   LayoutDashboard,
   Search,
   Settings2,
+  ShieldAlert,
   UserRoundSearch,
   Users,
 } from 'lucide-react'
@@ -94,6 +95,13 @@ export const adminNavItems: AdminNavItem[] = [
     icon: BellRing,
     section: 'tracking',
     badgeKey: 'open_applications',
+  },
+  {
+    label: 'Sessions',
+    href: '/sessions',
+    icon: ShieldAlert,
+    section: 'settings',
+    activePrefixes: ['/sessions'],
   },
   {
     label: 'Notification Config',

@@ -38,6 +38,7 @@ test('admin auth route does not preload staff workspace route chunks', async () 
     adminRouteModules,
     'loadNotificationsPage'
   )
+  const loadSessionsPage = vi.spyOn(adminRouteModules, 'loadSessionsPage')
 
   render(
     <MemoryRouter initialEntries={['/auth']}>
@@ -57,6 +58,7 @@ test('admin auth route does not preload staff workspace route chunks', async () 
   expect(loadListingsPage).not.toHaveBeenCalled()
   expect(loadMatchesPage).not.toHaveBeenCalled()
   expect(loadNotificationsPage).not.toHaveBeenCalled()
+  expect(loadSessionsPage).not.toHaveBeenCalled()
 })
 
 test('admin loads the dashboard route chunk only when the dashboard route is rendered', async () => {
@@ -82,4 +84,27 @@ test('admin loads the dashboard route chunk only when the dashboard route is ren
   expect(
     await screen.findByText('Admin dashboard chunk loaded')
   ).toBeInTheDocument()
+})
+
+test('admin loads the sessions route chunk only when the sessions route is rendered', async () => {
+  const { client } = createMockAuthClient({
+    portal: 'staff',
+    authMe: buildAuthMe({ role: 'staff' }),
+  })
+  const loadSessionsPage = vi
+    .spyOn(adminRouteModules, 'loadSessionsPage')
+    .mockResolvedValue({
+      AdminSessionsPage: () => <div>Admin sessions chunk loaded</div>,
+    } as Awaited<ReturnType<typeof adminRouteModules.loadSessionsPage>>)
+
+  render(
+    <MemoryRouter initialEntries={['/sessions']}>
+      <AdminPortalApp client={client} />
+    </MemoryRouter>
+  )
+
+  await waitFor(() => {
+    expect(loadSessionsPage).toHaveBeenCalledTimes(1)
+  })
+  expect(await screen.findByText('Admin sessions chunk loaded')).toBeInTheDocument()
 })

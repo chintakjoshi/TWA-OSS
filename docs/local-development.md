@@ -137,7 +137,7 @@ The local authSDK Postgres container uses trust auth, so Adminer may still ask f
 
 ## Environment Notes
 
-- `docker-compose.yml` pulls authSDK from `ghcr.io/chintakjoshi/auth-service:v1.5.0` by default.
+- `docker-compose.yml` pulls authSDK from `ghcr.io/chintakjoshi/auth-service:v1.5.1` by default.
 - The main Docker stack enables authSDK browser sessions by default and routes frontend API traffic through the same-origin `/api` proxy.
 - Local HTTP development uses non-`__Host-` auth cookie names on purpose. Browsers require `__Host-` cookies to be `Secure`, so those names only make sense once you are running over real HTTPS.
 - Backend debug mode now defaults to off. Set `TWA_DEBUG=true` in your local `.env` only when you intentionally need framework debug behavior while troubleshooting.

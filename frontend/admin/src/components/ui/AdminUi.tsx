@@ -1,5 +1,6 @@
 import {
   useEffect,
+  useId,
   type ButtonHTMLAttributes,
   type HTMLAttributes,
   type ReactNode,
@@ -433,6 +434,8 @@ export function Modal({
   onClose: () => void
   className?: string
 }) {
+  const titleId = useId()
+
   useEffect(() => {
     if (!open) return
     const onKeyDown = (event: KeyboardEvent) => {
@@ -451,6 +454,7 @@ export function Modal({
       onClick={onClose}
     >
       <div
+        aria-labelledby={titleId}
         aria-modal="true"
         className={cn(
           'max-h-[90vh] w-full max-w-4xl overflow-auto rounded-[28px] border border-[#dacdb8] bg-[#fffdf9] shadow-[0_28px_80px_rgba(15,23,42,0.2)]',
@@ -460,7 +464,10 @@ export function Modal({
         onClick={(event) => event.stopPropagation()}
       >
         <div className="flex items-center justify-between border-b border-[#eadfce] px-6 py-5">
-          <h2 className="admin-display text-[1.35rem] font-semibold text-slate-950">
+          <h2
+            id={titleId}
+            className="admin-display text-[1.35rem] font-semibold text-slate-950"
+          >
             {title}
           </h2>
           <AdminButton variant="secondary" onClick={onClose}>

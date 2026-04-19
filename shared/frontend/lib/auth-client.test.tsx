@@ -222,6 +222,144 @@ test('cookie-backed requests refresh through /auth/token without raw refresh tok
   expect(refreshHeaders.get('X-CSRF-Token')).toBe('bootstrap-csrf-token')
 })
 
+test('authSDK admin requests refresh through /auth/token and retry against the auth base URL', async () => {
+  let adminRequestCount = 0
+  let refreshRequestInit: RequestInit | undefined
+  const fetchMock = vi.fn(
+    async (input: string | URL | Request, init?: RequestInit) => {
+      const url =
+        typeof input === 'string'
+          ? input
+          : input instanceof URL
+            ? input.toString()
+            : input.url
+
+      if (url === 'http://app.local/_auth/admin/users?limit=1') {
+        adminRequestCount += 1
+        if (adminRequestCount === 1) {
+          return jsonResponse(
+            { detail: 'Session expired.', code: 'session_expired' },
+            { status: 401 }
+          )
+        }
+        return jsonResponse({
+          data: [
+            {
+              id: 'user-1',
+              email: 'staff@example.com',
+              role: 'admin',
+              is_active: true,
+              email_verified: true,
+              email_otp_enabled: true,
+              locked: false,
+              lock_retry_after: null,
+              created_at: '2026-04-17T12:00:00Z',
+              updated_at: '2026-04-17T12:00:00Z',
+            },
+          ],
+          next_cursor: null,
+          has_more: false,
+        })
+      }
+
+      if (url === 'http://app.local/_auth/auth/token') {
+        refreshRequestInit = init
+        return jsonResponse({
+          authenticated: true,
+          session_transport: 'cookie',
+        })
+      }
+
+      if (url === 'http://app.local/_auth/auth/csrf') {
+        return jsonResponse({ csrf_token: 'bootstrap-csrf-token' })
+      }
+
+      throw new Error(`Unexpected fetch request for ${url}`)
+    }
+  )
+  vi.stubGlobal('fetch', fetchMock)
+
+  const client = createAuthClient({
+    authBaseUrl: 'http://app.local/_auth',
+    twaApiUrl: 'http://app.local',
+    audience: 'twa-api',
+    storageKey: 'twa-cookie-auth-request-test',
+  })
+
+  const result = await client.requestAuth<{
+    data: Array<{ id: string; email: string }>
+    next_cursor: string | null
+    has_more: boolean
+  }>('/admin/users?limit=1', { sessionTransport: 'cookie' })
+
+  expect(result.data[0]).toMatchObject({
+    id: 'user-1',
+    email: 'staff@example.com',
+  })
+  expect(adminRequestCount).toBe(2)
+
+  const refreshInit = refreshRequestInit
+  expect(refreshInit?.credentials).toBe('include')
+  expect(refreshInit?.method).toBe('POST')
+  expect(refreshInit?.body).toBeUndefined()
+
+  const refreshHeaders = new Headers(refreshInit?.headers)
+  expect(refreshHeaders.get('X-Auth-Session-Transport')).toBe('cookie')
+  expect(refreshHeaders.get('X-CSRF-Token')).toBe('bootstrap-csrf-token')
+})
+
+test('authSDK unsafe requests preserve custom headers while bootstrapping csrf', async () => {
+  document.cookie = 'twa_auth_csrf=existing-csrf-token; path=/'
+
+  const fetchMock = vi.fn(async (input: string | URL | Request) => {
+    const url =
+      typeof input === 'string'
+        ? input
+        : input instanceof URL
+          ? input.toString()
+          : input.url
+
+    if (url === 'http://app.local/_auth/admin/users/user-1/sessions/session-1') {
+      return jsonResponse({
+        user_id: 'user-1',
+        session_id: 'session-1',
+        revoke_reason: 'compromised_device',
+      })
+    }
+
+    throw new Error(`Unexpected fetch request for ${url}`)
+  })
+  vi.stubGlobal('fetch', fetchMock)
+
+  const client = createAuthClient({
+    authBaseUrl: 'http://app.local/_auth',
+    twaApiUrl: 'http://app.local',
+    audience: 'twa-api',
+    storageKey: 'twa-cookie-auth-delete-test',
+  })
+
+  await client.requestAuth(
+    '/admin/users/user-1/sessions/session-1',
+    { sessionTransport: 'cookie' },
+    {
+      method: 'DELETE',
+      headers: {
+        'X-Action-Token': 'step-up-token',
+      },
+      body: JSON.stringify({ reason: 'compromised_device' }),
+    }
+  )
+
+  const requestInit = fetchMock.mock.calls.at(-1)?.[1]
+  expect(requestInit?.credentials).toBe('include')
+  expect(requestInit?.method).toBe('DELETE')
+
+  const headers = new Headers(requestInit?.headers)
+  expect(headers.get('X-Action-Token')).toBe('step-up-token')
+  expect(headers.get('X-CSRF-Token')).toBe('existing-csrf-token')
+  expect(headers.get('Content-Type')).toBe('application/json')
+})
+
 test('logout surfaces authSDK failures and preserves the cookie-session marker', async () => {
   document.cookie = 'twa_auth_csrf=existing-csrf-token; path=/'
 

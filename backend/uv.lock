@@ -58,7 +58,7 @@ wheels = [
 [[package]]
 name = "auth-service-sdk"
 version = "1.4.1"
-source = { git = "https://github.com/chintakjoshi/authSDK.git?subdirectory=sdk&rev=v1.5.0#7d729d251309df018ca7bb1dd8ecbd258cd1886c" }
+source = { git = "https://github.com/chintakjoshi/authSDK.git?subdirectory=sdk&rev=v1.5.1#7d729d251309df018ca7bb1dd8ecbd258cd1886c" }
 dependencies = [
     { name = "authlib" },
     { name = "cachetools" },
@@ -1140,7 +1140,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "alembic", specifier = ">=1.16.4" },
-    { name = "auth-service-sdk", git = "https://github.com/chintakjoshi/authSDK.git?subdirectory=sdk&rev=v1.5.0" },
+    { name = "auth-service-sdk", git = "https://github.com/chintakjoshi/authSDK.git?subdirectory=sdk&rev=v1.5.1" },
     { name = "fastapi", specifier = ">=0.116.0" },
     { name = "httpx", specifier = ">=0.28.1" },
     { name = "pgeocode", specifier = ">=0.5.0" },
