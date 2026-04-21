@@ -35,6 +35,12 @@ class TestDocsInDevelopment:
     def test_swagger_ui_available(self, dev_client: TestClient) -> None:
         response = dev_client.get("/docs")
         assert response.status_code == 200
+        assert "Swagger UI" in response.text
+        assert "window.__TWA_SWAGGER_REQUEST_INTERCEPTOR__" in response.text
+        assert "window.__TWA_SWAGGER_DOCS_CONFIG__" in response.text
+        assert "twa_auth_csrf" in response.text
+        assert "X-CSRF-Token" in response.text
+        assert '"bootstrapCsrf": false' in response.text
 
     def test_redoc_available(self, dev_client: TestClient) -> None:
         response = dev_client.get("/redoc")
