@@ -38,6 +38,7 @@ test('admin auth route does not preload staff workspace route chunks', async () 
     adminRouteModules,
     'loadNotificationsPage'
   )
+  const loadSecurityPage = vi.spyOn(adminRouteModules, 'loadSecurityPage')
 
   render(
     <MemoryRouter initialEntries={['/auth']}>
@@ -57,6 +58,7 @@ test('admin auth route does not preload staff workspace route chunks', async () 
   expect(loadListingsPage).not.toHaveBeenCalled()
   expect(loadMatchesPage).not.toHaveBeenCalled()
   expect(loadNotificationsPage).not.toHaveBeenCalled()
+  expect(loadSecurityPage).not.toHaveBeenCalled()
 })
 
 test('admin loads the dashboard route chunk only when the dashboard route is rendered', async () => {

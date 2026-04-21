@@ -15,6 +15,7 @@ export interface AppUserPayload {
 export interface AuthMeResponse {
   app_user: AppUserPayload | null
   profile_complete: boolean
+  email_otp_enabled: boolean
   employer_review_status: EmployerReviewStatus | null
   employer_capabilities: {
     applicant_visibility_enabled: boolean
@@ -90,6 +91,25 @@ export interface ResetPasswordResponse {
 }
 export interface OTPMessageSentResponse {
   sent: true
+}
+export type OTPAction = 'enable_otp' | 'disable_otp'
+export interface RequestActionOTPRequest {
+  action: OTPAction
+}
+export interface RequestActionOTPResponse {
+  sent: true
+  action: OTPAction
+  expires_in: number
+}
+export interface VerifyActionOTPRequest {
+  action: OTPAction
+  code: string
+}
+export interface VerifyActionOTPResponse {
+  action_token: string
+}
+export interface OTPEnrollmentResponse {
+  email_otp_enabled: boolean
 }
 export interface VerifyLoginOTPRequest {
   challenge_token: string

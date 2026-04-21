@@ -197,6 +197,7 @@ This is the role carried inside `authSDK` tokens.
     "updated_at": "2026-03-18T23:15:00Z"
   },
   "profile_complete": true,
+  "email_otp_enabled": false,
   "next_step": null
 }
 ```
@@ -459,6 +460,59 @@ Used by `auth-service-sdk` middleware for session validation.
 
 Returns the CSRF token that browser clients echo on unsafe requests while using cookie-backed sessions.
 
+### `POST {AUTH_BASE_URL}/auth/otp/request/action`
+
+Sends an OTP for a sensitive authenticated action such as disabling MFA.
+
+#### Request Body
+
+```json
+{
+  "action": "disable_otp"
+}
+```
+
+#### Notes
+
+- Requires an authenticated authSDK session
+- Browser clients must include the expected CSRF header
+- Returns `sent: true` and an expiry window
+
+### `POST {AUTH_BASE_URL}/auth/otp/verify/action`
+
+Verifies an action OTP and returns an action token for the protected mutation.
+
+#### Request Body
+
+```json
+{
+  "action": "disable_otp",
+  "code": "123456"
+}
+```
+
+### `POST {AUTH_BASE_URL}/auth/otp/enable`
+
+Enables email OTP for future password logins.
+
+#### Notes
+
+- Requires an authenticated authSDK session
+- Browser clients must include the expected CSRF header
+- May require a fresh login if the current session is stale
+- Returns `{ "email_otp_enabled": true }`
+
+### `POST {AUTH_BASE_URL}/auth/otp/disable`
+
+Disables email OTP for future password logins.
+
+#### Notes
+
+- Requires an authenticated authSDK session
+- Browser clients must include the expected CSRF header
+- Requires a valid action token from the action OTP flow
+- Returns `{ "email_otp_enabled": false }`
+
 ### `GET {AUTH_BASE_URL}/.well-known/jwks.json`
 
 Used by `auth-service-sdk` middleware for JWT verification.
@@ -565,6 +619,7 @@ Any authenticated `authSDK` user with audience `twa-api`.
     "updated_at": "2026-03-18T23:15:00Z"
   },
   "profile_complete": true,
+  "email_otp_enabled": false,
   "employer_review_status": null,
   "next_step": null
 }
@@ -576,6 +631,7 @@ If the user is authenticated in `authSDK` but has not been bootstrapped into TWA
 {
   "app_user": null,
   "profile_complete": false,
+  "email_otp_enabled": false,
   "employer_review_status": null,
   "next_step": "bootstrap_role"
 }

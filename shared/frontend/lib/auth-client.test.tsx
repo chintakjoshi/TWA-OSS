@@ -10,6 +10,7 @@ import {
 } from '../../../frontend/tests/utils/auth'
 import { AuthProvider, useAuth } from '../auth/AuthProvider'
 import { createAuthClient } from './auth-client'
+import { HttpError } from './http'
 
 function jsonResponse(
   body: unknown,
@@ -86,6 +87,53 @@ function AuthLogoutProbe() {
         }}
       >
         Trigger logout
+      </button>
+    </div>
+  )
+}
+
+function AuthOtpProbe() {
+  const auth = useAuth()
+  const [error, setError] = useState('none')
+
+  return (
+    <div>
+      <p>state:{auth.state}</p>
+      <p>challenge:{auth.otpChallenge?.challenge_token ?? 'none'}</p>
+      <p>error:{error}</p>
+      <button
+        type="button"
+        onClick={() => {
+          void auth
+            .login({
+              email: 'jobseeker@example.com',
+              password: 'Password123!',
+            })
+            .catch((nextError) => {
+              setError(
+                nextError instanceof Error ? nextError.message : 'unknown error'
+              )
+            })
+        }}
+      >
+        Trigger login OTP
+      </button>
+      <button
+        type="button"
+        onClick={() => {
+          void auth
+            .verifyLoginOtp({
+              challenge_token: 'challenge-token',
+              code: '999999',
+            })
+            .catch((nextError) => {
+              setError(
+                nextError instanceof Error ? nextError.message : 'unknown error'
+              )
+            })
+        }}
+      >
+        Trigger verify OTP
       </button>
     </div>
   )
@@ -369,6 +417,45 @@ test('auth provider turns portal denial into a generic login failure', async () 
   expect(spies.logout).toHaveBeenCalled()
 })
 
+test('auth provider preserves the OTP challenge after an invalid login code', async () => {
+  const user = userEvent.setup()
+  const { client } = createMockAuthClient({
+    loginResult: {
+      otp_required: true,
+      challenge_token: 'challenge-token',
+      masked_email: 'jo***@example.com',
+    },
+    verifyOtpError: new HttpError(400, 'Invalid OTP.', {
+      code: 'invalid_otp',
+      detail: 'Invalid OTP.',
+    }),
+  })
+
+  render(
+    <MemoryRouter>
+      <AuthProvider client={client}>
+        <AuthOtpProbe />
+      </AuthProvider>
+    </MemoryRouter>
+  )
+
+  await screen.findByText('state:anonymous')
+  await user.click(screen.getByRole('button', { name: 'Trigger login OTP' }))
+
+  await waitFor(() => {
+    expect(screen.getByText('state:otp_required')).toBeInTheDocument()
+  })
+  expect(screen.getByText('challenge:challenge-token')).toBeInTheDocument()
+
+  await user.click(screen.getByRole('button', { name: 'Trigger verify OTP' }))
+
+  await waitFor(() => {
+    expect(screen.getByText('error:Invalid OTP.')).toBeInTheDocument()
+  })
+  expect(screen.getByText('state:otp_required')).toBeInTheDocument()
+  expect(screen.getByText('challenge:challenge-token')).toBeInTheDocument()
+})
+
 test('fetchAuthMe includes the configured portal scope in the TWA auth request', async () => {
   const fetchMock = vi.fn().mockResolvedValueOnce(
     jsonResponse({
@@ -381,6 +468,7 @@ test('fetchAuthMe includes the configured portal scope in the TWA auth request',
         is_active: true,
       },
       profile_complete: true,
+      email_otp_enabled: false,
       employer_review_status: null,
       employer_capabilities: null,
       next_step: null,
@@ -403,5 +491,114 @@ test('fetchAuthMe includes the configured portal scope in the TWA auth request',
     expect.objectContaining({
       credentials: 'include',
     })
+  )
+})
+
+test('authenticated OTP action flows use cookie-backed requests and forward the action token to disable MFA', async () => {
+  document.cookie = 'twa_auth_csrf=existing-csrf-token; path=/'
+
+  const fetchMock = vi
+    .fn()
+    .mockResolvedValueOnce(
+      jsonResponse({
+        sent: true,
+        action: 'disable_otp',
+        expires_in: 300,
+      })
+    )
+    .mockResolvedValueOnce(jsonResponse({ action_token: 'action-token-123' }))
+    .mockResolvedValueOnce(jsonResponse({ email_otp_enabled: false }))
+  vi.stubGlobal('fetch', fetchMock)
+
+  const client = createAuthClient({
+    authBaseUrl: 'http://app.local/_auth',
+    twaApiUrl: 'http://app.local',
+    audience: 'twa-api',
+    storageKey: 'twa-cookie-action-otp-test',
+  })
+
+  await expect(
+    client.requestActionOtp({ action: 'disable_otp' })
+  ).resolves.toEqual({
+    sent: true,
+    action: 'disable_otp',
+    expires_in: 300,
+  })
+  await expect(
+    client.verifyActionOtp({ action: 'disable_otp', code: '123456' })
+  ).resolves.toEqual({
+    action_token: 'action-token-123',
+  })
+  await expect(client.disableEmailOtp('action-token-123')).resolves.toEqual({
+    email_otp_enabled: false,
+  })
+
+  expect(fetchMock).toHaveBeenCalledTimes(3)
+  expect(fetchMock.mock.calls[0]?.[0]).toBe(
+    'http://app.local/_auth/auth/otp/request/action'
+  )
+  expect(fetchMock.mock.calls[1]?.[0]).toBe(
+    'http://app.local/_auth/auth/otp/verify/action'
+  )
+  expect(fetchMock.mock.calls[2]?.[0]).toBe(
+    'http://app.local/_auth/auth/otp/disable'
+  )
+
+  const requestActionInit = fetchMock.mock.calls[0]?.[1]
+  expect(requestActionInit?.credentials).toBe('include')
+  expect(requestActionInit?.method).toBe('POST')
+  expect(requestActionInit?.body).toBe(JSON.stringify({ action: 'disable_otp' }))
+  expect(new Headers(requestActionInit?.headers).get('X-CSRF-Token')).toBe(
+    'existing-csrf-token'
+  )
+
+  const verifyActionInit = fetchMock.mock.calls[1]?.[1]
+  expect(verifyActionInit?.credentials).toBe('include')
+  expect(verifyActionInit?.method).toBe('POST')
+  expect(verifyActionInit?.body).toBe(
+    JSON.stringify({ action: 'disable_otp', code: '123456' })
+  )
+  expect(new Headers(verifyActionInit?.headers).get('X-CSRF-Token')).toBe(
+    'existing-csrf-token'
+  )
+
+  const disableInit = fetchMock.mock.calls[2]?.[1]
+  expect(disableInit?.credentials).toBe('include')
+  expect(disableInit?.method).toBe('POST')
+  expect(disableInit?.body).toBeUndefined()
+  const disableHeaders = new Headers(disableInit?.headers)
+  expect(disableHeaders.get('X-CSRF-Token')).toBe('existing-csrf-token')
+  expect(disableHeaders.get('X-Action-Token')).toBe('action-token-123')
+})
+
+test('enableEmailOtp posts to the authSDK self-service MFA endpoint', async () => {
+  document.cookie = 'twa_auth_csrf=existing-csrf-token; path=/'
+
+  const fetchMock = vi
+    .fn()
+    .mockResolvedValueOnce(jsonResponse({ email_otp_enabled: true }))
+  vi.stubGlobal('fetch', fetchMock)
+
+  const client = createAuthClient({
+    authBaseUrl: 'http://app.local/_auth',
+    twaApiUrl: 'http://app.local',
+    audience: 'twa-api',
+    storageKey: 'twa-enable-mfa-test',
+  })
+
+  await expect(client.enableEmailOtp()).resolves.toEqual({
+    email_otp_enabled: true,
+  })
+
+  expect(fetchMock).toHaveBeenCalledTimes(1)
+  expect(fetchMock.mock.calls[0]?.[0]).toBe(
+    'http://app.local/_auth/auth/otp/enable'
+  )
+  const init = fetchMock.mock.calls[0]?.[1]
+  expect(init?.credentials).toBe('include')
+  expect(init?.method).toBe('POST')
+  expect(init?.body).toBeUndefined()
+  expect(new Headers(init?.headers).get('X-CSRF-Token')).toBe(
+    'existing-csrf-token'
   )
 })
