@@ -58,6 +58,7 @@ def get_auth_me(
             else None
         ),
         profile_complete=result.profile_complete,
+        email_otp_enabled=result.email_otp_enabled,
         employer_review_status=result.employer_review_status,
         employer_capabilities=(
             EmployerCapabilitiesPayload(**result.employer_capabilities)

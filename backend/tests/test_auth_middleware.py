@@ -89,6 +89,7 @@ def test_auth_middleware_bypasses_public_routes_and_accepts_token_backed_identit
     assert authenticated_response.json() == {
         "app_user": None,
         "profile_complete": False,
+        "email_otp_enabled": False,
         "employer_review_status": None,
         "employer_capabilities": None,
         "next_step": "bootstrap_role",
@@ -188,6 +189,7 @@ def test_auth_middleware_accepts_cookie_authenticated_identity_without_bearer_he
     assert response.json() == {
         "app_user": None,
         "profile_complete": False,
+        "email_otp_enabled": False,
         "employer_review_status": None,
         "employer_capabilities": None,
         "next_step": "bootstrap_role",

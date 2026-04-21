@@ -2,6 +2,9 @@ import { useEffect, useMemo, useState } from 'react'
 import { Building2, Eye, EyeOff, LockKeyhole, Mail } from 'lucide-react'
 
 import { useAuth } from '@shared/auth/AuthProvider'
+import { getAuthErrorMessage } from '@shared/auth/errorMessage'
+import { OtpCodeInput } from '@shared/auth/OtpCodeInput'
+import { isCompleteOtpCode } from '@shared/auth/otp'
 import { HttpError } from '@shared/lib/http'
 
 import { jobseekerAppUrl } from '../app/authClient'
@@ -21,9 +24,7 @@ const authLabelClassName =
   'block text-xs font-semibold uppercase tracking-[0.18em] text-slate-700'
 
 function getErrorMessage(error: unknown) {
-  if (error instanceof HttpError) return error.message
-  if (error instanceof Error) return error.message
-  return 'Something went wrong. Please try again.'
+  return getAuthErrorMessage(error)
 }
 
 export function EmployerAuthPage() {
@@ -39,6 +40,7 @@ export function EmployerAuthPage() {
   const [verificationEmail, setVerificationEmail] = useState<string | null>(
     null
   )
+  const [otpCode, setOtpCode] = useState('')
 
   useEffect(() => {
     if (auth.state === 'otp_required') setMode('otp')
@@ -166,10 +168,9 @@ export function EmployerAuthPage() {
                             'Verify your work email before signing in. You can resend the confirmation below.'
                           )
                           return
-                        }
-                        throw nextError
                       }
-                      setNotice('Signed in successfully.')
+                      throw nextError
+                    }
                     })
                   }}
                 >
@@ -367,12 +368,15 @@ export function EmployerAuthPage() {
                   className="space-y-5"
                   onSubmit={(event) => {
                     event.preventDefault()
-                    const form = new FormData(event.currentTarget)
                     void run(async () => {
+                      if (!isCompleteOtpCode(otpCode)) {
+                        throw new Error('Enter the 6-digit OTP code.')
+                      }
                       await auth.verifyLoginOtp({
                         challenge_token: auth.otpChallenge!.challenge_token,
-                        code: String(form.get('code') ?? ''),
+                        code: otpCode,
                       })
+                      setOtpCode('')
                       setNotice('OTP verified. Continue into employer setup.')
                     })
                   }}
@@ -382,12 +386,14 @@ export function EmployerAuthPage() {
                   </InlineNotice>
                   <div>
                     <label className={authLabelClassName}>OTP code</label>
-                    <input
-                      className={`${authInputClassName} mt-2`}
-                      inputMode="numeric"
-                      name="code"
-                      required
-                    />
+                    <div className="mt-2">
+                      <OtpCodeInput
+                        ariaLabel="OTP code"
+                        name="code"
+                        value={otpCode}
+                        onChange={setOtpCode}
+                      />
+                    </div>
                   </div>
                   <div className="flex flex-wrap gap-3">
                     <PortalButton disabled={busy} type="submit">

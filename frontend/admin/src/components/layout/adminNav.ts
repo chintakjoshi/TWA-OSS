@@ -8,6 +8,7 @@ import {
   History,
   LayoutDashboard,
   Search,
+  ShieldCheck,
   Settings2,
   UserRoundSearch,
   Users,
@@ -94,6 +95,12 @@ export const adminNavItems: AdminNavItem[] = [
     icon: BellRing,
     section: 'tracking',
     badgeKey: 'open_applications',
+  },
+  {
+    label: 'Security',
+    href: '/security',
+    icon: ShieldCheck,
+    section: 'settings',
   },
   {
     label: 'Notification Config',

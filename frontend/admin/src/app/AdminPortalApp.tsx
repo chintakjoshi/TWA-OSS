@@ -18,6 +18,7 @@ import {
   LazyAdminListingsPage,
   LazyAdminMatchesPage,
   LazyAdminNotificationsPage,
+  LazyAdminSecurityPage,
 } from './routeModules'
 import { AdminAuthPage } from '../pages/AuthPage'
 import { AdminLandingPage } from '../pages/LandingPage'
@@ -126,6 +127,16 @@ function AdminRoutes() {
           <RouteSuspense>
             <RequireRole role="staff">
               <LazyAdminApplicationsPage />
+            </RequireRole>
+          </RouteSuspense>
+        }
+      />
+      <Route
+        path="/security"
+        element={
+          <RouteSuspense>
+            <RequireRole role="staff">
+              <LazyAdminSecurityPage />
             </RequireRole>
           </RouteSuspense>
         }
