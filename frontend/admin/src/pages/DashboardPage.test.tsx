@@ -137,3 +137,68 @@ test('admin dashboard does not load paginated applications or listings on mount'
     expect.anything()
   )
 })
+
+test('admin dashboard aborts the in-flight audit-log request on unmount', async () => {
+  let auditSignal: AbortSignal | undefined
+  const neverSettles = new Promise<never>(() => {})
+  const { client } = createMockAuthClient({
+    authMe: buildAuthMe({ role: 'staff' }),
+    requestTwaImpl: async (path, init) => {
+      if (path === '/api/v1/admin/dashboard') {
+        return {
+          pending_employers: 0,
+          pending_listings: 0,
+          active_jobseekers: 0,
+          open_applications: 0,
+          open_listings: 0,
+          placement_summary: {
+            rows: [],
+            ytd_applications: 0,
+            ytd_hires: 0,
+            ytd_employers: 0,
+          },
+        }
+      }
+
+      if (path.startsWith('/api/v1/admin/audit-log')) {
+        auditSignal = init?.signal as AbortSignal | undefined
+        return neverSettles
+      }
+
+      if (path.startsWith('/api/v1/notifications/me')) {
+        return {
+          items: [],
+          meta: {
+            page: 1,
+            page_size: 8,
+            total_items: 0,
+            total_pages: 0,
+          },
+        }
+      }
+
+      throw new Error(`Unexpected TWA request for ${path}`)
+    },
+  })
+
+  const { unmount } = render(
+    <MemoryRouter>
+      <AuthProvider client={client}>
+        <AdminShellProvider>
+          <AdminDashboardPage />
+        </AdminShellProvider>
+      </AuthProvider>
+    </MemoryRouter>
+  )
+
+  await waitFor(() => {
+    expect(auditSignal).toBeDefined()
+  })
+  expect(auditSignal?.aborted).toBe(false)
+
+  unmount()
+
+  await waitFor(() => {
+    expect(auditSignal?.aborted).toBe(true)
+  })
+})

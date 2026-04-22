@@ -75,20 +75,27 @@ export function AdminDashboardPage() {
     }
 
     let active = true
+    const controller = new AbortController()
     setError(null)
 
-    void listAuditLog(requestTwa, { page: 1, pageSize: 5 })
+    void listAuditLog(requestTwa, {
+      page: 1,
+      pageSize: 5,
+      signal: controller.signal,
+    })
       .then((auditResponse) => {
         if (!active) return
         setActivity(auditResponse.items)
       })
       .catch((nextError: Error) => {
         if (!active) return
+        if (nextError.name === 'AbortError') return
         setError(nextError.message)
       })
 
     return () => {
       active = false
+      controller.abort()
     }
   }, [authRole, authState, requestTwa])
 

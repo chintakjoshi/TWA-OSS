@@ -275,6 +275,7 @@ export function listAuditLog(
     action?: string
     dateFrom?: string
     dateTo?: string
+    signal?: AbortSignal
   } = {}
 ) {
   const {
@@ -285,9 +286,11 @@ export function listAuditLog(
     action,
     dateFrom,
     dateTo,
+    signal,
   } = options
   return requestTwa<PaginatedResponse<AuditLogEntry>>(
-    `/api/v1/admin/audit-log${buildQuery({ page, page_size: pageSize, actor_id: actorId, entity_type: entityType, action, date_from: dateFrom, date_to: dateTo })}`
+    `/api/v1/admin/audit-log${buildQuery({ page, page_size: pageSize, actor_id: actorId, entity_type: entityType, action, date_from: dateFrom, date_to: dateTo })}`,
+    { signal }
   )
 }
 
