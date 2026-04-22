@@ -3,6 +3,7 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 import { AuthProvider, useAuth } from '@shared/auth/AuthProvider'
 import type { AuthClient } from '@shared/lib/auth-client'
 import { RequireRole } from '@shared/auth/RouteGuards'
+import { ErrorBoundary } from '@shared/routing/ErrorBoundary'
 import { RouteSuspense } from '@shared/routing/LazyRoute'
 
 import { jobseekerAuthClient } from './authClient'
@@ -95,8 +96,10 @@ export function JobseekerApp({
   client?: AuthClient
 }) {
   return (
-    <AuthProvider client={client}>
-      <JobseekerRoutes />
-    </AuthProvider>
+    <ErrorBoundary>
+      <AuthProvider client={client}>
+        <JobseekerRoutes />
+      </AuthProvider>
+    </ErrorBoundary>
   )
 }
