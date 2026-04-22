@@ -245,6 +245,7 @@ services:
       TWA_AUTH_CSRF_HEADER_NAME: ${AUTH_CSRF_HEADER_NAME:-X-CSRF-Token}
       TWA_ENVIRONMENT: ${TWA_ENVIRONMENT:-development}
       TWA_DEBUG: '${TWA_DEBUG:-true}'
+      TWA_DOCS_ENABLED: '${TWA_DOCS_ENABLED:-false}'
       TWA_LOG_LEVEL: ${TWA_LOG_LEVEL:-INFO}
       TWA_REQUEST_ID_HEADER: ${TWA_REQUEST_ID_HEADER:-X-Request-ID}
       TWA_CORS_ORIGINS: ${TWA_CORS_ORIGINS:-http://localhost:5173,http://localhost:5174,http://localhost:5175}

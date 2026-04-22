@@ -3,6 +3,9 @@ import { Link } from 'react-router-dom'
 import { Eye, EyeOff, Home, LockKeyhole, Mail } from 'lucide-react'
 
 import { useAuth } from '@shared/auth/AuthProvider'
+import { getAuthErrorMessage } from '@shared/auth/errorMessage'
+import { OtpCodeInput } from '@shared/auth/OtpCodeInput'
+import { isCompleteOtpCode } from '@shared/auth/otp'
 import { getAuthStateLabel } from '@shared/lib/auth-client'
 import { HttpError } from '@shared/lib/http'
 
@@ -20,9 +23,7 @@ const authIconFieldClassName =
   'h-full w-full rounded-xl border border-[#ddcfba] bg-white px-4 py-0 text-[0.95rem] leading-[46px] text-slate-800 shadow-[inset_0_1px_0_rgba(255,255,255,0.6)] outline-none transition placeholder:text-slate-400 focus:border-[#d0922c] focus:ring-4 focus:ring-[#d0922c]/10'
 
 function getErrorMessage(error: unknown) {
-  if (error instanceof HttpError) return error.message
-  if (error instanceof Error) return error.message
-  return 'Something went wrong. Please try again.'
+  return getAuthErrorMessage(error)
 }
 
 export function AdminAuthPage() {
@@ -37,6 +38,7 @@ export function AdminAuthPage() {
   const [verificationEmail, setVerificationEmail] = useState<string | null>(
     null
   )
+  const [otpCode, setOtpCode] = useState('')
   const [staySignedIn, setStaySignedIn] = useState(true)
   const [showPassword, setShowPassword] = useState(false)
 
@@ -179,7 +181,6 @@ export function AdminAuthPage() {
                     }
                     throw nextError
                   }
-                  if (staySignedIn) setNotice('Signed in successfully.')
                 })
               }}
             >
@@ -263,12 +264,15 @@ export function AdminAuthPage() {
               className="mt-8 space-y-5"
               onSubmit={(event) => {
                 event.preventDefault()
-                const form = new FormData(event.currentTarget)
                 void run(async () => {
+                  if (!isCompleteOtpCode(otpCode)) {
+                    throw new Error('Enter the 6-digit OTP code.')
+                  }
                   await auth.verifyLoginOtp({
                     challenge_token: auth.otpChallenge!.challenge_token,
-                    code: String(form.get('code') ?? ''),
+                    code: otpCode,
                   })
+                  setOtpCode('')
                   setNotice(
                     'OTP verified. You can continue into the staff portal.'
                   )
@@ -282,14 +286,14 @@ export function AdminAuthPage() {
                 <label className="block text-xs font-semibold uppercase tracking-[0.18em] text-slate-700">
                   OTP Code
                 </label>
-                <input
-                  className={inputClassName}
-                  inputMode="numeric"
-                  maxLength={12}
-                  minLength={4}
-                  name="code"
-                  required
-                />
+                <div className="mt-2">
+                  <OtpCodeInput
+                    ariaLabel="OTP code"
+                    name="code"
+                    value={otpCode}
+                    onChange={setOtpCode}
+                  />
+                </div>
               </div>
               <div className="flex flex-wrap gap-3">
                 <AdminButton disabled={busy} type="submit">

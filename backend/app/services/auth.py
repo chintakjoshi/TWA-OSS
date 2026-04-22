@@ -21,6 +21,7 @@ class AuthProviderIdentity:
     auth_user_id: UUID
     email: str
     auth_provider_role: str
+    email_otp_enabled: bool = False
     principal_type: Literal["user"] = "user"
 
 
@@ -28,6 +29,7 @@ class AuthProviderIdentity:
 class AuthMeResult:
     app_user: AppUser | None
     profile_complete: bool
+    email_otp_enabled: bool
     employer_review_status: str | None
     employer_capabilities: dict[str, bool] | None
     next_step: str | None
@@ -49,6 +51,7 @@ def get_auth_provider_identity(request: Request) -> AuthProviderIdentity:
     user_id = user.get("user_id")
     email = user.get("email")
     role = user.get("role")
+    email_otp_enabled = user.get("email_otp_enabled")
     if (
         not isinstance(user_id, str)
         or not isinstance(email, str)
@@ -70,7 +73,10 @@ def get_auth_provider_identity(request: Request) -> AuthProviderIdentity:
         ) from exc
 
     return AuthProviderIdentity(
-        auth_user_id=auth_user_id, email=email, auth_provider_role=role
+        auth_user_id=auth_user_id,
+        email=email,
+        auth_provider_role=role,
+        email_otp_enabled=bool(email_otp_enabled),
     )
 
 
@@ -181,6 +187,7 @@ def build_auth_me(*, session: Session, identity: AuthProviderIdentity) -> AuthMe
         return AuthMeResult(
             app_user=None,
             profile_complete=False,
+            email_otp_enabled=identity.email_otp_enabled,
             employer_review_status=None,
             employer_capabilities=None,
             next_step=next_step,
@@ -222,6 +229,7 @@ def build_auth_me(*, session: Session, identity: AuthProviderIdentity) -> AuthMe
     return AuthMeResult(
         app_user=app_user,
         profile_complete=profile_complete,
+        email_otp_enabled=identity.email_otp_enabled,
         employer_review_status=employer_review_status,
         employer_capabilities=employer_capabilities,
         next_step=next_step,

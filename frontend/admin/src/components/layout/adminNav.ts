@@ -8,6 +8,7 @@ import {
   History,
   LayoutDashboard,
   Search,
+  ShieldCheck,
   Settings2,
   ShieldAlert,
   UserRoundSearch,
@@ -102,6 +103,12 @@ export const adminNavItems: AdminNavItem[] = [
     icon: ShieldAlert,
     section: 'settings',
     activePrefixes: ['/sessions'],
+  },
+  {
+    label: 'Security',
+    href: '/security',
+    icon: ShieldCheck,
+    section: 'settings',
   },
   {
     label: 'Notification Config',

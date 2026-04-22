@@ -399,6 +399,7 @@ export function ToggleRow({
         <p className="max-w-2xl text-sm text-slate-500">{description}</p>
       </div>
       <button
+        aria-label={title}
         aria-checked={checked}
         className={cn(
           'relative h-8 w-12 rounded-full transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d0922c]/50',

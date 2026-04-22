@@ -13,6 +13,7 @@ export const adminRouteModules = {
   loadMatchesPage: () => import('../pages/MatchesPage'),
   loadNotificationsPage: () => import('../pages/NotificationsPage'),
   loadSessionsPage: () => import('../pages/SessionsPage'),
+  loadSecurityPage: () => import('../pages/SecurityPage'),
 }
 
 export const LazyAdminApplicationsPage = lazyNamedRoute(
@@ -73,4 +74,9 @@ export const LazyAdminNotificationsPage = lazyNamedRoute(
 export const LazyAdminSessionsPage = lazyNamedRoute(
   () => adminRouteModules.loadSessionsPage(),
   'AdminSessionsPage'
+)
+
+export const LazyAdminSecurityPage = lazyNamedRoute(
+  () => adminRouteModules.loadSecurityPage(),
+  'AdminSecurityPage'
 )

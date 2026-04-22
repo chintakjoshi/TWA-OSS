@@ -4,6 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import get_settings
+from app.core.docs import SwaggerDocsConfig, register_swagger_ui_docs
 from app.core.exceptions import register_exception_handlers
 from app.core.logging import RequestLoggingMiddleware, configure_logging
 from app.core.middleware import CookieCSRFMiddleware, PathAwareJWTAuthMiddleware
@@ -18,7 +19,7 @@ def create_app() -> FastAPI:
         title=settings.app_name,
         version=settings.app_version,
         debug=settings.debug,
-        docs_url="/docs" if settings.docs_enabled else None,
+        docs_url=None,
         redoc_url="/redoc" if settings.docs_enabled else None,
         openapi_url="/openapi.json" if settings.docs_enabled else None,
     )
@@ -60,6 +61,24 @@ def create_app() -> FastAPI:
             allow_headers=["*"],
         )
     register_exception_handlers(app)
+    if settings.docs_enabled:
+        register_swagger_ui_docs(
+            app,
+            openapi_url=app.openapi_url or "/openapi.json",
+            title=f"{settings.app_name} - Swagger UI",
+            swagger_docs_config=SwaggerDocsConfig(
+                csrf_cookie_name=settings.auth_csrf_cookie_name,
+                csrf_header_name=settings.auth_csrf_header_name,
+                bootstrap_csrf=False,
+                csrf_bootstrap_path=None,
+                include_credentials=True,
+                cookie_transport_header_name=None,
+                cookie_transport_header_value=None,
+                cookie_transport_paths=tuple(),
+                protected_path_prefixes=(settings.api_v1_prefix,),
+                apply_csrf_to_unsafe_requests=True,
+            ),
+        )
     app.include_router(api_router)
     return app
 

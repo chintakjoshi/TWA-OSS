@@ -3,6 +3,9 @@ import { useMemo, useState } from 'react'
 import { HttpError } from '../lib/http'
 import { Alert, Button, Card, CardBody, Field } from '../ui/primitives'
 import { useAuth } from './AuthProvider'
+import { getAuthErrorMessage } from './errorMessage'
+import { OtpCodeInput } from './OtpCodeInput'
+import { isCompleteOtpCode } from './otp'
 
 export interface AuthConsoleProps {
   title: string
@@ -15,9 +18,7 @@ export interface AuthConsoleProps {
 type Mode = 'login' | 'signup' | 'forgot' | 'reset' | 'otp'
 
 function errorMessage(error: unknown): string {
-  if (error instanceof HttpError) return error.message
-  if (error instanceof Error) return error.message
-  return 'Something went wrong. Please try again.'
+  return getAuthErrorMessage(error)
 }
 
 export function AuthConsole({
@@ -35,6 +36,7 @@ export function AuthConsole({
   const [verificationEmail, setVerificationEmail] = useState<string | null>(
     null
   )
+  const [otpCode, setOtpCode] = useState('')
 
   const activeMode = auth.state === 'otp_required' ? 'otp' : mode
   const availableModes = useMemo<Mode[]>(
@@ -128,7 +130,6 @@ export function AuthConsole({
                     throw nextError
                   }
                   setVerificationEmail(null)
-                  setNotice('You are signed in through authSDK.')
                 })
               }}
             >
@@ -244,12 +245,15 @@ export function AuthConsole({
               className="stack-md"
               onSubmit={(event) => {
                 event.preventDefault()
-                const form = new FormData(event.currentTarget)
                 void run(async () => {
+                  if (!isCompleteOtpCode(otpCode)) {
+                    throw new Error('Enter the 6-digit OTP code.')
+                  }
                   await auth.verifyLoginOtp({
                     challenge_token: auth.otpChallenge!.challenge_token,
-                    code: String(form.get('code') ?? ''),
+                    code: otpCode,
                   })
+                  setOtpCode('')
                   setVerificationEmail(null)
                   setNotice('OTP verified. You can continue into TWA now.')
                 })
@@ -262,12 +266,11 @@ export function AuthConsole({
                 </p>
               </Alert>
               <Field label="OTP Code">
-                <input
+                <OtpCodeInput
+                  ariaLabel="OTP Code"
                   name="code"
-                  required
-                  minLength={4}
-                  maxLength={12}
-                  inputMode="numeric"
+                  value={otpCode}
+                  onChange={setOtpCode}
                 />
               </Field>
               <div className="inline-actions">

@@ -98,7 +98,7 @@ cd ..\admin; npm run dev
 
 ## Same-Origin Browser Auth Model
 
-TWA browser apps now use authSDK cookie sessions instead of persisting raw
+TWA browser apps use authSDK cookie sessions instead of persisting raw
 access and refresh tokens in browser storage.
 
 In local development that means:
@@ -110,16 +110,17 @@ In local development that means:
   `http://localhost:9000` directly from browser code unless you are
   intentionally bypassing the supported local setup
 
-The default frontend config now treats the TWA API as same-origin. You only
+The default frontend config treats the TWA API as same-origin. You only
 need `VITE_TWA_API_URL` if you are deliberately overriding that behavior for a
 nonstandard environment.
 
 ## Local URLs
 
 - TWA backend API: `http://localhost:9000`
-- Swagger UI: `http://localhost:9000/docs`
+- TWA backend Swagger UI: `http://localhost:9000/docs`
 - ReDoc: `http://localhost:9000/redoc`
-- authSDK: `http://localhost:8000`
+- authSDK API: `http://localhost:8000`
+- authSDK Swagger UI: `http://localhost:8000/docs`
 - Jobseeker app: `http://localhost:5173`
 - Employer app: `http://localhost:5174`
 - Admin app: `http://localhost:5175`
@@ -137,13 +138,16 @@ The local authSDK Postgres container uses trust auth, so Adminer may still ask f
 
 ## Environment Notes
 
-- `docker-compose.yml` pulls authSDK from `ghcr.io/chintakjoshi/auth-service:v1.5.1` by default.
+- `docker-compose.yml` pulls authSDK from `ghcr.io/chintakjoshi/auth-service:v1.5.2` by default.
 - The main Docker stack enables authSDK browser sessions by default and routes frontend API traffic through the same-origin `/api` proxy.
 - Local HTTP development uses non-`__Host-` auth cookie names on purpose. Browsers require `__Host-` cookies to be `Secure`, so those names only make sense once you are running over real HTTPS.
-- Backend debug mode now defaults to off. Set `TWA_DEBUG=true` in your local `.env` only when you intentionally need framework debug behavior while troubleshooting.
+- Backend debug mode defaults to off. Set `TWA_DEBUG=true` in your local `.env` only when you intentionally need framework debug behavior while troubleshooting.
 - Frontend auth requests should use `/_auth` and rely on the local proxy target rather than calling `http://localhost:8000` directly from the browser.
 - Frontend API requests should use `/api` and rely on the local proxy target rather than calling `http://localhost:9000` directly from the browser.
 - Cookie-authenticated unsafe requests require CSRF protection. The shared frontend auth client handles the CSRF bootstrap and header automatically.
+- `http://localhost:8000/docs` bootstraps CSRF automatically for cookie-session auth routes such as `/auth/login`, `/auth/token`, and `/auth/logout`.
+- `http://localhost:9000/docs` reads the existing `twa_auth_csrf` cookie for unsafe API requests, so authenticate through authSDK first if you want backend Swagger mutations to succeed with browser cookies.
+- If Swagger shows `403 {"code":"invalid_csrf_token"}`, the request reached a cookie-authenticated unsafe endpoint without a valid CSRF cookie and matching `X-CSRF-Token` header.
 - Run `npm install` at the repo root so `shared/frontend/` can resolve shared React dependencies.
 - `twa-backend` applies `alembic upgrade head` on container startup.
 - TWA notification email defaults are already wired to local MailHog.

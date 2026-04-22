@@ -3,6 +3,9 @@ import { Eye, EyeOff, Home, LockKeyhole, Mail } from 'lucide-react'
 import { Link } from 'react-router-dom'
 
 import { useAuth } from '@shared/auth/AuthProvider'
+import { getAuthErrorMessage } from '@shared/auth/errorMessage'
+import { OtpCodeInput } from '@shared/auth/OtpCodeInput'
+import { isCompleteOtpCode } from '@shared/auth/otp'
 import { HttpError } from '@shared/lib/http'
 
 import { employerAppUrl } from '../app/authClient'
@@ -22,9 +25,7 @@ const authLabelClassName =
   'block text-xs font-semibold uppercase tracking-[0.18em] text-slate-700'
 
 function getErrorMessage(error: unknown) {
-  if (error instanceof HttpError) return error.message
-  if (error instanceof Error) return error.message
-  return 'Something went wrong. Please try again.'
+  return getAuthErrorMessage(error)
 }
 
 export function JobseekerAuthPage() {
@@ -38,6 +39,7 @@ export function JobseekerAuthPage() {
   const [verificationEmail, setVerificationEmail] = useState<string | null>(
     null
   )
+  const [otpCode, setOtpCode] = useState('')
   const [showLoginPassword, setShowLoginPassword] = useState(false)
   const [showSignupPassword, setShowSignupPassword] = useState(false)
   const [autoBootstrapPending, setAutoBootstrapPending] = useState(false)
@@ -225,30 +227,32 @@ export function JobseekerAuthPage() {
 
           {showForms ? (
             <div className="mt-8 space-y-6">
-              <div className="flex gap-4 border-b border-[#eadfce] text-sm font-semibold">
-                <button
-                  className={`border-b-2 pb-3 transition ${
-                    mode === 'login'
-                      ? 'border-[#d0922c] text-slate-950'
-                      : 'border-transparent text-slate-400'
-                  }`}
-                  type="button"
-                  onClick={() => setMode('login')}
-                >
-                  Sign In
-                </button>
-                <button
-                  className={`border-b-2 pb-3 transition ${
-                    mode === 'signup'
-                      ? 'border-[#d0922c] text-slate-950'
-                      : 'border-transparent text-slate-400'
-                  }`}
-                  type="button"
-                  onClick={() => setMode('signup')}
-                >
-                  Register
-                </button>
-              </div>
+              {mode !== 'otp' ? (
+                <div className="flex gap-4 border-b border-[#eadfce] text-sm font-semibold">
+                  <button
+                    className={`border-b-2 pb-3 transition ${
+                      mode === 'login'
+                        ? 'border-[#d0922c] text-slate-950'
+                        : 'border-transparent text-slate-400'
+                    }`}
+                    type="button"
+                    onClick={() => setMode('login')}
+                  >
+                    Sign In
+                  </button>
+                  <button
+                    className={`border-b-2 pb-3 transition ${
+                      mode === 'signup'
+                        ? 'border-[#d0922c] text-slate-950'
+                        : 'border-transparent text-slate-400'
+                    }`}
+                    type="button"
+                    onClick={() => setMode('signup')}
+                  >
+                    Register
+                  </button>
+                </div>
+              ) : null}
 
               {mode === 'login' ? (
                 <form
@@ -474,12 +478,15 @@ export function JobseekerAuthPage() {
                   className="space-y-5"
                   onSubmit={(event) => {
                     event.preventDefault()
-                    const form = new FormData(event.currentTarget)
                     void run(async () => {
+                      if (!isCompleteOtpCode(otpCode)) {
+                        throw new Error('Enter the 6-digit OTP code.')
+                      }
                       await auth.verifyLoginOtp({
                         challenge_token: auth.otpChallenge!.challenge_token,
-                        code: String(form.get('code') ?? ''),
+                        code: otpCode,
                       })
+                      setOtpCode('')
                       setNotice('OTP verified. Continue into jobseeker setup.')
                     })
                   }}
@@ -489,14 +496,14 @@ export function JobseekerAuthPage() {
                   </InlineNotice>
                   <div>
                     <label className={authLabelClassName}>OTP code</label>
-                    <input
-                      className={`${authInputClassName} mt-2`}
-                      inputMode="numeric"
-                      maxLength={12}
-                      minLength={4}
-                      name="code"
-                      required
-                    />
+                    <div className="mt-2">
+                      <OtpCodeInput
+                        ariaLabel="OTP code"
+                        name="code"
+                        value={otpCode}
+                        onChange={setOtpCode}
+                      />
+                    </div>
                   </div>
                   <div className="flex flex-wrap gap-3">
                     <PortalButton disabled={busy} type="submit">

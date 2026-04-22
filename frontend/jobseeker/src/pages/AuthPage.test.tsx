@@ -13,6 +13,7 @@ test('jobseeker auth automatically bootstraps first-login users into the local T
     authMe: {
       app_user: null,
       profile_complete: false,
+      email_otp_enabled: false,
       employer_review_status: null,
       employer_capabilities: null,
       next_step: 'bootstrap_role',
@@ -136,4 +137,41 @@ test('jobseeker auth surfaces logout failures for authenticated users', async ()
     screen.getByText('Your jobseeker workspace is unlocked.')
   ).toBeInTheDocument()
   expect(spies.logout).toHaveBeenCalled()
+})
+
+test('jobseeker auth renders OTP entry as six visual boxes', async () => {
+  const user = userEvent.setup()
+  const { client } = createMockAuthClient({
+    loginResult: {
+      otp_required: true,
+      challenge_token: 'challenge-token',
+      masked_email: 'jo***@example.com',
+    },
+  })
+
+  render(
+    <MemoryRouter>
+      <AuthProvider client={client}>
+        <JobseekerAuthPage />
+      </AuthProvider>
+    </MemoryRouter>
+  )
+
+  await screen.findByText('Jobseeker portal access')
+
+  await user.type(
+    screen.getByPlaceholderText('you@example.com'),
+    'jobseeker@example.com'
+  )
+  await user.type(screen.getByPlaceholderText('Your password'), 'Password123')
+  await user.click(screen.getAllByRole('button', { name: /^sign in$/i })[1]!)
+
+  await screen.findByText(/enter the code sent to jo\*\*\*@example.com/i)
+  expect(screen.getAllByTestId('otp-digit-box')).toHaveLength(6)
+  expect(
+    screen.queryByRole('button', { name: /^sign in$/i })
+  ).not.toBeInTheDocument()
+  expect(
+    screen.queryByRole('button', { name: /^register$/i })
+  ).not.toBeInTheDocument()
 })
