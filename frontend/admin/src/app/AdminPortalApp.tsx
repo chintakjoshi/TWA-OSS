@@ -3,6 +3,7 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 import { AuthProvider, useAuth } from '@shared/auth/AuthProvider'
 import type { AuthClient } from '@shared/lib/auth-client'
 import { RequireRole } from '@shared/auth/RouteGuards'
+import { ErrorBoundary } from '@shared/routing/ErrorBoundary'
 import { RouteSuspense } from '@shared/routing/LazyRoute'
 
 import { adminAuthClient } from './authClient'
@@ -177,10 +178,12 @@ export function AdminPortalApp({
   client?: AuthClient
 }) {
   return (
-    <AuthProvider client={client}>
-      <AdminShellProvider>
-        <AdminRoutes />
-      </AdminShellProvider>
-    </AuthProvider>
+    <ErrorBoundary>
+      <AuthProvider client={client}>
+        <AdminShellProvider>
+          <AdminRoutes />
+        </AdminShellProvider>
+      </AuthProvider>
+    </ErrorBoundary>
   )
 }

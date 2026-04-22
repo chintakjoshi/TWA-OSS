@@ -4,6 +4,7 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 import { AuthProvider, useAuth } from '@shared/auth/AuthProvider'
 import type { AuthClient } from '@shared/lib/auth-client'
 import { RequireRole } from '@shared/auth/RouteGuards'
+import { ErrorBoundary } from '@shared/routing/ErrorBoundary'
 import { RouteSuspense } from '@shared/routing/LazyRoute'
 
 import { employerAuthClient } from './authClient'
@@ -171,8 +172,10 @@ export function EmployerPortalApp({
   client?: AuthClient
 }) {
   return (
-    <AuthProvider client={client}>
-      <EmployerRoutes />
-    </AuthProvider>
+    <ErrorBoundary>
+      <AuthProvider client={client}>
+        <EmployerRoutes />
+      </AuthProvider>
+    </ErrorBoundary>
   )
 }

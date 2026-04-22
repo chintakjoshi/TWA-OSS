@@ -1,6 +1,6 @@
 import { render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
-import { afterEach, expect, test, vi } from 'vitest'
+import { afterEach, beforeEach, expect, test, vi } from 'vitest'
 
 import { buildAuthMe, createMockAuthClient } from '../../../tests/utils/auth'
 import { AdminPortalApp } from './AdminPortalApp'
@@ -8,6 +8,16 @@ import { adminRouteModules } from './routeModules'
 
 afterEach(() => {
   vi.restoreAllMocks()
+})
+
+let consoleErrorSpy: ReturnType<typeof vi.spyOn>
+
+beforeEach(() => {
+  consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+})
+
+afterEach(() => {
+  consoleErrorSpy.mockRestore()
 })
 
 test('admin auth route does not preload staff workspace route chunks', async () => {
@@ -84,4 +94,35 @@ test('admin loads the dashboard route chunk only when the dashboard route is ren
   expect(
     await screen.findByText('Admin dashboard chunk loaded')
   ).toBeInTheDocument()
+})
+
+test('a thrown error in a lazy route is contained by the route error boundary', async () => {
+  const { client } = createMockAuthClient({
+    portal: 'staff',
+    authMe: buildAuthMe({ role: 'staff' }),
+  })
+
+  function ExplodingPage(): never {
+    throw new Error('simulated route crash')
+  }
+
+  // Use a route whose lazy module hasn't been resolved elsewhere in this
+  // file; React.lazy memoises the first resolved value per component
+  // reference, so reusing a previously-loaded route would ignore this mock.
+  vi.spyOn(adminRouteModules, 'loadApplicationsPage').mockResolvedValue({
+    AdminApplicationsPage: ExplodingPage,
+  } as Awaited<ReturnType<typeof adminRouteModules.loadApplicationsPage>>)
+
+  render(
+    <MemoryRouter initialEntries={['/applications']}>
+      <AdminPortalApp client={client} />
+    </MemoryRouter>
+  )
+
+  // Instead of the app going blank, the boundary renders a recoverable
+  // fallback with retry controls.
+  expect(
+    await screen.findByRole('heading', { name: /something went wrong/i })
+  ).toBeInTheDocument()
+  expect(screen.getByRole('button', { name: /try again/i })).toBeInTheDocument()
 })

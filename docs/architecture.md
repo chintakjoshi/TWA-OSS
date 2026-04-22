@@ -65,6 +65,40 @@ Common frontend patterns in this repo:
 - shared auth console and route guards
 - shared design tokens and reusable UI primitives
 - app-specific pages for portal workflows
+- layered React error boundaries (see below)
+
+### Error Boundary Strategy
+
+A thrown error in a lazy route, a render function, or an effect would
+otherwise collapse the React tree to a blank document. The shared
+`ErrorBoundary` component in `shared/frontend/routing/ErrorBoundary.tsx`
+contains these failures.
+
+Two layers are wired into every portal:
+
+1. **Per-route boundary** — `RouteSuspense`
+   (`shared/frontend/routing/LazyRoute.tsx`) wraps each lazy route in a
+   `RouteErrorBoundary`. The boundary clears itself automatically when the
+   pathname changes, so navigating away from a broken page recovers normal
+   rendering without a hard reload.
+2. **Portal-root boundary** — each of `AdminPortalApp`, `EmployerPortalApp`,
+   and `JobseekerApp` wraps their provider + router tree in a bare
+   `ErrorBoundary`. This is the last-resort net for failures outside the
+   route tree (auth provider hydration, layout shells, the router itself).
+
+Notes for contributors:
+
+- React error boundaries only catch errors thrown during rendering, in
+  lifecycle methods, and in constructors. They do **not** catch errors
+  thrown from event handlers, async callbacks, or SSE handlers directly.
+  To surface those, capture the error into component state and throw it
+  during render (e.g. `if (error) throw error`).
+- `onError` can be passed to `ErrorBoundary` to forward the captured error
+  to observability infrastructure. The boundary tolerates a throwing
+  `onError` and still shows the fallback.
+- For custom recovery UIs, pass a `fallback={(error, reset) => ...}`
+  render prop; calling `reset()` clears the captured error and re-mounts
+  the children.
 
 ## Data And Infrastructure
 
