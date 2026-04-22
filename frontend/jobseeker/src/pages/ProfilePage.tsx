@@ -168,6 +168,7 @@ const setupSteps: Array<{ id: WizardStep; label: string }> = [
 
 export function JobseekerProfilePage() {
   const auth = useAuth()
+  const appUserId = auth.authMe?.app_user?.id
   const navigate = useNavigate()
   const [profile, setProfile] = useState<JobseekerProfile | null>(null)
   const [draft, setDraft] = useState<ProfileDraft | null>(null)
@@ -205,12 +206,14 @@ export function JobseekerProfilePage() {
   )
 
   useEffect(() => {
+    if (!appUserId) return
+
     const active = { current: true }
     void hydrateProfile(active)
     return () => {
       active.current = false
     }
-  }, [auth.authMe?.app_user?.id, auth.state])
+  }, [appUserId])
 
   const selectedCharges = useMemo(() => {
     if (!draft) return []
