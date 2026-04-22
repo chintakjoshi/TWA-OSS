@@ -119,30 +119,32 @@ export function EmployerAuthPage() {
 
           {!authenticatedEmployer ? (
             <div className="mt-8 space-y-6">
-              <div className="flex gap-4 border-b border-[#eadfce] text-sm font-semibold">
-                <button
-                  className={`border-b-2 pb-3 transition ${
-                    mode === 'login'
-                      ? 'border-[#d0922c] text-slate-950'
-                      : 'border-transparent text-slate-400'
-                  }`}
-                  type="button"
-                  onClick={() => setMode('login')}
-                >
-                  Sign In
-                </button>
-                <button
-                  className={`border-b-2 pb-3 transition ${
-                    mode === 'signup'
-                      ? 'border-[#d0922c] text-slate-950'
-                      : 'border-transparent text-slate-400'
-                  }`}
-                  type="button"
-                  onClick={() => setMode('signup')}
-                >
-                  Register
-                </button>
-              </div>
+              {mode !== 'otp' ? (
+                <div className="flex gap-4 border-b border-[#eadfce] text-sm font-semibold">
+                  <button
+                    className={`border-b-2 pb-3 transition ${
+                      mode === 'login'
+                        ? 'border-[#d0922c] text-slate-950'
+                        : 'border-transparent text-slate-400'
+                    }`}
+                    type="button"
+                    onClick={() => setMode('login')}
+                  >
+                    Sign In
+                  </button>
+                  <button
+                    className={`border-b-2 pb-3 transition ${
+                      mode === 'signup'
+                        ? 'border-[#d0922c] text-slate-950'
+                        : 'border-transparent text-slate-400'
+                    }`}
+                    type="button"
+                    onClick={() => setMode('signup')}
+                  >
+                    Register
+                  </button>
+                </div>
+              ) : null}
 
               {mode === 'login' ? (
                 <form
@@ -168,9 +170,9 @@ export function EmployerAuthPage() {
                             'Verify your work email before signing in. You can resend the confirmation below.'
                           )
                           return
+                        }
+                        throw nextError
                       }
-                      throw nextError
-                    }
                     })
                   }}
                 >

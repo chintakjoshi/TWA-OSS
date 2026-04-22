@@ -55,9 +55,10 @@ export function OtpCodeInput({
   const inputRef = useRef<HTMLInputElement | null>(null)
   const [isFocused, setIsFocused] = useState(false)
   const normalizedValue = useMemo(() => normalizeOtpCode(value), [value])
-  const activeIndex = normalizedValue.length >= OTP_CODE_LENGTH
-    ? OTP_CODE_LENGTH - 1
-    : normalizedValue.length
+  const activeIndex =
+    normalizedValue.length >= OTP_CODE_LENGTH
+      ? OTP_CODE_LENGTH - 1
+      : normalizedValue.length
 
   return (
     <div

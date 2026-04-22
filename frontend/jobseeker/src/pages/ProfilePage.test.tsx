@@ -199,3 +199,80 @@ test('profile setup stays on the background step after saving location and trans
     )
   })
 }, 10000)
+
+test('jobseeker MFA settings live inside the profile page', async () => {
+  const user = userEvent.setup()
+  const profile: JobseekerProfile = {
+    id: 'profile-1',
+    app_user_id: 'jobseeker-app-user',
+    auth_user_id: 'jobseeker-auth-user',
+    full_name: 'Sam Ali',
+    phone: '3146003937',
+    address: '2300 OVERLOOK RD APT 410',
+    city: 'Cleveland',
+    zip: '44106-1234',
+    transit_type: 'public_transit',
+    charges: {
+      sex_offense: false,
+      violent: false,
+      armed: false,
+      children: false,
+      drug: false,
+      theft: false,
+    },
+    profile_complete: true,
+    status: 'active',
+    created_at: '2026-03-01T00:00:00.000Z',
+    updated_at: null,
+  }
+
+  const { client, spies } = createMockAuthClient({
+    authMe: buildAuthMe({
+      role: 'jobseeker',
+      profileComplete: true,
+      emailOtpEnabled: false,
+    }),
+    requestTwaImpl: async (path) => {
+      if (path === '/api/v1/jobseekers/me') {
+        return { profile }
+      }
+      throw new Error(`Unexpected path ${path}`)
+    },
+  })
+
+  render(
+    <MemoryRouter>
+      <AuthProvider client={client}>
+        <JobseekerProfilePage />
+      </AuthProvider>
+    </MemoryRouter>
+  )
+
+  await screen.findByRole('heading', { name: 'Sam Ali' })
+  expect(
+    screen.queryByRole('link', { name: 'Security' })
+  ).not.toBeInTheDocument()
+
+  const toggle = await screen.findByRole('switch', {
+    name: /multi-factor authentication/i,
+  })
+  expect(toggle).toHaveAttribute('aria-checked', 'false')
+
+  await user.click(toggle)
+
+  expect(
+    await screen.findByText(
+      /are you sure you want to enable multi-factor authentication/i
+    )
+  ).toBeInTheDocument()
+
+  await user.click(screen.getByRole('button', { name: /yes, enable mfa/i }))
+
+  await waitFor(() => {
+    expect(spies.enableEmailOtp).toHaveBeenCalledTimes(1)
+  })
+  expect(
+    await screen.findByText(/multi-factor authentication is now enabled/i)
+  ).toBeInTheDocument()
+  expect(toggle).toHaveAttribute('aria-checked', 'true')
+})

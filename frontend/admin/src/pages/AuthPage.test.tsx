@@ -81,7 +81,10 @@ test('admin auth keeps the user on the OTP step after an invalid code and does n
 
   await screen.findByText('Welcome back')
 
-  await user.type(screen.getByPlaceholderText('you@twa.slu.edu'), 'staff@example.com')
+  await user.type(
+    screen.getByPlaceholderText('you@twa.slu.edu'),
+    'staff@example.com'
+  )
   await user.type(screen.getByPlaceholderText('Your password'), 'Password123')
   await user.click(screen.getByRole('button', { name: /^sign in$/i }))
 
@@ -102,6 +105,7 @@ test('admin auth keeps the user on the OTP step after an invalid code and does n
     await screen.findByText('Invalid OTP. Please try again.')
   ).toBeInTheDocument()
   expect(screen.getByRole('button', { name: /verify otp/i })).toBeEnabled()
-  expect(screen.getByText(/enter the code sent to st\*\*\*@example.com/i))
-    .toBeInTheDocument()
+  expect(
+    screen.getByText(/enter the code sent to st\*\*\*@example.com/i)
+  ).toBeInTheDocument()
 })

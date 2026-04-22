@@ -172,7 +172,7 @@ export function AdminAuthPage() {
                     if (
                       nextError instanceof HttpError &&
                       nextError.code === 'email_not_verified'
-                  ) {
+                    ) {
                       setVerificationEmail(email)
                       setNotice(
                         'Verify your email before signing in. You can resend the verification email below.'
