@@ -9,7 +9,10 @@ import type {
   ForgotPasswordResponse,
   LoginOTPChallengeResponse,
   LoginRequest,
+  OTPEnrollmentResponse,
   OTPMessageSentResponse,
+  RequestActionOTPRequest,
+  RequestActionOTPResponse,
   ResendVerifyEmailRequest,
   ResendVerifyEmailResponse,
   ResetPasswordRequest,
@@ -17,6 +20,8 @@ import type {
   SignupRequest,
   SignupResponse,
   StoredSession,
+  VerifyActionOTPRequest,
+  VerifyActionOTPResponse,
   VerifyLoginOTPRequest,
 } from '@shared/lib/types'
 import { vi } from 'vitest'
@@ -25,6 +30,7 @@ type MockAuthState = {
   session: StoredSession | null
   authMe: AuthMeResponse | null
   otpChallenge: LoginOTPChallengeResponse | null
+  nextActionToken: string | null
 }
 
 type MockAuthClientOptions = {
@@ -34,7 +40,12 @@ type MockAuthClientOptions = {
   loginError?: Error
   logoutError?: Error
   loginResult?: LoginOTPChallengeResponse | CookieSessionResponse
+  verifyOtpError?: Error
   verifyOtpResult?: CookieSessionResponse
+  requestActionOtpResult?: RequestActionOTPResponse
+  verifyActionOtpResult?: VerifyActionOTPResponse
+  enableEmailOtpError?: Error
+  disableEmailOtpError?: Error
   fetchAuthMeError?: Error
   onLogin?: (
     payload: LoginRequest,
@@ -49,6 +60,22 @@ type MockAuthClientOptions = {
     init: RequestInit | undefined,
     state: MockAuthState
   ) => Promise<unknown>
+  onRequestActionOtp?: (
+    payload: RequestActionOTPRequest,
+    state: MockAuthState
+  ) => void | Promise<void>
+  onVerifyActionOtp?: (
+    payload: VerifyActionOTPRequest,
+    state: MockAuthState
+  ) => void | Promise<void>
+  onEnableEmailOtp?: (
+    actionToken: string | undefined,
+    state: MockAuthState
+  ) => void | Promise<void>
+  onDisableEmailOtp?: (
+    actionToken: string | undefined,
+    state: MockAuthState
+  ) => void | Promise<void>
   requestTwaImpl?: (
     path: string,
     init: RequestInit | undefined,
@@ -69,6 +96,7 @@ function unbootstrappedAuthMe(): AuthMeResponse {
   return {
     app_user: null,
     profile_complete: false,
+    email_otp_enabled: false,
     employer_review_status: null,
     employer_capabilities: null,
     next_step: 'bootstrap_role',
@@ -90,12 +118,14 @@ export function buildAuthMe({
   role,
   email = `${role}@example.com`,
   profileComplete = role !== 'jobseeker',
+  emailOtpEnabled = false,
   employerReviewStatus = role === 'employer' ? 'approved' : null,
   applicantVisibilityEnabled = role === 'employer' ? true : null,
 }: {
   role: 'jobseeker' | 'employer' | 'staff'
   email?: string
   profileComplete?: boolean
+  emailOtpEnabled?: boolean
   employerReviewStatus?: 'pending' | 'approved' | 'rejected' | null
   applicantVisibilityEnabled?: boolean | null
 }): AuthMeResponse {
@@ -111,6 +141,7 @@ export function buildAuthMe({
       updated_at: null,
     },
     profile_complete: profileComplete,
+    email_otp_enabled: emailOtpEnabled,
     employer_review_status: employerReviewStatus,
     employer_capabilities:
       role === 'employer'
@@ -137,6 +168,7 @@ export function createMockAuthClient(options: MockAuthClientOptions = {}) {
           : null,
     authMe: options.authMe ?? null,
     otpChallenge: null,
+    nextActionToken: null,
   }
 
   const loginResult =
@@ -152,6 +184,18 @@ export function createMockAuthClient(options: MockAuthClientOptions = {}) {
       authenticated: true,
       session_transport: 'cookie',
     } satisfies CookieSessionResponse)
+  const requestActionOtpResult =
+    options.requestActionOtpResult ??
+    ({
+      sent: true,
+      action: 'disable_otp',
+      expires_in: 300,
+    } satisfies RequestActionOTPResponse)
+  const verifyActionOtpResult =
+    options.verifyActionOtpResult ??
+    ({
+      action_token: 'mock-action-token',
+    } satisfies VerifyActionOTPResponse)
 
   const signup = vi.fn(
     async (payload: SignupRequest): Promise<SignupResponse> => ({
@@ -189,6 +233,7 @@ export function createMockAuthClient(options: MockAuthClientOptions = {}) {
   const verifyLoginOtp = vi.fn(
     async (payload: VerifyLoginOTPRequest): Promise<CookieSessionResponse> => {
       void payload
+      if (options.verifyOtpError) throw options.verifyOtpError
       state.session = defaultSession
       state.otpChallenge = null
       return verifyOtpResult
@@ -199,6 +244,51 @@ export function createMockAuthClient(options: MockAuthClientOptions = {}) {
     async (challengeToken: string): Promise<OTPMessageSentResponse> => {
       void challengeToken
       return { sent: true }
+    }
+  )
+
+  const requestActionOtp = vi.fn(
+    async (
+      payload: RequestActionOTPRequest
+    ): Promise<RequestActionOTPResponse> => {
+      await options.onRequestActionOtp?.(payload, state)
+      return {
+        ...requestActionOtpResult,
+        action: payload.action,
+      }
+    }
+  )
+
+  const verifyActionOtp = vi.fn(
+    async (
+      payload: VerifyActionOTPRequest
+    ): Promise<VerifyActionOTPResponse> => {
+      await options.onVerifyActionOtp?.(payload, state)
+      state.nextActionToken = verifyActionOtpResult.action_token
+      return verifyActionOtpResult
+    }
+  )
+
+  const enableEmailOtp = vi.fn(
+    async (actionToken?: string): Promise<OTPEnrollmentResponse> => {
+      if (options.enableEmailOtpError) throw options.enableEmailOtpError
+      await options.onEnableEmailOtp?.(actionToken, state)
+      if (state.authMe) {
+        state.authMe = { ...state.authMe, email_otp_enabled: true }
+      }
+      return { email_otp_enabled: true }
+    }
+  )
+
+  const disableEmailOtp = vi.fn(
+    async (actionToken?: string): Promise<OTPEnrollmentResponse> => {
+      if (options.disableEmailOtpError) throw options.disableEmailOtpError
+      await options.onDisableEmailOtp?.(actionToken, state)
+      if (state.authMe) {
+        state.authMe = { ...state.authMe, email_otp_enabled: false }
+      }
+      state.nextActionToken = null
+      return { email_otp_enabled: false }
     }
   )
 
@@ -318,6 +408,12 @@ export function createMockAuthClient(options: MockAuthClientOptions = {}) {
   }
 
   const requestTwa = vi.fn(requestTwaImpl)
+  const streamTwa = vi.fn(
+    async (): Promise<Response> =>
+      new Response(new ReadableStream(), {
+        headers: { 'Content-Type': 'text/event-stream' },
+      })
+  )
 
   const requestAuth = vi.fn(requestAuthImpl)
 
@@ -357,6 +453,10 @@ export function createMockAuthClient(options: MockAuthClientOptions = {}) {
     login,
     verifyLoginOtp,
     resendLoginOtp,
+    requestActionOtp,
+    verifyActionOtp,
+    enableEmailOtp,
+    disableEmailOtp,
     requestPasswordReset,
     resetPassword,
     refresh,
@@ -377,6 +477,10 @@ export function createMockAuthClient(options: MockAuthClientOptions = {}) {
       login,
       verifyLoginOtp,
       resendLoginOtp,
+      requestActionOtp,
+      verifyActionOtp,
+      enableEmailOtp,
+      disableEmailOtp,
       requestPasswordReset,
       resetPassword,
       refresh,

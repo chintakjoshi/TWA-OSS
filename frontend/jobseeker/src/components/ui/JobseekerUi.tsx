@@ -294,11 +294,13 @@ export function StatCard({
 }
 
 export function Toggle({
+  ariaLabel,
   checked,
   disabled,
   size = 'default',
   onChange,
 }: {
+  ariaLabel?: string
   checked: boolean
   disabled?: boolean
   size?: 'default' | 'compact'
@@ -306,6 +308,7 @@ export function Toggle({
 }) {
   return (
     <button
+      aria-label={ariaLabel}
       aria-checked={checked}
       className={cn(
         'relative rounded-full transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d0922c]/50',

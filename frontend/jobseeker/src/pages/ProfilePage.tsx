@@ -14,6 +14,7 @@ import {
   updateMyJobseekerProfile,
 } from '../api/jobseekerApi'
 import { JobseekerHeader } from '../components/JobseekerHeader'
+import { JobseekerMfaSection } from '../components/JobseekerMfaSection'
 import { ErrorState, LoadingState } from '../components/PageState'
 import {
   DefinitionList,
@@ -518,6 +519,8 @@ export function JobseekerProfilePage() {
                 shown publicly inside this portal.
               </p>
             </Surface>
+
+            <JobseekerMfaSection />
           </div>
         ) : (
           <div className="space-y-6">
@@ -945,6 +948,10 @@ export function JobseekerProfilePage() {
                 ) : null}
               </PanelBody>
             </PortalPanel>
+
+            <div className="mx-auto max-w-[760px]">
+              <JobseekerMfaSection />
+            </div>
           </div>
         )}
       </main>

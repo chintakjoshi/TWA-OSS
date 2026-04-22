@@ -291,16 +291,19 @@ export function StatCard({
 }
 
 export function Toggle({
+  ariaLabel,
   checked,
   disabled,
   onChange,
 }: {
+  ariaLabel?: string
   checked: boolean
   disabled?: boolean
   onChange: (checked: boolean) => void
 }) {
   return (
     <button
+      aria-label={ariaLabel}
       aria-checked={checked}
       className={cn(
         'relative h-8 w-12 rounded-full transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d0922c]/50',

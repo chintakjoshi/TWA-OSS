@@ -94,6 +94,7 @@ def test_auth_me_returns_bootstrap_step_for_unbootstrapped_user(
     assert response.json() == {
         "app_user": None,
         "profile_complete": False,
+        "email_otp_enabled": False,
         "employer_review_status": None,
         "employer_capabilities": None,
         "next_step": "bootstrap_role",
@@ -284,6 +285,7 @@ def test_auth_me_returns_employer_review_context(client: TestClient) -> None:
     payload = response.json()
     assert payload["app_user"]["app_role"] == "employer"
     assert payload["profile_complete"] is True
+    assert payload["email_otp_enabled"] is False
     assert payload["employer_review_status"] == "pending"
     assert payload["employer_capabilities"] == {"applicant_visibility_enabled": False}
     assert payload["next_step"] == "await_staff_approval"

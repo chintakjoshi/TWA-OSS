@@ -16,10 +16,13 @@ import type {
   ForgotPasswordRequest,
   LoginOTPChallengeResponse,
   LoginRequest,
+  OTPEnrollmentResponse,
+  RequestActionOTPRequest,
   ResendVerifyEmailRequest,
   ResetPasswordRequest,
   SignupRequest,
   StoredSession,
+  VerifyActionOTPRequest,
   VerifyLoginOTPRequest,
 } from '../lib/types'
 
@@ -36,6 +39,18 @@ interface AuthContextValue {
   login: (payload: LoginRequest) => Promise<void>
   verifyLoginOtp: (payload: VerifyLoginOTPRequest) => Promise<void>
   resendLoginOtp: () => Promise<void>
+  requestActionOtp: (
+    payload: RequestActionOTPRequest
+  ) => ReturnType<AuthClient['requestActionOtp']>
+  verifyActionOtp: (
+    payload: VerifyActionOTPRequest
+  ) => ReturnType<AuthClient['verifyActionOtp']>
+  enableEmailOtp: (
+    actionToken?: string
+  ) => ReturnType<AuthClient['enableEmailOtp']>
+  disableEmailOtp: (
+    actionToken?: string
+  ) => ReturnType<AuthClient['disableEmailOtp']>
   requestPasswordReset: (payload: ForgotPasswordRequest) => Promise<void>
   resetPassword: (payload: ResetPasswordRequest) => Promise<void>
   bootstrapRole: (payload: AuthBootstrapRequest) => Promise<void>
@@ -67,6 +82,20 @@ export function AuthProvider({
   const [authMe, setAuthMe] = useState<AuthMeResponse | null>(null)
   const [otpChallenge, setOtpChallenge] =
     useState<LoginOTPChallengeResponse | null>(null)
+
+  const applyEmailOtpState = useCallback(
+    (result: OTPEnrollmentResponse) => {
+      setAuthMe((current) =>
+        current
+          ? {
+              ...current,
+              email_otp_enabled: result.email_otp_enabled,
+            }
+          : current
+      )
+    },
+    [setAuthMe]
+  )
 
   const resetAuthState = useCallback(() => {
     client.clearStoredSession()
@@ -184,14 +213,39 @@ export function AuthProvider({
       },
       async verifyLoginOtp(payload: VerifyLoginOTPRequest) {
         setState('loading')
-        await client.verifyLoginOtp(payload)
-        const nextSession = client.loadStoredSession()
-        setSession(nextSession)
-        await hydrate(nextSession, { interactive: true })
+        try {
+          await client.verifyLoginOtp(payload)
+          const nextSession = client.loadStoredSession()
+          setSession(nextSession)
+          await hydrate(nextSession, { interactive: true })
+        } catch (error) {
+          if (otpChallenge) {
+            setState('otp_required')
+          } else {
+            resetAuthState()
+          }
+          throw error
+        }
       },
       async resendLoginOtp() {
         if (!otpChallenge) return
         await client.resendLoginOtp(otpChallenge.challenge_token)
+      },
+      requestActionOtp(payload: RequestActionOTPRequest) {
+        return client.requestActionOtp(payload)
+      },
+      verifyActionOtp(payload: VerifyActionOTPRequest) {
+        return client.verifyActionOtp(payload)
+      },
+      async enableEmailOtp(actionToken?: string) {
+        const result = await client.enableEmailOtp(actionToken)
+        applyEmailOtpState(result)
+        return result
+      },
+      async disableEmailOtp(actionToken?: string) {
+        const result = await client.disableEmailOtp(actionToken)
+        applyEmailOtpState(result)
+        return result
       },
       async requestPasswordReset(payload: ForgotPasswordRequest) {
         await client.requestPasswordReset(payload)
@@ -218,7 +272,16 @@ export function AuthProvider({
         return client.streamTwa(path, client.loadStoredSession(), init)
       },
     }),
-    [authMe, client, hydrate, otpChallenge, resetAuthState, session, state]
+    [
+      applyEmailOtpState,
+      authMe,
+      client,
+      hydrate,
+      otpChallenge,
+      resetAuthState,
+      session,
+      state,
+    ]
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

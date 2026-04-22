@@ -11,14 +11,19 @@ import type {
   ForgotPasswordResponse,
   LoginOTPChallengeResponse,
   LoginRequest,
+  OTPEnrollmentResponse,
   OTPMessageSentResponse,
   ResendVerifyEmailRequest,
   ResendVerifyEmailResponse,
+  RequestActionOTPRequest,
+  RequestActionOTPResponse,
   ResetPasswordRequest,
   ResetPasswordResponse,
   SignupRequest,
   SignupResponse,
   StoredSession,
+  VerifyActionOTPRequest,
+  VerifyActionOTPResponse,
   VerifyLoginOTPRequest,
 } from './types'
 import { isCookieSessionResponse, isOtpChallengeResponse } from './types'
@@ -46,6 +51,14 @@ export interface AuthClient {
   ): Promise<LoginOTPChallengeResponse | CookieSessionResponse>
   verifyLoginOtp(payload: VerifyLoginOTPRequest): Promise<CookieSessionResponse>
   resendLoginOtp(challengeToken: string): Promise<OTPMessageSentResponse>
+  requestActionOtp(
+    payload: RequestActionOTPRequest
+  ): Promise<RequestActionOTPResponse>
+  verifyActionOtp(
+    payload: VerifyActionOTPRequest
+  ): Promise<VerifyActionOTPResponse>
+  enableEmailOtp(actionToken?: string): Promise<OTPEnrollmentResponse>
+  disableEmailOtp(actionToken?: string): Promise<OTPEnrollmentResponse>
   requestPasswordReset(
     payload: ForgotPasswordRequest
   ): Promise<ForgotPasswordResponse>
@@ -341,6 +354,38 @@ export function createAuthClient(config: AuthClientConfig): AuthClient {
           method: 'POST',
           body: JSON.stringify({ challenge_token: challengeToken }),
         }
+      )
+    },
+    requestActionOtp(payload) {
+      return requestJsonWithSession<RequestActionOTPResponse>(
+        config.authBaseUrl,
+        '/auth/otp/request/action',
+        { method: 'POST', body: JSON.stringify(payload) }
+      )
+    },
+    verifyActionOtp(payload) {
+      return requestJsonWithSession<VerifyActionOTPResponse>(
+        config.authBaseUrl,
+        '/auth/otp/verify/action',
+        { method: 'POST', body: JSON.stringify(payload) }
+      )
+    },
+    enableEmailOtp(actionToken) {
+      const headers = new Headers()
+      if (actionToken) headers.set('X-Action-Token', actionToken)
+      return requestJsonWithSession<OTPEnrollmentResponse>(
+        config.authBaseUrl,
+        '/auth/otp/enable',
+        { method: 'POST', headers }
+      )
+    },
+    disableEmailOtp(actionToken) {
+      const headers = new Headers()
+      if (actionToken) headers.set('X-Action-Token', actionToken)
+      return requestJsonWithSession<OTPEnrollmentResponse>(
+        config.authBaseUrl,
+        '/auth/otp/disable',
+        { method: 'POST', headers }
       )
     },
     requestPasswordReset(payload) {

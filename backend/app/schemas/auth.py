@@ -60,6 +60,7 @@ class EmployerCapabilitiesPayload(BaseModel):
 class AuthMeResponse(BaseModel):
     app_user: AppUserPayload | None
     profile_complete: bool
+    email_otp_enabled: bool = False
     employer_review_status: Literal["pending", "approved", "rejected"] | None
     employer_capabilities: EmployerCapabilitiesPayload | None = None
     next_step: str | None
