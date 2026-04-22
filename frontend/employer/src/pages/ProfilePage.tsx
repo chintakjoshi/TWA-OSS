@@ -7,6 +7,7 @@ import {
   updateMyEmployerProfile,
 } from '../api/employerApi'
 import { EmployerHeader } from '../components/EmployerHeader'
+import { EmployerMfaSection } from '../components/EmployerMfaSection'
 import { EmployerProfileForm } from '../components/EmployerProfileForm'
 import { ErrorState, LoadingState } from '../components/PageState'
 import {
@@ -244,6 +245,8 @@ export function EmployerProfilePage() {
                 </div>
               </Surface>
             </div>
+
+            <EmployerMfaSection />
           </>
         ) : null}
       </main>

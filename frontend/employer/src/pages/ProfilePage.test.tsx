@@ -203,3 +203,159 @@ test('approved employers are returned to review after saving profile changes', a
     screen.queryByRole('button', { name: /save employer profile/i })
   ).not.toBeInTheDocument()
 })
+
+test('employer MFA can be enabled from the profile page after confirmation', async () => {
+  const user = userEvent.setup()
+  const profile: EmployerProfile = {
+    id: 'employer-1',
+    app_user_id: 'employer-app-user',
+    auth_user_id: 'employer-auth-user',
+    org_name: 'Acme Logistics',
+    contact_name: 'Jordan Rivers',
+    phone: '314-555-0199',
+    address: '123 Main St',
+    city: 'St. Louis',
+    zip: '63103',
+    review_status: 'approved',
+    review_note: null,
+    reviewed_by: null,
+    reviewed_at: null,
+    created_at: '2026-03-01T00:00:00.000Z',
+    updated_at: '2026-03-20T12:00:00.000Z',
+  }
+
+  const { client, spies } = createMockAuthClient({
+    authMe: buildAuthMe({
+      role: 'employer',
+      employerReviewStatus: 'approved',
+      emailOtpEnabled: false,
+    }),
+    requestTwaImpl: async (path) => {
+      if (path === '/api/v1/employers/me') {
+        return { employer: profile }
+      }
+
+      throw new Error(`Unexpected TWA request for ${path}`)
+    },
+  })
+
+  render(
+    <MemoryRouter>
+      <AuthProvider client={client}>
+        <EmployerProfilePage />
+      </AuthProvider>
+    </MemoryRouter>
+  )
+
+  await screen.findByRole('heading', { name: 'Jordan Rivers' })
+
+  const toggle = await screen.findByRole('switch', {
+    name: /multi-factor authentication/i,
+  })
+  expect(toggle).toHaveAttribute('aria-checked', 'false')
+
+  await user.click(toggle)
+
+  expect(
+    await screen.findByText(
+      /are you sure you want to enable multi-factor authentication/i
+    )
+  ).toBeInTheDocument()
+
+  await user.click(screen.getByRole('button', { name: /yes, enable mfa/i }))
+
+  await waitFor(() => {
+    expect(spies.enableEmailOtp).toHaveBeenCalledTimes(1)
+  })
+  expect(
+    await screen.findByText(/multi-factor authentication is now enabled/i)
+  ).toBeInTheDocument()
+  expect(toggle).toHaveAttribute('aria-checked', 'true')
+})
+
+test('employer MFA disable requires confirmation before sending OTP', async () => {
+  const user = userEvent.setup()
+  const profile: EmployerProfile = {
+    id: 'employer-1',
+    app_user_id: 'employer-app-user',
+    auth_user_id: 'employer-auth-user',
+    org_name: 'Acme Logistics',
+    contact_name: 'Jordan Rivers',
+    phone: '314-555-0199',
+    address: '123 Main St',
+    city: 'St. Louis',
+    zip: '63103',
+    review_status: 'approved',
+    review_note: null,
+    reviewed_by: null,
+    reviewed_at: null,
+    created_at: '2026-03-01T00:00:00.000Z',
+    updated_at: '2026-03-20T12:00:00.000Z',
+  }
+
+  const { client, spies } = createMockAuthClient({
+    authMe: buildAuthMe({
+      role: 'employer',
+      employerReviewStatus: 'approved',
+      emailOtpEnabled: true,
+    }),
+    requestTwaImpl: async (path) => {
+      if (path === '/api/v1/employers/me') {
+        return { employer: profile }
+      }
+
+      throw new Error(`Unexpected TWA request for ${path}`)
+    },
+  })
+
+  render(
+    <MemoryRouter>
+      <AuthProvider client={client}>
+        <EmployerProfilePage />
+      </AuthProvider>
+    </MemoryRouter>
+  )
+
+  await screen.findByRole('heading', { name: 'Jordan Rivers' })
+
+  const toggle = await screen.findByRole('switch', {
+    name: /multi-factor authentication/i,
+  })
+  expect(toggle).toHaveAttribute('aria-checked', 'true')
+
+  await user.click(toggle)
+
+  expect(
+    await screen.findByText(
+      /are you sure you want to disable multi-factor authentication/i
+    )
+  ).toBeInTheDocument()
+  expect(spies.requestActionOtp).not.toHaveBeenCalled()
+
+  await user.click(screen.getByRole('button', { name: /yes, send otp/i }))
+
+  await waitFor(() => {
+    expect(spies.requestActionOtp).toHaveBeenCalledWith({
+      action: 'disable_otp',
+    })
+  })
+  expect(
+    await screen.findByText(/enter the 6-digit otp code sent to your email/i)
+  ).toBeInTheDocument()
+  expect(screen.getAllByTestId('otp-digit-box')).toHaveLength(6)
+
+  await user.type(screen.getByLabelText(/otp code/i), '123456')
+  await user.click(screen.getByRole('button', { name: /turn off mfa/i }))
+
+  await waitFor(() => {
+    expect(spies.verifyActionOtp).toHaveBeenCalledWith({
+      action: 'disable_otp',
+      code: '123456',
+    })
+  })
+  expect(spies.disableEmailOtp).toHaveBeenCalledWith('mock-action-token')
+  expect(
+    await screen.findByText(/multi-factor authentication is now disabled/i)
+  ).toBeInTheDocument()
+  expect(toggle).toHaveAttribute('aria-checked', 'false')
+})

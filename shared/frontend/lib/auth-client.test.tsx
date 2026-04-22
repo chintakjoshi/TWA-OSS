@@ -139,6 +139,43 @@ function AuthOtpProbe() {
   )
 }
 
+function AuthMfaProbe() {
+  const auth = useAuth()
+  const [error, setError] = useState('none')
+
+  return (
+    <div>
+      <p>state:{auth.state}</p>
+      <p>mfa:{String(auth.authMe?.email_otp_enabled ?? false)}</p>
+      <p>error:{error}</p>
+      <button
+        type="button"
+        onClick={() => {
+          void auth.enableEmailOtp().catch((nextError) => {
+            setError(
+              nextError instanceof Error ? nextError.message : 'unknown error'
+            )
+          })
+        }}
+      >
+        Enable MFA
+      </button>
+      <button
+        type="button"
+        onClick={() => {
+          void auth.disableEmailOtp('mock-action-token').catch((nextError) => {
+            setError(
+              nextError instanceof Error ? nextError.message : 'unknown error'
+            )
+          })
+        }}
+      >
+        Disable MFA
+      </button>
+    </div>
+  )
+}
+
 function clearCookies() {
   for (const entry of document.cookie.split(';')) {
     const [name] = entry.split('=')
@@ -454,6 +491,42 @@ test('auth provider preserves the OTP challenge after an invalid login code', as
   })
   expect(screen.getByText('state:otp_required')).toBeInTheDocument()
   expect(screen.getByText('challenge:challenge-token')).toBeInTheDocument()
+})
+
+test('auth provider updates MFA state immediately after enable and disable actions', async () => {
+  const user = userEvent.setup()
+  const { client, spies } = createMockAuthClient({
+    authMe: buildAuthMe({
+      role: 'jobseeker',
+      profileComplete: true,
+      emailOtpEnabled: false,
+    }),
+  })
+
+  render(
+    <MemoryRouter>
+      <AuthProvider client={client}>
+        <AuthMfaProbe />
+      </AuthProvider>
+    </MemoryRouter>
+  )
+
+  await screen.findByText('state:authenticated')
+  expect(screen.getByText('mfa:false')).toBeInTheDocument()
+
+  await user.click(screen.getByRole('button', { name: 'Enable MFA' }))
+
+  await waitFor(() => {
+    expect(spies.enableEmailOtp).toHaveBeenCalledTimes(1)
+  })
+  expect(screen.getByText('mfa:true')).toBeInTheDocument()
+
+  await user.click(screen.getByRole('button', { name: 'Disable MFA' }))
+
+  await waitFor(() => {
+    expect(spies.disableEmailOtp).toHaveBeenCalledWith('mock-action-token')
+  })
+  expect(screen.getByText('mfa:false')).toBeInTheDocument()
 })
 
 test('fetchAuthMe includes the configured portal scope in the TWA auth request', async () => {

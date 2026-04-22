@@ -143,7 +143,7 @@ test('staff must confirm before the disable MFA OTP is sent', async () => {
     })
   })
   expect(
-    await screen.findByText(/enter the otp code sent to your email/i)
+    await screen.findByText(/enter the 6-digit otp code sent to your email/i)
   ).toBeInTheDocument()
   expect(screen.getAllByTestId('otp-digit-box')).toHaveLength(6)
 
