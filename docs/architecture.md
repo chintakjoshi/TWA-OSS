@@ -100,6 +100,27 @@ Notes for contributors:
   render prop; calling `reset()` clears the captured error and re-mounts
   the children.
 
+### SSE Payload Validation
+
+Server-sent event handlers must not cast `parsed.payload` directly into
+React state. A malformed frame (buggy backend release, proxy rewriting
+bodies, hostile intermediary) can otherwise corrupt state silently or
+throw inside a `setState` updater and take the app down.
+
+Each portal owns runtime validators for its own SSE contract. The admin
+notification stream validators live in
+`frontend/admin/src/lib/notificationSseValidators.ts` and cover the
+`snapshot`, `notification.created`, and `notification.read` events. New
+SSE events in any portal should follow the same pattern:
+
+1. Define a `parseX(input: unknown): X | null` validator that (a)
+   inspects every field's type, (b) returns a fresh plain object on
+   success so attacker-controlled extra properties cannot flow into
+   state, and (c) returns `null` on any deviation.
+2. In the stream loop, guard each `setState` with the validator and
+   `console.warn` (do not render) on `null` — the stream must keep
+   going. Never pass raw network payloads into `setState`.
+
 ## Data And Infrastructure
 
 Local infrastructure is orchestrated by `docker-compose.yml` and includes:

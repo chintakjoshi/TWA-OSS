@@ -13,10 +13,14 @@ import {
 import { announceComingSoon } from '../../lib/comingSoon'
 import { cn } from '../../lib/cn'
 import { formatRelativeTime } from '../../lib/formatting'
+import {
+  parseAdminNotificationSnapshot,
+  parseNotificationCreatedPayload,
+  parseNotificationReadPayload,
+} from '../../lib/notificationSseValidators'
 import type {
   AdminNotification,
   AdminNotificationReadResult,
-  AdminNotificationSnapshot,
 } from '../../types/admin'
 import { useAdminShell } from './AdminShellProvider'
 import { adminNavItems } from './adminNav'
@@ -83,6 +87,16 @@ function applyReadResults(
       ? notification
       : { ...notification, read_at: readAt }
   })
+}
+
+function logInvalidSsePayload(event: string, payload: unknown) {
+  // Invalid frames are dropped silently on the UI but surfaced to the
+  // browser console so engineers diagnosing a bad release can still see
+  // them. We never include the raw payload in user-facing state.
+  console.warn(
+    `[admin-notifications] Dropped malformed "${event}" SSE payload.`,
+    payload
+  )
 }
 
 function parseSseBlock(block: string) {
@@ -285,26 +299,37 @@ export function AdminWorkspaceLayout({
             const parsed = parseSseBlock(block)
 
             if (parsed?.event === 'snapshot') {
-              const snapshot =
-                parsed.payload as unknown as AdminNotificationSnapshot
-              setNotifications(snapshot.notifications)
-              setUnreadCount(snapshot.unread_count)
+              const snapshot = parseAdminNotificationSnapshot(parsed.payload)
+              if (snapshot === null) {
+                logInvalidSsePayload('snapshot', parsed.payload)
+              } else {
+                setNotifications(snapshot.notifications)
+                setUnreadCount(snapshot.unread_count)
+              }
             }
 
             if (parsed?.event === 'notification.created') {
-              const notification = parsed.payload
-                .notification as AdminNotification
-              setNotifications((current) =>
-                upsertNotification(current, notification)
-              )
-              setUnreadCount((current) => current + 1)
+              const payload = parseNotificationCreatedPayload(parsed.payload)
+              if (payload === null) {
+                logInvalidSsePayload('notification.created', parsed.payload)
+              } else {
+                setNotifications((current) =>
+                  upsertNotification(current, payload.notification)
+                )
+                setUnreadCount((current) => current + 1)
+              }
             }
 
             if (parsed?.event === 'notification.read') {
-              const result = parsed.payload
-                .notification as AdminNotificationReadResult
-              setNotifications((current) => applyReadResult(current, result))
-              setUnreadCount((current) => Math.max(0, current - 1))
+              const payload = parseNotificationReadPayload(parsed.payload)
+              if (payload === null) {
+                logInvalidSsePayload('notification.read', parsed.payload)
+              } else {
+                setNotifications((current) =>
+                  applyReadResult(current, payload.notification)
+                )
+                setUnreadCount((current) => Math.max(0, current - 1))
+              }
             }
 
             boundaryIndex = buffer.indexOf('\n\n')
