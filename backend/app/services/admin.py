@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import UTC, datetime
 from uuid import UUID
 
-from sqlalchemy import func, select
+from sqlalchemy import case, desc, func, select
 from sqlalchemy.orm import Session
 
 from app.models import Application, AuditLog, Employer, JobListing, Jobseeker
@@ -14,12 +14,93 @@ from app.models.enums import (
     ListingLifecycleStatus,
     ListingReviewStatus,
 )
-from app.schemas.admin import AdminDashboardPayload, AuditLogPayload
+from app.schemas.admin import (
+    AdminDashboardPayload,
+    AuditLogPayload,
+    PlacementSummaryPayload,
+    PlacementSummaryRowPayload,
+)
 from app.services.common import (
     PaginationParams,
     apply_pagination,
     build_paginated_response,
 )
+
+
+def _serialize_month_bucket(year: int, month: int) -> datetime:
+    return datetime(year, month, 1, tzinfo=UTC)
+
+
+def get_admin_dashboard_placement_summary(session: Session) -> PlacementSummaryPayload:
+    current_year = datetime.now(UTC).year
+    current_year_start = datetime(current_year, 1, 1, tzinfo=UTC)
+    next_year_start = datetime(current_year + 1, 1, 1, tzinfo=UTC)
+
+    monthly_rows = session.execute(
+        select(
+            func.extract("year", Application.applied_at).label("year"),
+            func.extract("month", Application.applied_at).label("month"),
+            func.count(Application.id).label("applications"),
+            func.coalesce(
+                func.sum(
+                    case(
+                        (Application.status == ApplicationStatus.HIRED, 1),
+                        else_=0,
+                    )
+                ),
+                0,
+            ).label("hires"),
+        )
+        .select_from(Application)
+        .group_by("year", "month")
+        .order_by(desc("year"), desc("month"))
+        .limit(4)
+    ).all()
+
+    ytd_applications, ytd_hires = session.execute(
+        select(
+            func.count(Application.id),
+            func.coalesce(
+                func.sum(
+                    case(
+                        (Application.status == ApplicationStatus.HIRED, 1),
+                        else_=0,
+                    )
+                ),
+                0,
+            ),
+        )
+        .select_from(Application)
+        .where(
+            Application.applied_at >= current_year_start,
+            Application.applied_at < next_year_start,
+        )
+    ).one()
+
+    ytd_employers = session.execute(
+        select(func.count(func.distinct(JobListing.employer_id)))
+        .select_from(Application)
+        .join(JobListing, JobListing.id == Application.job_listing_id)
+        .where(
+            Application.status == ApplicationStatus.HIRED,
+            Application.applied_at >= current_year_start,
+            Application.applied_at < next_year_start,
+        )
+    ).scalar_one()
+
+    return PlacementSummaryPayload(
+        rows=[
+            PlacementSummaryRowPayload(
+                month=_serialize_month_bucket(int(row.year), int(row.month)),
+                applications=int(row.applications),
+                hires=int(row.hires),
+            )
+            for row in monthly_rows
+        ],
+        ytd_applications=int(ytd_applications),
+        ytd_hires=int(ytd_hires),
+        ytd_employers=int(ytd_employers),
+    )
 
 
 def get_admin_dashboard_summary(session: Session) -> AdminDashboardPayload:
@@ -51,12 +132,14 @@ def get_admin_dashboard_summary(session: Session) -> AdminDashboardPayload:
             JobListing.lifecycle_status == ListingLifecycleStatus.OPEN,
         )
     ).scalar_one()
+    placement_summary = get_admin_dashboard_placement_summary(session)
     return AdminDashboardPayload(
         pending_employers=pending_employers,
         pending_listings=pending_listings,
         active_jobseekers=active_jobseekers,
         open_applications=open_applications,
         open_listings=open_listings,
+        placement_summary=placement_summary,
     )
 
 
