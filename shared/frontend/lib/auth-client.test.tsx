@@ -646,6 +646,106 @@ test('authenticated OTP action flows use cookie-backed requests and forward the 
   expect(disableHeaders.get('X-Action-Token')).toBe('action-token-123')
 })
 
+test('CSRF header reflects the current cookie, not a stale cached value, after the cookie rotates', async () => {
+  // Simulate the CSRF cookie rotating mid-session (e.g. server issued a new
+  // token on refresh). The next mutation must send the NEW cookie value —
+  // previously the client cached the first value and kept shipping it.
+  document.cookie = 'twa_auth_csrf=initial-csrf-token; path=/'
+
+  const fetchMock = vi
+    .fn()
+    .mockResolvedValueOnce(jsonResponse({ email_otp_enabled: true }))
+    .mockResolvedValueOnce(jsonResponse({ email_otp_enabled: false }))
+  vi.stubGlobal('fetch', fetchMock)
+
+  const client = createAuthClient({
+    authBaseUrl: 'http://app.local/_auth',
+    twaApiUrl: 'http://app.local',
+    audience: 'twa-api',
+    storageKey: 'twa-csrf-rotate-test',
+  })
+
+  await client.enableEmailOtp()
+
+  const firstHeaders = new Headers(fetchMock.mock.calls[0]?.[1]?.headers)
+  expect(firstHeaders.get('X-CSRF-Token')).toBe('initial-csrf-token')
+
+  // Server rotates the cookie between mutations.
+  document.cookie = 'twa_auth_csrf=rotated-csrf-token; path=/'
+
+  await client.disableEmailOtp()
+
+  const secondHeaders = new Headers(fetchMock.mock.calls[1]?.[1]?.headers)
+  expect(secondHeaders.get('X-CSRF-Token')).toBe('rotated-csrf-token')
+})
+
+test('cleared CSRF cookie forces a fresh /auth/csrf fetch instead of shipping a stale cached token', async () => {
+  // User's CSRF cookie expires or is cleared after the first mutation. The
+  // next mutation must NOT ship the previously-cached token — it must go
+  // back to /auth/csrf to obtain a fresh one.
+  document.cookie = 'twa_auth_csrf=first-csrf-token; path=/'
+
+  const fetchMock = vi.fn(async (input: string | URL | Request) => {
+    const url =
+      typeof input === 'string'
+        ? input
+        : input instanceof URL
+          ? input.toString()
+          : input.url
+
+    if (url === 'http://app.local/_auth/auth/otp/enable') {
+      return jsonResponse({ email_otp_enabled: true })
+    }
+    if (url === 'http://app.local/_auth/auth/otp/disable') {
+      return jsonResponse({ email_otp_enabled: false })
+    }
+    if (url === 'http://app.local/_auth/auth/csrf') {
+      // Simulate the CSRF endpoint also setting a fresh cookie, as the real
+      // backend does. The client should prefer the cookie but fall back to
+      // the response body token when the cookie remains unreadable in JS.
+      document.cookie = 'twa_auth_csrf=refetched-csrf-token; path=/'
+      return jsonResponse({ csrf_token: 'refetched-csrf-token' })
+    }
+    throw new Error(`Unexpected fetch for ${url}`)
+  })
+  vi.stubGlobal('fetch', fetchMock)
+
+  const client = createAuthClient({
+    authBaseUrl: 'http://app.local/_auth',
+    twaApiUrl: 'http://app.local',
+    audience: 'twa-api',
+    storageKey: 'twa-csrf-cleared-test',
+  })
+
+  await client.enableEmailOtp()
+  expect(
+    new Headers(fetchMock.mock.calls[0]?.[1]?.headers).get('X-CSRF-Token')
+  ).toBe('first-csrf-token')
+
+  // The CSRF cookie is cleared (e.g. expired).
+  clearCookies()
+  expect(document.cookie).toBe('')
+
+  await client.disableEmailOtp()
+
+  // There must be a /auth/csrf fetch between the two mutations.
+  const calls = fetchMock.mock.calls.map((call) =>
+    typeof call[0] === 'string' ? call[0] : ''
+  )
+  expect(calls).toContain('http://app.local/_auth/auth/csrf')
+
+  // The disable call must ship the FRESH token, not the stale cached one.
+  const disableCall = fetchMock.mock.calls.find(
+    (call) => call[0] === 'http://app.local/_auth/auth/otp/disable'
+  )
+  expect(new Headers(disableCall?.[1]?.headers).get('X-CSRF-Token')).toBe(
+    'refetched-csrf-token'
+  )
+  expect(new Headers(disableCall?.[1]?.headers).get('X-CSRF-Token')).not.toBe(
+    'first-csrf-token'
+  )
+})
+
 test('enableEmailOtp posts to the authSDK self-service MFA endpoint', async () => {
   document.cookie = 'twa_auth_csrf=existing-csrf-token; path=/'
 
