@@ -87,7 +87,6 @@ const SAFE_HTTP_METHODS = new Set(['GET', 'HEAD', 'OPTIONS', 'TRACE'])
 
 export function createAuthClient(config: AuthClientConfig): AuthClient {
   const store = createSessionStore(config.storageKey)
-  let csrfTokenCache: string | null = null
   const csrfCookieName = config.csrfCookieName?.trim() || 'twa_auth_csrf'
   const csrfHeaderName = config.csrfHeaderName?.trim() || 'X-CSRF-Token'
 
@@ -110,13 +109,16 @@ export function createAuthClient(config: AuthClientConfig): AuthClient {
     return parsed || null
   }
 
+  /**
+   * Returns the current CSRF token from the cookie, or `null` if no cookie
+   * is present. The cookie is the single source of truth — there is no
+   * in-memory fallback cache. If a cached value were returned after the
+   * cookie expired, rotated, or was cleared, every subsequent mutation
+   * would ship a stale token and be rejected by the server with no way to
+   * recover short of a page reload.
+   */
   function readCsrfToken(): string | null {
-    const cookieValue = readCookieValue(csrfCookieName)
-    if (cookieValue) {
-      csrfTokenCache = cookieValue
-      return cookieValue
-    }
-    return csrfTokenCache
+    return readCookieValue(csrfCookieName)
   }
 
   async function ensureCsrfToken(): Promise<string> {
@@ -129,8 +131,11 @@ export function createAuthClient(config: AuthClientConfig): AuthClient {
         credentials: 'include',
       }
     )
-    csrfTokenCache = payload.csrf_token
-    return payload.csrf_token
+    // The /auth/csrf endpoint is expected to Set-Cookie the new token. Prefer
+    // the cookie since that is the source of truth on subsequent calls, but
+    // fall back to the response body for callers that hit a context where
+    // the cookie isn't readable (e.g. certain SameSite/Path edge cases).
+    return readCsrfToken() ?? payload.csrf_token
   }
 
   async function buildRequestInit(
@@ -377,7 +382,6 @@ export function createAuthClient(config: AuthClientConfig): AuthClient {
         { cookieTransport: true }
       )
       store.clear()
-      csrfTokenCache = null
     },
     async fetchAuthMe(session) {
       void session
