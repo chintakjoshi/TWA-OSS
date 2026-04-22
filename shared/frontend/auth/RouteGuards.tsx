@@ -16,20 +16,6 @@ function LoadingCard({ message }: { message: string }) {
   )
 }
 
-function GuardFallback({ title, detail }: { title: string; detail: string }) {
-  return (
-    <div className="guard-shell">
-      <Card strong>
-        <CardBody className="stack-md">
-          <p className="eyebrow">Access Check</p>
-          <h1 className="card-title">{title}</h1>
-          <p className="card-copy">{detail}</p>
-        </CardBody>
-      </Card>
-    </div>
-  )
-}
-
 export function RequireRole({
   role,
   children,
@@ -46,14 +32,8 @@ export function RequireRole({
     return <Navigate replace to="/auth" state={{ from: location.pathname }} />
   if (!auth.authMe?.app_user)
     return <Navigate replace to="/auth" state={{ from: location.pathname }} />
-  if (auth.authMe.app_user.app_role !== role) {
-    return (
-      <GuardFallback
-        title="This portal is role-specific."
-        detail="Please sign in with an authorized account to access this portal."
-      />
-    )
-  }
+  if (auth.authMe.app_user.app_role !== role)
+    return <Navigate replace to="/auth" state={{ from: location.pathname }} />
 
   return children
 }

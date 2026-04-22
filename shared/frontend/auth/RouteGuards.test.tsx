@@ -41,19 +41,12 @@ test('protected routes redirect anonymous users to the auth screen', async () =>
   expect(spies.refresh).not.toHaveBeenCalled()
 })
 
-test('protected routes show a role mismatch fallback for the wrong local role', async () => {
+test('protected routes redirect wrong-role users back to the auth screen', async () => {
   const { client } = createMockAuthClient({
     authMe: buildAuthMe({ role: 'employer' }),
   })
 
   renderGuard(client)
 
-  expect(
-    await screen.findByText('This portal is role-specific.')
-  ).toBeInTheDocument()
-  expect(
-    screen.getByText(
-      'Please sign in with an authorized account to access this portal.'
-    )
-  ).toBeInTheDocument()
+  expect(await screen.findByText('Auth screen')).toBeInTheDocument()
 })
