@@ -30,8 +30,10 @@ function getErrorMessage(error: unknown) {
 
 export function JobseekerAuthPage() {
   const auth = useAuth()
+  const authState = auth.state
+  const bootstrapRole = auth.bootstrapRole
   const [mode, setMode] = useState<AuthMode>(
-    auth.state === 'otp_required' ? 'otp' : 'login'
+    authState === 'otp_required' ? 'otp' : 'login'
   )
   const [busy, setBusy] = useState(false)
   const [notice, setNotice] = useState<string | null>(null)
@@ -45,12 +47,11 @@ export function JobseekerAuthPage() {
   const [autoBootstrapPending, setAutoBootstrapPending] = useState(false)
 
   useEffect(() => {
-    if (auth.state === 'otp_required') setMode('otp')
-  }, [auth.state])
+    if (authState === 'otp_required') setMode('otp')
+  }, [authState])
 
   const authenticatedJobseeker = auth.authMe?.app_user?.app_role === 'jobseeker'
-  const needsBootstrap =
-    auth.state === 'authenticated' && !auth.authMe?.app_user
+  const needsBootstrap = authState === 'authenticated' && !auth.authMe?.app_user
   const showForms = !authenticatedJobseeker && !needsBootstrap
 
   const title = useMemo(() => {
@@ -62,10 +63,10 @@ export function JobseekerAuthPage() {
   }, [mode])
 
   useEffect(() => {
-    if (!needsBootstrap) {
-      setAutoBootstrapPending(false)
-      return
-    }
+    // Keep failed auto-bootstrap attempts user-driven so we do not loop
+    // background retries or hide the error state before someone can act on it.
+    if (!needsBootstrap) return
+    if (error) return
     if (autoBootstrapPending) return
 
     setAutoBootstrapPending(true)
@@ -73,17 +74,16 @@ export function JobseekerAuthPage() {
     setError(null)
     setNotice('Preparing your profile setup...')
 
-    void auth
-      .bootstrapRole({ role: 'jobseeker' })
+    void bootstrapRole({ role: 'jobseeker' })
       .catch((nextError) => {
         setError(getErrorMessage(nextError))
         setNotice(null)
-        setAutoBootstrapPending(false)
       })
       .finally(() => {
+        setAutoBootstrapPending(false)
         setBusy(false)
       })
-  }, [auth, autoBootstrapPending, needsBootstrap])
+  }, [authState, autoBootstrapPending, bootstrapRole, error, needsBootstrap])
 
   async function run(task: () => Promise<void>) {
     setBusy(true)
@@ -216,7 +216,9 @@ export function JobseekerAuthPage() {
                 <div className="mt-6 flex justify-center">
                   <PortalButton
                     disabled={busy}
-                    onClick={() => setAutoBootstrapPending(false)}
+                    onClick={() => {
+                      setError(null)
+                    }}
                   >
                     Try again
                   </PortalButton>
