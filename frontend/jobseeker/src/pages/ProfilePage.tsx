@@ -33,8 +33,6 @@ import type {
   JobseekerProfileFormValues,
 } from '../types/jobseeker'
 
-const PLACEHOLDER_STORAGE_KEY = 'twa-jobseeker-ui-profile-extras'
-
 const emptyCharges: ChargeFlags = {
   sex_offense: false,
   violent: false,
@@ -81,7 +79,7 @@ function splitFullName(fullName: string | null | undefined) {
 
 function toDraft(
   profile: JobseekerProfile | null,
-  preferredContact: PreferredContact
+  preferredContact: PreferredContact = 'Email'
 ): ProfileDraft {
   const name = splitFullName(profile?.full_name)
   return {
@@ -157,18 +155,6 @@ function validateStep(step: WizardStep, draft: ProfileDraft) {
   return null
 }
 
-function loadPreferredContact(): PreferredContact {
-  if (typeof window === 'undefined') return 'Email'
-  try {
-    const raw = window.localStorage.getItem(PLACEHOLDER_STORAGE_KEY)
-    if (!raw) return 'Email'
-    const parsed = JSON.parse(raw) as { preferred_contact?: PreferredContact }
-    return parsed.preferred_contact ?? 'Email'
-  } catch {
-    return 'Email'
-  }
-}
-
 function statusTone(status: JobseekerProfile['status']) {
   return status === 'hired' ? 'success' : 'active'
 }
@@ -200,9 +186,8 @@ export function JobseekerProfilePage() {
       try {
         const response = await getMyJobseekerProfile(auth.requestTwa)
         if (!active.current) return
-        const preferredContact = loadPreferredContact()
         setProfile(response.profile)
-        setDraft(toDraft(response.profile, preferredContact))
+        setDraft(toDraft(response.profile))
         setStep(inferInitialStep(response.profile))
         setWizardMode(response.profile.profile_complete ? 'edit' : 'setup')
         setIsEditing(!response.profile.profile_complete)
@@ -226,14 +211,6 @@ export function JobseekerProfilePage() {
       active.current = false
     }
   }, [auth.authMe?.app_user?.id, auth.state])
-
-  useEffect(() => {
-    if (typeof window === 'undefined' || !draft) return
-    window.localStorage.setItem(
-      PLACEHOLDER_STORAGE_KEY,
-      JSON.stringify({ preferred_contact: draft.preferred_contact })
-    )
-  }, [draft])
 
   const selectedCharges = useMemo(() => {
     if (!draft) return []
@@ -263,7 +240,7 @@ export function JobseekerProfilePage() {
       setDraft((current) =>
         toDraft(
           refreshed.profile,
-          current?.preferred_contact ?? loadPreferredContact()
+          current?.preferred_contact ?? 'Email'
         )
       )
       if (reloadAuth) {

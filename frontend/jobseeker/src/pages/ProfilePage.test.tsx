@@ -1,7 +1,7 @@
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
-import { expect, test } from 'vitest'
+import { expect, test, vi } from 'vitest'
 
 import { AuthProvider } from '@shared/auth/AuthProvider'
 
@@ -367,4 +367,66 @@ test('jobseeker MFA disable requires confirmation before sending OTP', async () 
     await screen.findByText(/multi-factor authentication is now disabled/i)
   ).toBeInTheDocument()
   expect(toggle).toHaveAttribute('aria-checked', 'false')
+})
+
+test('profile page does not use localStorage for preferred contact placeholder state', async () => {
+  const user = userEvent.setup()
+  const getItemSpy = vi.spyOn(Storage.prototype, 'getItem')
+  const setItemSpy = vi.spyOn(Storage.prototype, 'setItem')
+  const profile: JobseekerProfile = {
+    id: 'profile-1',
+    app_user_id: 'jobseeker-app-user',
+    auth_user_id: 'jobseeker-auth-user',
+    full_name: 'Sam Ali',
+    phone: '3146003937',
+    address: '2300 OVERLOOK RD APT 410',
+    city: 'Cleveland',
+    zip: '44106-1234',
+    transit_type: 'public_transit',
+    charges: {
+      sex_offense: false,
+      violent: false,
+      armed: false,
+      children: false,
+      drug: false,
+      theft: false,
+    },
+    profile_complete: true,
+    status: 'active',
+    created_at: '2026-03-01T00:00:00.000Z',
+    updated_at: null,
+  }
+
+  const { client } = createMockAuthClient({
+    authMe: buildAuthMe({ role: 'jobseeker', profileComplete: true }),
+    requestTwaImpl: async (path) => {
+      if (path === '/api/v1/jobseekers/me') {
+        return { profile }
+      }
+      throw new Error(`Unexpected path ${path}`)
+    },
+  })
+
+  render(
+    <MemoryRouter>
+      <AuthProvider client={client}>
+        <JobseekerProfilePage />
+      </AuthProvider>
+    </MemoryRouter>
+  )
+
+  await screen.findByRole('heading', { name: 'Sam Ali' })
+  expect(getItemSpy).not.toHaveBeenCalled()
+  expect(setItemSpy).not.toHaveBeenCalled()
+
+  await user.click(screen.getByRole('button', { name: 'Edit Profile' }))
+  await screen.findByText('How should TWA reach you?')
+
+  await user.selectOptions(screen.getByRole('combobox'), 'Text')
+
+  expect(getItemSpy).not.toHaveBeenCalled()
+  expect(setItemSpy).not.toHaveBeenCalled()
+
+  getItemSpy.mockRestore()
+  setItemSpy.mockRestore()
 })
