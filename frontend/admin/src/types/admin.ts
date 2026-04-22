@@ -17,12 +17,26 @@ export interface PaginatedResponse<T> {
   }
 }
 
+export interface PlacementSummaryRow {
+  month: string
+  applications: number
+  hires: number
+}
+
+export interface PlacementSummary {
+  rows: PlacementSummaryRow[]
+  ytd_applications: number
+  ytd_hires: number
+  ytd_employers: number
+}
+
 export interface AdminDashboard {
   pending_employers: number
   pending_listings: number
   active_jobseekers: number
   open_applications: number
   open_listings: number
+  placement_summary: PlacementSummary
 }
 
 export interface EmployerProfile {

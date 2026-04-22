@@ -1103,7 +1103,7 @@ Returns applicants for a listing owned by the logged-in employer.
 
 ## `GET /api/v1/admin/dashboard`
 
-Returns summary metrics for the staff dashboard.
+Returns summary metrics and placement aggregates for the staff dashboard.
 
 ### Auth
 
@@ -1117,9 +1117,31 @@ Returns summary metrics for the staff dashboard.
   "pending_listings": 5,
   "active_jobseekers": 42,
   "open_applications": 16,
-  "open_listings": 12
+  "open_listings": 12,
+  "placement_summary": {
+    "rows": [
+      {
+        "month": "2026-03-01T00:00:00Z",
+        "applications": 8,
+        "hires": 2
+      },
+      {
+        "month": "2026-02-01T00:00:00Z",
+        "applications": 5,
+        "hires": 1
+      }
+    ],
+    "ytd_applications": 29,
+    "ytd_hires": 6,
+    "ytd_employers": 4
+  }
 }
 ```
+
+### Notes
+
+- `placement_summary.rows` is ordered newest month first and capped to the most recent 4 months with application activity
+- `ytd_*` metrics use the current UTC calendar year
 
 ## `GET /api/v1/admin/queue/employers`
 

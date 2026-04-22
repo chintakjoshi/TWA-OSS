@@ -337,7 +337,7 @@ GET    /api/v1/employer/listings/{id}                     # view single listing
 GET    /api/v1/employer/listings/{id}/applicants          # view applicants for a listing when sharing is enabled
 
 # Staff admin
-GET    /api/v1/admin/dashboard                            # summary metrics
+GET    /api/v1/admin/dashboard                            # summary metrics + placement aggregates
 GET    /api/v1/admin/queue/employers                      # pending employer registrations
 PATCH  /api/v1/admin/employers/{id}                       # approve or reject employer account
 GET    /api/v1/admin/employers                            # all employers
