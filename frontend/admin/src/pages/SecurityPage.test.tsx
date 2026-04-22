@@ -24,6 +24,12 @@ test('staff can enable MFA after confirming the warning modal', async () => {
           active_jobseekers: 0,
           open_applications: 0,
           open_listings: 0,
+          placement_summary: {
+            rows: [],
+            ytd_applications: 0,
+            ytd_hires: 0,
+            ytd_employers: 0,
+          },
         }
       }
 
@@ -92,6 +98,12 @@ test('staff must confirm before the disable MFA OTP is sent', async () => {
           active_jobseekers: 0,
           open_applications: 0,
           open_listings: 0,
+          placement_summary: {
+            rows: [],
+            ytd_applications: 0,
+            ytd_hires: 0,
+            ytd_employers: 0,
+          },
         }
       }
 

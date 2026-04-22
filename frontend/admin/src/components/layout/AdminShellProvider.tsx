@@ -23,14 +23,14 @@ const AdminShellContext = createContext<AdminShellContextValue | null>(null)
 
 export function AdminShellProvider({ children }: { children: ReactNode }) {
   const auth = useAuth()
+  const authState = auth.state
+  const authRole = auth.authMe?.app_user?.app_role
+  const requestTwa = auth.requestTwa
   const [summary, setSummary] = useState<AdminDashboard | null>(null)
   const [summaryLoading, setSummaryLoading] = useState(true)
 
   const refreshSummary = useCallback(async () => {
-    if (
-      auth.state !== 'authenticated' ||
-      auth.authMe?.app_user?.app_role !== 'staff'
-    ) {
+    if (authState !== 'authenticated' || authRole !== 'staff') {
       setSummary(null)
       setSummaryLoading(false)
       return
@@ -38,14 +38,14 @@ export function AdminShellProvider({ children }: { children: ReactNode }) {
 
     setSummaryLoading(true)
     try {
-      const nextSummary = await getDashboard(auth.requestTwa)
+      const nextSummary = await getDashboard(requestTwa)
       setSummary(nextSummary)
     } catch {
       setSummary(null)
     } finally {
       setSummaryLoading(false)
     }
-  }, [auth])
+  }, [authRole, authState, requestTwa])
 
   useEffect(() => {
     void refreshSummary()

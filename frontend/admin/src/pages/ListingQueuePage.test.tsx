@@ -69,6 +69,12 @@ test('listing queue shows unknown transit status when accessibility has not been
           active_jobseekers: 5,
           open_applications: 2,
           open_listings: 3,
+          placement_summary: {
+            rows: [],
+            ytd_applications: 0,
+            ytd_hires: 0,
+            ytd_employers: 0,
+          },
         }
       }
       if (path.startsWith('/api/v1/admin/queue/listings')) {

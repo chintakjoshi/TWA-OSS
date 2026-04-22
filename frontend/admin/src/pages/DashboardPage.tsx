@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   Activity,
@@ -19,7 +19,7 @@ import {
 
 import { useAuth } from '@shared/auth/AuthProvider'
 
-import { listApplications, listAuditLog, listListings } from '../api/adminApi'
+import { listAuditLog } from '../api/adminApi'
 import { AdminWorkspaceLayout } from '../components/layout/AdminWorkspaceLayout'
 import { useAdminShell } from '../components/layout/AdminShellProvider'
 import {
@@ -38,74 +38,7 @@ import {
   formatMonthLabel,
   formatRelativeTime,
 } from '../lib/formatting'
-import { loadAllPages } from '../lib/pagination'
-import type {
-  AdminApplication,
-  AuditLogEntry,
-  JobListing,
-} from '../types/admin'
-
-type PlacementRow = {
-  month: string
-  applications: number
-  hires: number
-}
-
-function buildPlacementSummary(
-  applications: AdminApplication[],
-  listings: JobListing[]
-): {
-  rows: PlacementRow[]
-  ytdApplications: number
-  ytdHires: number
-  ytdEmployers: number
-} {
-  const listingMap = new Map(listings.map((listing) => [listing.id, listing]))
-  const monthMap = new Map<string, PlacementRow>()
-  const currentYear = new Date().getFullYear()
-  const hiredEmployerIds = new Set<string>()
-  let ytdApplications = 0
-  let ytdHires = 0
-
-  applications.forEach((application) => {
-    const appliedDate = new Date(application.applied_at)
-    const bucket = new Date(
-      appliedDate.getFullYear(),
-      appliedDate.getMonth(),
-      1
-    )
-    const key = bucket.toISOString()
-    const existing = monthMap.get(key) ?? {
-      month: key,
-      applications: 0,
-      hires: 0,
-    }
-
-    existing.applications += 1
-    if (application.status === 'hired') {
-      existing.hires += 1
-      const listing = listingMap.get(application.job.id)
-      if (listing?.employer_id) hiredEmployerIds.add(listing.employer_id)
-    }
-    monthMap.set(key, existing)
-
-    if (appliedDate.getFullYear() === currentYear) {
-      ytdApplications += 1
-      if (application.status === 'hired') ytdHires += 1
-    }
-  })
-
-  const rows = [...monthMap.values()]
-    .sort((left, right) => right.month.localeCompare(left.month))
-    .slice(0, 4)
-
-  return {
-    rows,
-    ytdApplications,
-    ytdHires,
-    ytdEmployers: hiredEmployerIds.size,
-  }
-}
+import type { AuditLogEntry, PlacementSummary } from '../types/admin'
 
 function describeActivity(entry: AuditLogEntry) {
   const action = describeAuditAction(entry.action)
@@ -126,32 +59,28 @@ function describeActivity(entry: AuditLogEntry) {
 
 export function AdminDashboardPage() {
   const auth = useAuth()
+  const authState = auth.state
+  const authRole = auth.authMe?.app_user?.app_role
+  const requestTwa = auth.requestTwa
   const navigate = useNavigate()
-  const { summary, summaryLoading, refreshSummary } = useAdminShell()
+  const { summary, summaryLoading } = useAdminShell()
   const [activity, setActivity] = useState<AuditLogEntry[]>([])
-  const [applications, setApplications] = useState<AdminApplication[]>([])
-  const [listings, setListings] = useState<JobListing[]>([])
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
+    if (authState !== 'authenticated' || authRole !== 'staff') {
+      setActivity([])
+      setError(null)
+      return
+    }
+
     let active = true
     setError(null)
 
-    void Promise.all([
-      refreshSummary(),
-      listAuditLog(auth.requestTwa, { page: 1, pageSize: 5 }),
-      loadAllPages((page) =>
-        listApplications(auth.requestTwa, { page, pageSize: 50 })
-      ),
-      loadAllPages((page) =>
-        listListings(auth.requestTwa, { page, pageSize: 50 })
-      ),
-    ])
-      .then(([, auditResponse, applicationItems, listingItems]) => {
+    void listAuditLog(requestTwa, { page: 1, pageSize: 5 })
+      .then((auditResponse) => {
         if (!active) return
         setActivity(auditResponse.items)
-        setApplications(applicationItems)
-        setListings(listingItems)
       })
       .catch((nextError: Error) => {
         if (!active) return
@@ -161,12 +90,14 @@ export function AdminDashboardPage() {
     return () => {
       active = false
     }
-  }, [auth.requestTwa, refreshSummary])
+  }, [authRole, authState, requestTwa])
 
-  const placementSummary = useMemo(
-    () => buildPlacementSummary(applications, listings),
-    [applications, listings]
-  )
+  const placementSummary: PlacementSummary = summary?.placement_summary ?? {
+    rows: [],
+    ytd_applications: 0,
+    ytd_hires: 0,
+    ytd_employers: 0,
+  }
 
   if (summaryLoading && !summary) {
     return (
@@ -384,14 +315,14 @@ export function AdminDashboardPage() {
                     </p>
                     <div className="mt-3 flex flex-wrap items-center gap-3">
                       <p className="admin-display text-4xl font-semibold text-slate-950">
-                        {placementSummary.ytdHires} placements
+                        {placementSummary.ytd_hires} placements
                       </p>
                       <StatusBadge tone="warning">
-                        {placementSummary.ytdApplications} total applications
+                        {placementSummary.ytd_applications} total applications
                       </StatusBadge>
                     </div>
                     <p className="mt-2 text-sm text-slate-500">
-                      Across {placementSummary.ytdEmployers} employers
+                      Across {placementSummary.ytd_employers} employers
                       represented in hired applications this year.
                     </p>
                   </div>
