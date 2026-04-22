@@ -430,3 +430,54 @@ test('profile page does not use localStorage for preferred contact placeholder s
   getItemSpy.mockRestore()
   setItemSpy.mockRestore()
 })
+
+test('profile page hydrates once after auth settles for the same user', async () => {
+  const profileRequests: string[] = []
+  const profile: JobseekerProfile = {
+    id: 'profile-1',
+    app_user_id: 'jobseeker-app-user',
+    auth_user_id: 'jobseeker-auth-user',
+    full_name: 'Sam Ali',
+    phone: '3146003937',
+    address: '2300 OVERLOOK RD APT 410',
+    city: 'Cleveland',
+    zip: '44106-1234',
+    transit_type: 'public_transit',
+    charges: {
+      sex_offense: false,
+      violent: false,
+      armed: false,
+      children: false,
+      drug: false,
+      theft: false,
+    },
+    profile_complete: true,
+    status: 'active',
+    created_at: '2026-03-01T00:00:00.000Z',
+    updated_at: null,
+  }
+
+  const { client } = createMockAuthClient({
+    authMe: buildAuthMe({ role: 'jobseeker', profileComplete: true }),
+    requestTwaImpl: async (path) => {
+      if (path === '/api/v1/jobseekers/me') {
+        profileRequests.push(path)
+        return { profile }
+      }
+      throw new Error(`Unexpected path ${path}`)
+    },
+  })
+
+  render(
+    <MemoryRouter>
+      <AuthProvider client={client}>
+        <JobseekerProfilePage />
+      </AuthProvider>
+    </MemoryRouter>
+  )
+
+  await screen.findByRole('heading', { name: 'Sam Ali' })
+  await new Promise((resolve) => setTimeout(resolve, 25))
+
+  expect(profileRequests).toHaveLength(1)
+})
