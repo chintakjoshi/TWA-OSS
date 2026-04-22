@@ -153,7 +153,12 @@ describe('useUserSessionsWorkspace', () => {
       if (/\/admin\/users\/u-1$/.test(path)) return user
       if (path.includes('status=revoked')) {
         return {
-          data: [buildSession({ session_id: 's-rev', revoked_at: '2026-04-16T00:00:00Z' })],
+          data: [
+            buildSession({
+              session_id: 's-rev',
+              revoked_at: '2026-04-16T00:00:00Z',
+            }),
+          ],
           next_cursor: null,
           has_more: false,
         }
@@ -169,14 +174,18 @@ describe('useUserSessionsWorkspace', () => {
       useUserSessionsWorkspace({ requestAuth, selectedUserId: 'u-1' })
     )
     await waitFor(() => {
-      expect(result.current.sessions.map((s) => s.session_id)).toEqual(['s-act'])
+      expect(result.current.sessions.map((s) => s.session_id)).toEqual([
+        's-act',
+      ])
     })
 
     act(() => {
       result.current.setSessionStatus('revoked')
     })
     await waitFor(() => {
-      expect(result.current.sessions.map((s) => s.session_id)).toEqual(['s-rev'])
+      expect(result.current.sessions.map((s) => s.session_id)).toEqual([
+        's-rev',
+      ])
     })
   })
 
@@ -342,7 +351,9 @@ describe('useUserSessionsWorkspace', () => {
     const patched = result.current.sessions.find((s) => s.session_id === 's-1')
     expect(patched?.revoked_at).toMatch(/T/)
     expect(patched?.revoke_reason).toBe('compromised')
-    const untouched = result.current.sessions.find((s) => s.session_id === 's-2')
+    const untouched = result.current.sessions.find(
+      (s) => s.session_id === 's-2'
+    )
     expect(untouched?.revoked_at).toBeNull()
   })
 
@@ -445,9 +456,11 @@ describe('useUserSessionsWorkspace', () => {
 
     const requestAuth = vi.fn(async (path: string) => {
       if (/\/admin\/users\/u-1$/.test(path)) return userOneDetail.promise
-      if (/\/admin\/users\/u-1\/sessions/.test(path)) return userOneSessions.promise
+      if (/\/admin\/users\/u-1\/sessions/.test(path))
+        return userOneSessions.promise
       if (/\/admin\/users\/u-2$/.test(path)) return userTwoDetail.promise
-      if (/\/admin\/users\/u-2\/sessions/.test(path)) return userTwoSessions.promise
+      if (/\/admin\/users\/u-2\/sessions/.test(path))
+        return userTwoSessions.promise
       throw new Error(`unmocked path: ${path}`)
     })
 
@@ -474,9 +487,9 @@ describe('useUserSessionsWorkspace', () => {
     await waitFor(() => {
       expect(result.current.selectedUser?.id).toBe('u-2')
     })
-    expect(result.current.sessions.map((session) => session.session_id)).toEqual([
-      's-2',
-    ])
+    expect(
+      result.current.sessions.map((session) => session.session_id)
+    ).toEqual(['s-2'])
 
     await act(async () => {
       userOneDetail.resolve(
@@ -491,8 +504,8 @@ describe('useUserSessionsWorkspace', () => {
     })
 
     expect(result.current.selectedUser?.id).toBe('u-2')
-    expect(result.current.sessions.map((session) => session.session_id)).toEqual([
-      's-2',
-    ])
+    expect(
+      result.current.sessions.map((session) => session.session_id)
+    ).toEqual(['s-2'])
   })
 })

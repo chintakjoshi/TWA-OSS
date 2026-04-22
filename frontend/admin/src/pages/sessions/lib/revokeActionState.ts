@@ -56,9 +56,15 @@ export type FilterActionState =
 export type RevokeActionState = InlineReasonActionState | FilterActionState
 
 type InlineReasonInit =
-  | Pick<SingleRevokeActionState, 'kind' | 'userId' | 'sessionId' | 'title' | 'description'>
+  | Pick<
+      SingleRevokeActionState,
+      'kind' | 'userId' | 'sessionId' | 'title' | 'description'
+    >
   | Pick<AllRevokeActionState, 'kind' | 'userId' | 'title' | 'description'>
-  | Pick<SuspiciousRevokeActionState, 'kind' | 'userId' | 'title' | 'description'>
+  | Pick<
+      SuspiciousRevokeActionState,
+      'kind' | 'userId' | 'title' | 'description'
+    >
 
 type FilterActionInit = Pick<
   FilterPreviewActionState | FilterExecuteActionState,

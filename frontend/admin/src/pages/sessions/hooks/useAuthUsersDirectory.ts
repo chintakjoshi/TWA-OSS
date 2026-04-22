@@ -97,11 +97,7 @@ export function useAuthUsersDirectory({
           appliedFiltersRef.current = activeFilters
         }
 
-        if (
-          !append &&
-          !firstLoadFiredRef.current &&
-          response.data.length > 0
-        ) {
+        if (!append && !firstLoadFiredRef.current && response.data.length > 0) {
           firstLoadFiredRef.current = true
           onFirstLoadedRef.current?.(response.data[0].id)
         }

@@ -82,9 +82,7 @@ describe('useAuthUsersDirectory', () => {
       .fn<(path: string, init?: RequestInit) => Promise<UsersResponse>>()
       .mockResolvedValue({ data: [], next_cursor: null, has_more: false })
 
-    const { result } = renderHook(() =>
-      useAuthUsersDirectory({ requestAuth })
-    )
+    const { result } = renderHook(() => useAuthUsersDirectory({ requestAuth }))
 
     await waitFor(() => {
       expect(result.current.loading).toBe(false)
@@ -115,9 +113,7 @@ describe('useAuthUsersDirectory', () => {
       .fn<(path: string, init?: RequestInit) => Promise<UsersResponse>>()
       .mockResolvedValue({ data: [], next_cursor: null, has_more: false })
 
-    const { result } = renderHook(() =>
-      useAuthUsersDirectory({ requestAuth })
-    )
+    const { result } = renderHook(() => useAuthUsersDirectory({ requestAuth }))
 
     await waitFor(() => {
       expect(result.current.loading).toBe(false)
@@ -150,9 +146,7 @@ describe('useAuthUsersDirectory', () => {
       .fn<(path: string, init?: RequestInit) => Promise<UsersResponse>>()
       .mockResolvedValue({ data: [], next_cursor: null, has_more: false })
 
-    const { result } = renderHook(() =>
-      useAuthUsersDirectory({ requestAuth })
-    )
+    const { result } = renderHook(() => useAuthUsersDirectory({ requestAuth }))
     await waitFor(() => {
       expect(result.current.loading).toBe(false)
     })
@@ -176,9 +170,7 @@ describe('useAuthUsersDirectory', () => {
       .fn<(path: string, init?: RequestInit) => Promise<UsersResponse>>()
       .mockResolvedValue({ data: [], next_cursor: null, has_more: false })
 
-    const { result } = renderHook(() =>
-      useAuthUsersDirectory({ requestAuth })
-    )
+    const { result } = renderHook(() => useAuthUsersDirectory({ requestAuth }))
     await waitFor(() => {
       expect(result.current.loading).toBe(false)
     })
@@ -200,9 +192,7 @@ describe('useAuthUsersDirectory', () => {
         has_more: false,
       })
 
-    const { result } = renderHook(() =>
-      useAuthUsersDirectory({ requestAuth })
-    )
+    const { result } = renderHook(() => useAuthUsersDirectory({ requestAuth }))
     await waitFor(() => {
       expect(result.current.loading).toBe(false)
     })
@@ -218,17 +208,13 @@ describe('useAuthUsersDirectory', () => {
   test('ignores stale directory responses when a newer search finishes first', async () => {
     const initial = createDeferred<UsersResponse>()
     const filtered = createDeferred<UsersResponse>()
-    const requestAuth = vi.fn(
-      async (path: string): Promise<UsersResponse> => {
-        if (path === '/admin/users?limit=12') return initial.promise
-        if (path.includes('email=second%40example.com')) return filtered.promise
-        throw new Error(`unmocked path: ${path}`)
-      }
-    )
+    const requestAuth = vi.fn(async (path: string): Promise<UsersResponse> => {
+      if (path === '/admin/users?limit=12') return initial.promise
+      if (path.includes('email=second%40example.com')) return filtered.promise
+      throw new Error(`unmocked path: ${path}`)
+    })
 
-    const { result } = renderHook(() =>
-      useAuthUsersDirectory({ requestAuth })
-    )
+    const { result } = renderHook(() => useAuthUsersDirectory({ requestAuth }))
 
     expect(result.current.loading).toBe(true)
 
@@ -311,9 +297,7 @@ describe('useAuthUsersDirectory', () => {
   test('surfaces error message and leaves loading off', async () => {
     const requestAuth = vi.fn().mockRejectedValue(new Error('directory down'))
 
-    const { result } = renderHook(() =>
-      useAuthUsersDirectory({ requestAuth })
-    )
+    const { result } = renderHook(() => useAuthUsersDirectory({ requestAuth }))
     await waitFor(() => {
       expect(result.current.loading).toBe(false)
     })
@@ -326,15 +310,17 @@ describe('useAuthUsersDirectory', () => {
       .fn<(path: string, init?: RequestInit) => Promise<UsersResponse>>()
       .mockResolvedValue({ data: [], next_cursor: null, has_more: false })
 
-    const { result } = renderHook(() =>
-      useAuthUsersDirectory({ requestAuth })
-    )
+    const { result } = renderHook(() => useAuthUsersDirectory({ requestAuth }))
     await waitFor(() => {
       expect(result.current.loading).toBe(false)
     })
 
     act(() => {
-      result.current.setFilters({ email: 'foo', role: 'admin', locked: 'locked' })
+      result.current.setFilters({
+        email: 'foo',
+        role: 'admin',
+        locked: 'locked',
+      })
     })
     await act(async () => {
       await result.current.load()

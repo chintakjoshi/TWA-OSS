@@ -46,13 +46,13 @@ describe('useSuspiciousQueue', () => {
   })
 
   test('load() fetches the first page and marks loaded', async () => {
-    const requestAuth = vi.fn<
-      (path: string, init?: RequestInit) => Promise<QueueResponse>
-    >().mockResolvedValue({
-      data: [buildQueueItem()],
-      next_cursor: 'cursor-2',
-      has_more: true,
-    })
+    const requestAuth = vi
+      .fn<(path: string, init?: RequestInit) => Promise<QueueResponse>>()
+      .mockResolvedValue({
+        data: [buildQueueItem()],
+        next_cursor: 'cursor-2',
+        has_more: true,
+      })
 
     const { result } = renderHook(() => useSuspiciousQueue(requestAuth))
 
@@ -100,9 +100,7 @@ describe('useSuspiciousQueue', () => {
   })
 
   test('initial load error leaves state empty and surfaces the message', async () => {
-    const requestAuth = vi
-      .fn()
-      .mockRejectedValue(new Error('network fried'))
+    const requestAuth = vi.fn().mockRejectedValue(new Error('network fried'))
 
     const { result } = renderHook(() => useSuspiciousQueue(requestAuth))
 
@@ -149,7 +147,9 @@ describe('useSuspiciousQueue', () => {
       .fn<(path: string, init?: RequestInit) => Promise<QueueResponse>>()
       .mockReturnValueOnce(stalePromise)
       .mockResolvedValueOnce({
-        data: [buildQueueItem({ session_id: 'fresh', user_email: 'fresh@x.io' })],
+        data: [
+          buildQueueItem({ session_id: 'fresh', user_email: 'fresh@x.io' }),
+        ],
         next_cursor: null,
         has_more: false,
       })

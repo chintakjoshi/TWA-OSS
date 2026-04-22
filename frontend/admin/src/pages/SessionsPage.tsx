@@ -143,9 +143,9 @@ export function AdminSessionsPage() {
     openUserWorkspace(users[0].id)
   }, [openUserWorkspace, selectedUserId, users, usersError, usersLoading])
 
-  const revokeActionRef = useRef<
-    ReturnType<typeof useRevokeAction> | null
-  >(null)
+  const revokeActionRef = useRef<ReturnType<typeof useRevokeAction> | null>(
+    null
+  )
   const filterSweep = useFilterSweep({
     selectedUserId,
     selectedUserEmail: selectedUser?.email ?? null,
@@ -192,7 +192,10 @@ export function AdminSessionsPage() {
     handlers: {
       async onSingleRevoked(response, ctx) {
         setSuccessMessage('Session revoked successfully.')
-        applyLocalSessionRevocation([response.session_id], response.revoke_reason)
+        applyLocalSessionRevocation(
+          [response.session_id],
+          response.revoke_reason
+        )
         await syncWorkspaceAfterMutation(ctx.userId)
       },
       async onAllRevoked(response, ctx) {
@@ -393,7 +396,10 @@ export function AdminSessionsPage() {
               <LoadingState title="Loading auth users..." />
             ) : usersError ? (
               <div className="px-6 py-6">
-                <ErrorState title="User lookup unavailable" message={usersError} />
+                <ErrorState
+                  title="User lookup unavailable"
+                  message={usersError}
+                />
               </div>
             ) : users.length === 0 ? (
               <div className="px-6 py-6">
@@ -445,17 +451,21 @@ export function AdminSessionsPage() {
                               {accountLabel(user)}
                             </StatusBadge>
                           </TableCell>
-                          <TableCell>{formatDateTime(user.created_at)}</TableCell>
+                          <TableCell>
+                            {formatDateTime(user.created_at)}
+                          </TableCell>
                           <TableCell className="text-right">
-                              <AdminButton
-                                className={tableActionButtonClassName}
-                                variant={
-                                  selectedUserId === user.id ? 'primary' : 'secondary'
-                                }
-                                onClick={() => openUserWorkspace(user.id)}
-                              >
-                                Manage sessions
-                              </AdminButton>
+                            <AdminButton
+                              className={tableActionButtonClassName}
+                              variant={
+                                selectedUserId === user.id
+                                  ? 'primary'
+                                  : 'secondary'
+                              }
+                              onClick={() => openUserWorkspace(user.id)}
+                            >
+                              Manage sessions
+                            </AdminButton>
                           </TableCell>
                         </tr>
                       ))}
@@ -587,7 +597,9 @@ export function AdminSessionsPage() {
                         </thead>
                         <tbody>
                           {suspiciousQueue.visibleItems.map((session) => (
-                            <tr key={`queue-${session.user_id}-${session.session_id}`}>
+                            <tr
+                              key={`queue-${session.user_id}-${session.session_id}`}
+                            >
                               <TableCell>
                                 <div className="space-y-1">
                                   <p className="font-semibold text-slate-900">
@@ -615,7 +627,9 @@ export function AdminSessionsPage() {
                               </TableCell>
                               <TableCell>
                                 <div className="space-y-1">
-                                  <p>{formatRelativeTime(session.last_seen_at)}</p>
+                                  <p>
+                                    {formatRelativeTime(session.last_seen_at)}
+                                  </p>
                                   <p className="text-xs text-slate-500">
                                     {formatDateTime(session.last_seen_at)}
                                   </p>
@@ -627,7 +641,9 @@ export function AdminSessionsPage() {
                                     aria-label={`Open workspace ${session.user_email}`}
                                     className={tableActionButtonClassName}
                                     variant="secondary"
-                                    onClick={() => openUserWorkspace(session.user_id)}
+                                    onClick={() =>
+                                      openUserWorkspace(session.user_id)
+                                    }
                                   >
                                     Open workspace
                                   </AdminButton>
@@ -697,7 +713,10 @@ export function AdminSessionsPage() {
         ) : selectedUserLoading && !selectedUser ? (
           <LoadingState title="Loading selected user..." />
         ) : selectedUserError ? (
-          <ErrorState title="Selected user unavailable" message={selectedUserError} />
+          <ErrorState
+            title="Selected user unavailable"
+            message={selectedUserError}
+          />
         ) : selectedUser ? (
           <div className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
             <Surface className="space-y-5">
@@ -710,8 +729,8 @@ export function AdminSessionsPage() {
                     {selectedUser.email}
                   </h2>
                   <p className="mt-2 text-sm text-slate-500">
-                    Review active access, suspicious logins, and step-up protected
-                    revoke actions for this auth identity.
+                    Review active access, suspicious logins, and step-up
+                    protected revoke actions for this auth identity.
                   </p>
                 </div>
                 <div className="flex flex-col items-end gap-2">
@@ -732,11 +751,15 @@ export function AdminSessionsPage() {
                   },
                   {
                     label: 'Email Verified',
-                    value: selectedUser.email_verified ? 'Verified' : 'Unverified',
+                    value: selectedUser.email_verified
+                      ? 'Verified'
+                      : 'Unverified',
                   },
                   {
                     label: 'Email OTP',
-                    value: selectedUser.email_otp_enabled ? 'Enabled' : 'Disabled',
+                    value: selectedUser.email_otp_enabled
+                      ? 'Enabled'
+                      : 'Disabled',
                   },
                   {
                     label: 'Locked',
@@ -876,17 +899,25 @@ export function AdminSessionsPage() {
                                       Suspicious
                                     </StatusBadge>
                                     <p className="max-w-[220px] text-xs text-slate-500">
-                                      {formatReasonList(session.suspicious_reasons)}
+                                      {formatReasonList(
+                                        session.suspicious_reasons
+                                      )}
                                     </p>
                                   </div>
                                 ) : (
-                                  <StatusBadge tone="success">Normal</StatusBadge>
+                                  <StatusBadge tone="success">
+                                    Normal
+                                  </StatusBadge>
                                 )}
                               </TableCell>
-                              <TableCell>{session.ip_address ?? 'Unknown'}</TableCell>
+                              <TableCell>
+                                {session.ip_address ?? 'Unknown'}
+                              </TableCell>
                               <TableCell>
                                 <div className="space-y-1">
-                                  <p>{formatRelativeTime(session.last_seen_at)}</p>
+                                  <p>
+                                    {formatRelativeTime(session.last_seen_at)}
+                                  </p>
                                   <p className="text-xs text-slate-500">
                                     {formatDateTime(session.last_seen_at)}
                                   </p>
@@ -957,7 +988,10 @@ export function AdminSessionsPage() {
           {detailLoading ? (
             <LoadingState title="Loading session detail..." />
           ) : detailError ? (
-            <ErrorState title="Session detail unavailable" message={detailError} />
+            <ErrorState
+              title="Session detail unavailable"
+              message={detailError}
+            />
           ) : detailSession ? (
             <div className="space-y-6">
               <DefinitionList
@@ -1031,7 +1065,9 @@ export function AdminSessionsPage() {
                               {formatDateTime(event.created_at)}
                             </p>
                           </div>
-                          <StatusBadge tone={event.success ? 'success' : 'danger'}>
+                          <StatusBadge
+                            tone={event.success ? 'success' : 'danger'}
+                          >
                             {event.success ? 'Success' : 'Failed'}
                           </StatusBadge>
                         </div>
@@ -1195,7 +1231,10 @@ export function AdminSessionsPage() {
                   <div>
                     <p className="text-sm font-semibold text-slate-950">
                       Preview matched{' '}
-                      {formatSessionCount(filterSweepPreview.matched_session_count)}.
+                      {formatSessionCount(
+                        filterSweepPreview.matched_session_count
+                      )}
+                      .
                     </p>
                     <p className="mt-1 text-sm text-slate-500">
                       Re-run the preview after changing any filter before
@@ -1284,7 +1323,10 @@ export function AdminSessionsPage() {
                 </div>
               ) : actionState.payload.reason ? (
                 <InlineNotice>
-                  Revoke reason: <span className="font-semibold">{actionState.payload.reason}</span>
+                  Revoke reason:{' '}
+                  <span className="font-semibold">
+                    {actionState.payload.reason}
+                  </span>
                 </InlineNotice>
               ) : null}
 
@@ -1320,7 +1362,9 @@ export function AdminSessionsPage() {
                     disabled={actionState.submitting}
                     icon={ShieldAlert}
                     variant={
-                      actionState.kind === 'filterPreview' ? 'primary' : 'danger'
+                      actionState.kind === 'filterPreview'
+                        ? 'primary'
+                        : 'danger'
                     }
                     onClick={() => void handleConfirmAction()}
                   >

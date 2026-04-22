@@ -1,9 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
-import {
-  getAuthUserDetail,
-  listAuthUserSessions,
-} from '../../../api/adminApi'
+import { getAuthUserDetail, listAuthUserSessions } from '../../../api/adminApi'
 import type {
   AuthAdminSessionItem,
   AuthAdminUserDetail,
@@ -41,7 +38,10 @@ export type UseUserSessionsWorkspaceReturn = {
 
   loadSessions: (cursor?: string | null) => Promise<void>
   refresh: () => Promise<void>
-  patchRevokedSessions: (sessionIds: readonly string[], revokeReason: string) => void
+  patchRevokedSessions: (
+    sessionIds: readonly string[],
+    revokeReason: string
+  ) => void
 }
 
 function matchesSessionSearch(
@@ -66,7 +66,9 @@ export function useUserSessionsWorkspace({
     null
   )
   const [selectedUserLoading, setSelectedUserLoading] = useState(false)
-  const [selectedUserError, setSelectedUserError] = useState<string | null>(null)
+  const [selectedUserError, setSelectedUserError] = useState<string | null>(
+    null
+  )
 
   const [sessions, setSessions] = useState<AuthAdminSessionItem[]>([])
   const [sessionsCursor, setSessionsCursor] = useState<string | null>(null)

@@ -106,5 +106,7 @@ test('admin loads the sessions route chunk only when the sessions route is rende
   await waitFor(() => {
     expect(loadSessionsPage).toHaveBeenCalledTimes(1)
   })
-  expect(await screen.findByText('Admin sessions chunk loaded')).toBeInTheDocument()
+  expect(
+    await screen.findByText('Admin sessions chunk loaded')
+  ).toBeInTheDocument()
 })

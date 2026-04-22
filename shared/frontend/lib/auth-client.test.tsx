@@ -319,7 +319,9 @@ test('authSDK unsafe requests preserve custom headers while bootstrapping csrf',
           ? input.toString()
           : input.url
 
-    if (url === 'http://app.local/_auth/admin/users/user-1/sessions/session-1') {
+    if (
+      url === 'http://app.local/_auth/admin/users/user-1/sessions/session-1'
+    ) {
       return jsonResponse({
         user_id: 'user-1',
         session_id: 'session-1',

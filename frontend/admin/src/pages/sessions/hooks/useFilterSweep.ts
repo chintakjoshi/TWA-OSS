@@ -36,9 +36,7 @@ export type UseFilterSweepReturn = {
   openSweep: () => void
   closeSweep: () => void
   updateDraft: (patch: Partial<SessionSweepDraft>) => void
-  setPreview: (
-    next: AuthAdminSessionFilteredRevokeResponse | null
-  ) => void
+  setPreview: (next: AuthAdminSessionFilteredRevokeResponse | null) => void
   setError: (next: string | null) => void
   requestAction: (kind: FilterSweepActionKind) => void
 }
@@ -132,15 +130,13 @@ export function useFilterSweep({
         userId: selectedUserId,
         title: 'Verify revoke action',
         description,
-        payload:
-          kind === 'preview' ? { ...payload, dry_run: true } : payload,
+        payload: kind === 'preview' ? { ...payload, dry_run: true } : payload,
       })
     },
     [draft, onOpenAction, preview, selectedUserEmail, selectedUserId]
   )
 
-  const canExecute =
-    preview !== null && preview.matched_session_count > 0
+  const canExecute = preview !== null && preview.matched_session_count > 0
 
   return {
     open,

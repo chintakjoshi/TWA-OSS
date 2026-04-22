@@ -81,10 +81,7 @@ describe('useRevokeAction', () => {
   test('setAction + requestOtp transitions through submitting → otpRequested', async () => {
     const requestAuth = buildRequestAuth(
       new Map([
-        [
-          /\/auth\/otp\/request\/action/,
-          async () => ({ delivery: 'email' }),
-        ],
+        [/\/auth\/otp\/request\/action/, async () => ({ delivery: 'email' })],
       ])
     )
     const { result } = renderHook(() =>
@@ -162,7 +159,10 @@ describe('useRevokeAction', () => {
     const response = sessionResponse({ session_id: 's-42' })
     const requestAuth = buildRequestAuth(
       new Map<RegExp, (path: string) => Promise<unknown>>([
-        [/\/auth\/otp\/verify\/action/, async () => ({ action_token: 'tok-1' })],
+        [
+          /\/auth\/otp\/verify\/action/,
+          async () => ({ action_token: 'tok-1' }),
+        ],
         [/\/admin\/users\/u-1\/sessions\/s-42$/, async () => response],
       ])
     )
@@ -202,7 +202,10 @@ describe('useRevokeAction', () => {
     const response = bulkResponse({ revoked_session_count: 3 })
     const requestAuth = buildRequestAuth(
       new Map<RegExp, (path: string) => Promise<unknown>>([
-        [/\/auth\/otp\/verify\/action/, async () => ({ action_token: 'tok-a' })],
+        [
+          /\/auth\/otp\/verify\/action/,
+          async () => ({ action_token: 'tok-a' }),
+        ],
         [/\/admin\/users\/u-1\/sessions$/, async () => response],
       ])
     )
@@ -242,7 +245,10 @@ describe('useRevokeAction', () => {
     })
     const requestAuth = buildRequestAuth(
       new Map<RegExp, (path: string) => Promise<unknown>>([
-        [/\/auth\/otp\/verify\/action/, async () => ({ action_token: 'tok-s' })],
+        [
+          /\/auth\/otp\/verify\/action/,
+          async () => ({ action_token: 'tok-s' }),
+        ],
         [/\/revoke-by-filter$/, async () => response],
       ])
     )
@@ -277,7 +283,10 @@ describe('useRevokeAction', () => {
     const response = filteredResponse({ matched_session_count: 5 })
     const requestAuth = buildRequestAuth(
       new Map<RegExp, (path: string) => Promise<unknown>>([
-        [/\/auth\/otp\/verify\/action/, async () => ({ action_token: 'tok-p' })],
+        [
+          /\/auth\/otp\/verify\/action/,
+          async () => ({ action_token: 'tok-p' }),
+        ],
         [/\/revoke-by-filter$/, async () => response],
       ])
     )
@@ -310,7 +319,10 @@ describe('useRevokeAction', () => {
     const response = filteredResponse({ revoked_session_count: 7 })
     const requestAuth = buildRequestAuth(
       new Map<RegExp, (path: string) => Promise<unknown>>([
-        [/\/auth\/otp\/verify\/action/, async () => ({ action_token: 'tok-e' })],
+        [
+          /\/auth\/otp\/verify\/action/,
+          async () => ({ action_token: 'tok-e' }),
+        ],
         [/\/revoke-by-filter$/, async () => response],
       ])
     )
