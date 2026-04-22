@@ -126,10 +126,8 @@ async def _collect_first_snapshot(app, user: AppUser) -> str:
     response = await notifications_router.stream_my_notifications(
         request=_ConnectedRequest(),  # type: ignore[arg-type]
         auth_context=_auth_context_for(user),
-            session_factory=app.dependency_overrides[
-                get_db_session_factory
-            ](),
-        )
+        session_factory=app.dependency_overrides[get_db_session_factory](),
+    )
     body_iterator = response.body_iterator
     assert body_iterator is not None
     try:
@@ -160,9 +158,7 @@ def test_stream_opens_and_closes_session_per_snapshot(
     configured_app, jobseeker_user, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """Each snapshot must open its own session and close it before returning control."""
-    factory_override = configured_app.dependency_overrides[
-        get_db_session_factory
-    ]
+    factory_override = configured_app.dependency_overrides[get_db_session_factory]
     real_factory = factory_override()
 
     open_count = 0
@@ -187,9 +183,9 @@ def test_stream_opens_and_closes_session_per_snapshot(
     def tracking_factory() -> TrackingSession:
         return TrackingSession()
 
-    configured_app.dependency_overrides[
-        get_db_session_factory
-    ] = lambda: tracking_factory
+    configured_app.dependency_overrides[get_db_session_factory] = (
+        lambda: tracking_factory
+    )
 
     chunk = anyio.run(_collect_first_snapshot, configured_app, jobseeker_user)
     assert "event: snapshot" in chunk
