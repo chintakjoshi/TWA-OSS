@@ -71,8 +71,9 @@ test('staff can enable MFA after confirming the warning modal', async () => {
   await waitFor(() => {
     expect(spies.enableEmailOtp).toHaveBeenCalledTimes(1)
   })
-  expect(await screen.findByText(/multi-factor authentication is now enabled/i))
-    .toBeInTheDocument()
+  expect(
+    await screen.findByText(/multi-factor authentication is now enabled/i)
+  ).toBeInTheDocument()
   expect(toggle).toHaveAttribute('aria-checked', 'true')
 })
 
@@ -156,7 +157,8 @@ test('staff must confirm before the disable MFA OTP is sent', async () => {
     })
   })
   expect(spies.disableEmailOtp).toHaveBeenCalledWith('mock-action-token')
-  expect(await screen.findByText(/multi-factor authentication is now disabled/i))
-    .toBeInTheDocument()
+  expect(
+    await screen.findByText(/multi-factor authentication is now disabled/i)
+  ).toBeInTheDocument()
   expect(toggle).toHaveAttribute('aria-checked', 'false')
 })

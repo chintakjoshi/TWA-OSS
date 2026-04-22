@@ -1,5 +1,4 @@
 import { useState } from 'react'
-
 import { ShieldCheck } from 'lucide-react'
 
 import { useAuth } from '@shared/auth/AuthProvider'
@@ -8,18 +7,15 @@ import { OtpCodeInput } from '@shared/auth/OtpCodeInput'
 import { isCompleteOtpCode } from '@shared/auth/otp'
 import { HttpError } from '@shared/lib/http'
 
-import { AdminWorkspaceLayout } from '../components/layout/AdminWorkspaceLayout'
 import {
-  AdminButton,
-  AdminPanel,
   FieldLabel,
   InlineNotice,
   Modal,
-  PanelBody,
-  PanelHeader,
-  StatusBadge,
-  ToggleRow,
-} from '../components/ui/AdminUi'
+  PortalBadge,
+  PortalButton,
+  Surface,
+  Toggle,
+} from './ui/JobseekerUi'
 
 function getMfaErrorMessage(error: unknown): string {
   if (error instanceof HttpError && error.code === 'reauth_required') {
@@ -36,7 +32,7 @@ function formatOtpExpiry(expiresIn: number | null): string | null {
   return `The code expires in about ${minutes} minute${minutes === 1 ? '' : 's'}.`
 }
 
-export function AdminSecurityPage() {
+export function JobseekerMfaSection() {
   const auth = useAuth()
   const mfaEnabled = Boolean(auth.authMe?.email_otp_enabled)
   const [notice, setNotice] = useState<string | null>(null)
@@ -134,60 +130,83 @@ export function AdminSecurityPage() {
   }
 
   return (
-    <AdminWorkspaceLayout title="Security">
-      <div className="space-y-6">
-        {notice ? <InlineNotice tone="success">{notice}</InlineNotice> : null}
-        {error ? <InlineNotice tone="danger">{error}</InlineNotice> : null}
+    <>
+      <Surface>
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#8da2c5]">
+              Security
+            </p>
+            <h2 className="jobseeker-display mt-2 text-[1.9rem] font-semibold text-slate-950">
+              Multi-factor authentication
+            </h2>
+            <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-500">
+              Protect your jobseeker account with an email OTP challenge during
+              sign-in.
+            </p>
+          </div>
+          <PortalBadge tone={mfaEnabled ? 'success' : 'neutral'}>
+            {mfaEnabled ? 'MFA enabled' : 'MFA disabled'}
+          </PortalBadge>
+        </div>
 
-        <AdminPanel className="max-w-4xl">
-          <PanelHeader
-            title="Multi-Factor Authentication"
-            subtitle="Protect your TWA staff account with an email OTP challenge during sign-in."
-            action={
-              <StatusBadge tone={mfaEnabled ? 'success' : 'neutral'}>
-                {mfaEnabled ? 'Enabled' : 'Disabled'}
-              </StatusBadge>
-            }
-          />
-          <PanelBody className="space-y-6">
-            <div className="rounded-2xl border border-[#eadfce] bg-[#fcfaf6] px-5 py-5">
-              <div className="flex items-start gap-4">
-                <div className="rounded-2xl bg-[#132130] p-3 text-white">
-                  <ShieldCheck className="h-5 w-5" />
-                </div>
-                <div className="space-y-2">
-                  <p className="text-lg font-semibold text-slate-950">
-                    Staff account sign-in protection
-                  </p>
-                  <p className="text-sm leading-7 text-slate-500">
-                    Turning MFA on will require an OTP code during login.
-                    Turning it off requires a fresh OTP verification first.
-                  </p>
-                </div>
-              </div>
+        {notice ? (
+          <InlineNotice className="mt-6" tone="success">
+            {notice}
+          </InlineNotice>
+        ) : null}
+        {error ? (
+          <InlineNotice className="mt-6" tone="danger">
+            {error}
+          </InlineNotice>
+        ) : null}
+
+        <div className="mt-6 rounded-2xl border border-[#eadfce] bg-[#fcfaf6] px-5 py-5">
+          <div className="flex items-start gap-4">
+            <div className="rounded-2xl bg-[#132130] p-3 text-white">
+              <ShieldCheck className="h-5 w-5" />
             </div>
+            <div className="space-y-2">
+              <p className="text-lg font-semibold text-slate-950">
+                Jobseeker sign-in protection
+              </p>
+              <p className="text-sm leading-7 text-slate-500">
+                Turning MFA on will require an OTP code during login. Turning it
+                off requires a fresh OTP verification first.
+              </p>
+            </div>
+          </div>
+        </div>
 
-            <ToggleRow
-              checked={mfaEnabled}
-              description="Require a one-time password from the staff email inbox whenever this account signs in."
-              disabled={isSubmitting || isRequestingOtp || isResendingOtp}
-              title="Multi-Factor Authentication"
-              onChange={(nextChecked) => {
-                if (nextChecked) {
-                  setError(null)
-                  setNotice(null)
-                  setConfirmEnableOpen(true)
-                  return
-                }
-
+        <div className="mt-6 flex items-center justify-between gap-4 border-b border-[#eadfce] py-5 last:border-b-0">
+          <div className="space-y-1">
+            <p className="text-lg font-semibold text-slate-950">
+              Multi-Factor Authentication
+            </p>
+            <p className="max-w-2xl text-sm text-slate-500">
+              Require a one-time password from your email inbox whenever this
+              account signs in.
+            </p>
+          </div>
+          <Toggle
+            ariaLabel="Multi-Factor Authentication"
+            checked={mfaEnabled}
+            disabled={isSubmitting || isRequestingOtp || isResendingOtp}
+            onChange={(nextChecked) => {
+              if (nextChecked) {
                 setError(null)
                 setNotice(null)
-                setConfirmDisableOpen(true)
-              }}
-            />
-          </PanelBody>
-        </AdminPanel>
-      </div>
+                setConfirmEnableOpen(true)
+                return
+              }
+
+              setError(null)
+              setNotice(null)
+              setConfirmDisableOpen(true)
+            }}
+          />
+        </div>
+      </Surface>
 
       <Modal
         open={confirmEnableOpen}
@@ -203,21 +222,21 @@ export function AdminSecurityPage() {
             Enabling this will require an OTP code during login.
           </p>
           <div className="flex justify-end gap-3">
-            <AdminButton
+            <PortalButton
               disabled={isSubmitting}
               variant="secondary"
               onClick={() => setConfirmEnableOpen(false)}
             >
               Cancel
-            </AdminButton>
-            <AdminButton
+            </PortalButton>
+            <PortalButton
               disabled={isSubmitting}
               onClick={() => {
                 void handleEnable()
               }}
             >
               {isSubmitting ? 'Enabling...' : 'Yes, enable MFA'}
-            </AdminButton>
+            </PortalButton>
           </div>
         </div>
       </Modal>
@@ -236,14 +255,14 @@ export function AdminSecurityPage() {
             Disabling it will stop OTP verification during login.
           </p>
           <div className="flex justify-end gap-3">
-            <AdminButton
+            <PortalButton
               disabled={isRequestingOtp}
               variant="secondary"
               onClick={() => setConfirmDisableOpen(false)}
             >
               Cancel
-            </AdminButton>
-            <AdminButton
+            </PortalButton>
+            <PortalButton
               disabled={isRequestingOtp}
               variant="danger"
               onClick={() => {
@@ -251,7 +270,7 @@ export function AdminSecurityPage() {
               }}
             >
               {isRequestingOtp ? 'Sending OTP...' : 'Yes, send OTP'}
-            </AdminButton>
+            </PortalButton>
           </div>
         </div>
       </Modal>
@@ -288,7 +307,7 @@ export function AdminSecurityPage() {
           </div>
 
           <div className="flex justify-between gap-3">
-            <AdminButton
+            <PortalButton
               disabled={isSubmitting || isResendingOtp}
               variant="secondary"
               onClick={() => {
@@ -296,16 +315,16 @@ export function AdminSecurityPage() {
               }}
             >
               {isResendingOtp ? 'Resending...' : 'Resend OTP'}
-            </AdminButton>
+            </PortalButton>
             <div className="flex gap-3">
-              <AdminButton
+              <PortalButton
                 disabled={isSubmitting || isResendingOtp}
                 variant="secondary"
                 onClick={() => setDisableOtpOpen(false)}
               >
                 Cancel
-              </AdminButton>
-              <AdminButton
+              </PortalButton>
+              <PortalButton
                 disabled={isSubmitting || isResendingOtp}
                 variant="danger"
                 onClick={() => {
@@ -313,11 +332,11 @@ export function AdminSecurityPage() {
                 }}
               >
                 {isSubmitting ? 'Turning off...' : 'Turn off MFA'}
-              </AdminButton>
+              </PortalButton>
             </div>
           </div>
         </div>
       </Modal>
-    </AdminWorkspaceLayout>
+    </>
   )
 }

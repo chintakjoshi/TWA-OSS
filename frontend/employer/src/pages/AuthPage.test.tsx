@@ -49,10 +49,19 @@ test('employer auth renders OTP entry as six visual boxes', async () => {
 
   await screen.findByText('Employer portal access')
 
-  await user.type(screen.getByPlaceholderText('you@yourcompany.com'), 'employer@example.com')
+  await user.type(
+    screen.getByPlaceholderText('you@yourcompany.com'),
+    'employer@example.com'
+  )
   await user.type(screen.getByPlaceholderText('Your password'), 'Password123')
   await user.click(screen.getAllByRole('button', { name: /^sign in$/i })[1]!)
 
   await screen.findByText(/enter the code sent to em\*\*\*@example.com/i)
   expect(screen.getAllByTestId('otp-digit-box')).toHaveLength(6)
+  expect(
+    screen.queryByRole('button', { name: /^sign in$/i })
+  ).not.toBeInTheDocument()
+  expect(
+    screen.queryByRole('button', { name: /^register$/i })
+  ).not.toBeInTheDocument()
 })

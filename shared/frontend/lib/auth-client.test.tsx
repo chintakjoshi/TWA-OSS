@@ -547,7 +547,9 @@ test('authenticated OTP action flows use cookie-backed requests and forward the 
   const requestActionInit = fetchMock.mock.calls[0]?.[1]
   expect(requestActionInit?.credentials).toBe('include')
   expect(requestActionInit?.method).toBe('POST')
-  expect(requestActionInit?.body).toBe(JSON.stringify({ action: 'disable_otp' }))
+  expect(requestActionInit?.body).toBe(
+    JSON.stringify({ action: 'disable_otp' })
+  )
   expect(new Headers(requestActionInit?.headers).get('X-CSRF-Token')).toBe(
     'existing-csrf-token'
   )

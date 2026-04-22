@@ -38,10 +38,18 @@ interface AuthContextValue {
   login: (payload: LoginRequest) => Promise<void>
   verifyLoginOtp: (payload: VerifyLoginOTPRequest) => Promise<void>
   resendLoginOtp: () => Promise<void>
-  requestActionOtp: (payload: RequestActionOTPRequest) => ReturnType<AuthClient['requestActionOtp']>
-  verifyActionOtp: (payload: VerifyActionOTPRequest) => ReturnType<AuthClient['verifyActionOtp']>
-  enableEmailOtp: (actionToken?: string) => ReturnType<AuthClient['enableEmailOtp']>
-  disableEmailOtp: (actionToken?: string) => ReturnType<AuthClient['disableEmailOtp']>
+  requestActionOtp: (
+    payload: RequestActionOTPRequest
+  ) => ReturnType<AuthClient['requestActionOtp']>
+  verifyActionOtp: (
+    payload: VerifyActionOTPRequest
+  ) => ReturnType<AuthClient['verifyActionOtp']>
+  enableEmailOtp: (
+    actionToken?: string
+  ) => ReturnType<AuthClient['enableEmailOtp']>
+  disableEmailOtp: (
+    actionToken?: string
+  ) => ReturnType<AuthClient['disableEmailOtp']>
   requestPasswordReset: (payload: ForgotPasswordRequest) => Promise<void>
   resetPassword: (payload: ResetPasswordRequest) => Promise<void>
   bootstrapRole: (payload: AuthBootstrapRequest) => Promise<void>
@@ -241,15 +249,7 @@ export function AuthProvider({
         return client.streamTwa(path, client.loadStoredSession(), init)
       },
     }),
-    [
-      authMe,
-      client,
-      hydrate,
-      otpChallenge,
-      resetAuthState,
-      session,
-      state,
-    ]
+    [authMe, client, hydrate, otpChallenge, resetAuthState, session, state]
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
