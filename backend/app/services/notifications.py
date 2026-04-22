@@ -396,8 +396,7 @@ def safe_dispatch_notification(
             extra={"event_type": event_type, "error": str(exc)},
         )
     except Exception as exc:
-        session.rollback()
-        logger.warning(
+        logger.exception(
             "notification_dispatch_failed",
             extra={"event_type": event_type, "error": str(exc)},
         )
