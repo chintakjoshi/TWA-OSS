@@ -1,5 +1,16 @@
 import type {
   AdminApplication,
+  AuthActionOtpRequestResponse,
+  AuthActionOtpVerifyResponse,
+  AuthAdminSessionDetail,
+  AuthAdminSessionFilteredRevokeResponse,
+  AuthAdminSessionFilterRevokeInput,
+  AuthAdminSessionItem,
+  AuthAdminSuspiciousSessionItem,
+  AuthAdminSessionRevokeResponse,
+  AuthAdminUserDetail,
+  AuthAdminUserListItem,
+  AuthAdminUserSessionsRevokedResponse,
   AdminDashboard,
   AdminNotification,
   AdminNotificationBulkReadResponse,
@@ -7,6 +18,7 @@ import type {
   ApplicationUpdateInput,
   AuditLogEntry,
   ChargeFlags,
+  CursorPageResponse,
   EmployerProfile,
   EmployerReviewInput,
   JobListing,
@@ -21,6 +33,7 @@ import type {
 } from '../types/admin'
 
 type RequestTwa = <T>(path: string, init?: RequestInit) => Promise<T>
+type RequestAuth = <T>(path: string, init?: RequestInit) => Promise<T>
 
 function buildQuery(
   params: Record<string, string | number | boolean | undefined | null>
@@ -32,6 +45,12 @@ function buildQuery(
   })
   const query = search.toString()
   return query ? `?${query}` : ''
+}
+
+function buildActionHeaders(actionToken?: string) {
+  const headers = new Headers()
+  if (actionToken) headers.set('X-Action-Token', actionToken)
+  return headers
 }
 
 export function getDashboard(requestTwa: RequestTwa) {
@@ -306,5 +325,137 @@ export function getMatchesForListing(
 ) {
   return requestTwa<{ items: JobseekerMatchItem[] }>(
     `/api/v1/admin/match/listing/${listingId}`
+  )
+}
+
+export function listAuthUsers(
+  requestAuth: RequestAuth,
+  options: {
+    email?: string
+    role?: string
+    locked?: boolean
+    cursor?: string
+    limit?: number
+  } = {}
+) {
+  const { email, role, locked, cursor, limit = 12 } = options
+  return requestAuth<CursorPageResponse<AuthAdminUserListItem>>(
+    `/admin/users${buildQuery({ email, role, locked, cursor, limit })}`
+  )
+}
+
+export function getAuthUserDetail(requestAuth: RequestAuth, userId: string) {
+  return requestAuth<AuthAdminUserDetail>(`/admin/users/${userId}`)
+}
+
+export function listAuthUserSessions(
+  requestAuth: RequestAuth,
+  userId: string,
+  options: {
+    status?: 'active' | 'revoked' | 'all'
+    cursor?: string
+    limit?: number
+  } = {}
+) {
+  const { status = 'active', cursor, limit = 50 } = options
+  return requestAuth<CursorPageResponse<AuthAdminSessionItem>>(
+    `/admin/users/${userId}/sessions${buildQuery({ status, cursor, limit })}`
+  )
+}
+
+export function listAuthSuspiciousSessions(
+  requestAuth: RequestAuth,
+  options: {
+    email?: string
+    role?: string
+    cursor?: string
+    limit?: number
+  } = {}
+) {
+  const { email, role, cursor, limit = 50 } = options
+  return requestAuth<CursorPageResponse<AuthAdminSuspiciousSessionItem>>(
+    `/admin/sessions/suspicious${buildQuery({ email, role, cursor, limit })}`
+  )
+}
+
+export function getAuthUserSessionDetail(
+  requestAuth: RequestAuth,
+  userId: string,
+  sessionId: string,
+  timelineLimit = 20
+) {
+  return requestAuth<AuthAdminSessionDetail>(
+    `/admin/users/${userId}/sessions/${sessionId}${buildQuery({
+      timeline_limit: timelineLimit,
+    })}`
+  )
+}
+
+export function requestRevokeActionOtp(requestAuth: RequestAuth) {
+  return requestAuth<AuthActionOtpRequestResponse>('/auth/otp/request/action', {
+    method: 'POST',
+    body: JSON.stringify({ action: 'revoke_sessions' }),
+  })
+}
+
+export function verifyRevokeActionOtp(requestAuth: RequestAuth, code: string) {
+  return requestAuth<AuthActionOtpVerifyResponse>('/auth/otp/verify/action', {
+    method: 'POST',
+    body: JSON.stringify({ action: 'revoke_sessions', code }),
+  })
+}
+
+export function revokeAuthUserSession(
+  requestAuth: RequestAuth,
+  userId: string,
+  sessionId: string,
+  options: {
+    reason?: string
+    actionToken: string
+  }
+) {
+  const { reason, actionToken } = options
+  return requestAuth<AuthAdminSessionRevokeResponse>(
+    `/admin/users/${userId}/sessions/${sessionId}`,
+    {
+      method: 'DELETE',
+      headers: buildActionHeaders(actionToken),
+      body: reason ? JSON.stringify({ reason }) : undefined,
+    }
+  )
+}
+
+export function revokeAllAuthUserSessions(
+  requestAuth: RequestAuth,
+  userId: string,
+  options: {
+    reason?: string
+    actionToken: string
+  }
+) {
+  const { reason, actionToken } = options
+  return requestAuth<AuthAdminUserSessionsRevokedResponse>(
+    `/admin/users/${userId}/sessions`,
+    {
+      method: 'DELETE',
+      headers: buildActionHeaders(actionToken),
+      body: reason ? JSON.stringify({ reason }) : undefined,
+    }
+  )
+}
+
+export function revokeAuthUserSessionsByFilter(
+  requestAuth: RequestAuth,
+  userId: string,
+  payload: AuthAdminSessionFilterRevokeInput,
+  actionToken: string
+) {
+  return requestAuth<AuthAdminSessionFilteredRevokeResponse>(
+    `/admin/users/${userId}/sessions/revoke-by-filter`,
+    {
+      method: 'POST',
+      headers: buildActionHeaders(actionToken),
+      body: JSON.stringify(payload),
+    }
   )
 }

@@ -55,6 +55,11 @@ type MockAuthClientOptions = {
     payload: AuthBootstrapRequest,
     state: MockAuthState
   ) => void | Promise<void>
+  requestAuthImpl?: (
+    path: string,
+    init: RequestInit | undefined,
+    state: MockAuthState
+  ) => Promise<unknown>
   onRequestActionOtp?: (
     payload: RequestActionOTPRequest,
     state: MockAuthState
@@ -76,6 +81,11 @@ type MockAuthClientOptions = {
     init: RequestInit | undefined,
     state: MockAuthState
   ) => Promise<unknown>
+  streamTwaImpl?: (
+    path: string,
+    init: RequestInit | undefined,
+    state: MockAuthState
+  ) => Promise<Response>
 }
 
 const defaultSession: StoredSession = {
@@ -386,13 +396,43 @@ export function createMockAuthClient(options: MockAuthClientOptions = {}) {
     return (await options.requestTwaImpl(path, init, state)) as T
   }
 
+  const requestAuthImpl: AuthClient['requestAuth'] = async <T>(
+    path: string,
+    _session: StoredSession | null,
+    init?: RequestInit
+  ): Promise<T> => {
+    if (!options.requestAuthImpl) {
+      throw new Error(`Unhandled auth request for ${path}`)
+    }
+    return (await options.requestAuthImpl(path, init, state)) as T
+  }
+
   const requestTwa = vi.fn(requestTwaImpl)
-  const streamTwa = vi.fn(
-    async (): Promise<Response> =>
-      new Response(new ReadableStream(), {
-        headers: { 'Content-Type': 'text/event-stream' },
-      })
-  )
+
+  const requestAuth = vi.fn(requestAuthImpl)
+
+  const streamTwaImpl: AuthClient['streamTwa'] = async (
+    path: string,
+    _session: StoredSession | null,
+    init?: RequestInit
+  ): Promise<Response> => {
+    if (options.streamTwaImpl) {
+      return options.streamTwaImpl(path, init, state)
+    }
+
+    return new Response(
+      new ReadableStream<Uint8Array>({
+        start() {},
+      }),
+      {
+        headers: {
+          'Content-Type': 'text/event-stream',
+        },
+      }
+    )
+  }
+
+  const streamTwa = vi.fn(streamTwaImpl)
 
   const client: AuthClient = {
     loadStoredSession: () => state.session,
@@ -418,6 +458,7 @@ export function createMockAuthClient(options: MockAuthClientOptions = {}) {
     fetchAuthMe,
     bootstrapRole,
     requestTwa: requestTwa as AuthClient['requestTwa'],
+    requestAuth: requestAuth as AuthClient['requestAuth'],
     streamTwa: streamTwa as AuthClient['streamTwa'],
   }
 
@@ -441,6 +482,7 @@ export function createMockAuthClient(options: MockAuthClientOptions = {}) {
       fetchAuthMe,
       bootstrapRole,
       requestTwa,
+      requestAuth,
       streamTwa,
     },
     defaultSession,

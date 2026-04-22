@@ -75,6 +75,11 @@ export interface AuthClient {
     session: StoredSession | null,
     init?: RequestInit
   ): Promise<T>
+  requestAuth<T>(
+    path: string,
+    session: StoredSession | null,
+    init?: RequestInit
+  ): Promise<T>
   streamTwa(
     path: string,
     session: StoredSession | null,
@@ -242,6 +247,35 @@ export function createAuthClient(config: AuthClientConfig): AuthClient {
     }
   }
 
+  async function requestAuthWithRefresh<T>(
+    path: string,
+    init: RequestInit = {}
+  ): Promise<T> {
+    try {
+      const result = await requestJsonWithSession<T>(
+        config.authBaseUrl,
+        path,
+        init,
+        { cookieTransport: true }
+      )
+      store.save(COOKIE_SESSION)
+      return result
+    } catch (error) {
+      if (error instanceof HttpError && error.status === 401) {
+        await refresh()
+        const retried = await requestJsonWithSession<T>(
+          config.authBaseUrl,
+          path,
+          init,
+          { cookieTransport: true }
+        )
+        store.save(COOKIE_SESSION)
+        return retried
+      }
+      throw error
+    }
+  }
+
   async function streamTwaWithRefresh(
     path: string,
     init: RequestInit = {}
@@ -401,6 +435,10 @@ export function createAuthClient(config: AuthClientConfig): AuthClient {
     requestTwa(path, session, init = {}) {
       void session
       return requestTwaWithRefresh(path, init)
+    },
+    requestAuth(path, session, init = {}) {
+      void session
+      return requestAuthWithRefresh(path, init)
     },
     streamTwa(path, session, init = {}) {
       void session
