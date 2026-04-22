@@ -3,10 +3,27 @@ import { useState } from 'react'
 import { ShieldCheck } from 'lucide-react'
 
 import { useAuth } from '@shared/auth/AuthProvider'
-import { getAuthErrorMessage } from '@shared/auth/errorMessage'
+import {
+  formatMfaOtpExpiry,
+  getMfaErrorMessage,
+  getMfaStatusLabel,
+  MFA_CARD_DESCRIPTION,
+  MFA_DISABLE_CONFIRM_BODY,
+  MFA_DISABLE_CONFIRM_TITLE,
+  MFA_DISABLE_OTP_MODAL_TITLE,
+  MFA_DISABLE_OTP_PROMPT,
+  MFA_DISABLE_OTP_REQUIRED,
+  MFA_DISABLE_SUCCESS,
+  MFA_ENABLE_CONFIRM_BODY,
+  MFA_ENABLE_CONFIRM_TITLE,
+  MFA_ENABLE_SUCCESS,
+  MFA_OTP_CODE_ARIA_LABEL,
+  MFA_RESEND_SUCCESS,
+  MFA_TITLE,
+  MFA_TOGGLE_DESCRIPTION,
+} from '@shared/auth/mfa'
 import { OtpCodeInput } from '@shared/auth/OtpCodeInput'
 import { isCompleteOtpCode } from '@shared/auth/otp'
-import { HttpError } from '@shared/lib/http'
 
 import { AdminWorkspaceLayout } from '../components/layout/AdminWorkspaceLayout'
 import {
@@ -20,21 +37,6 @@ import {
   StatusBadge,
   ToggleRow,
 } from '../components/ui/AdminUi'
-
-function getMfaErrorMessage(error: unknown): string {
-  if (error instanceof HttpError && error.code === 'reauth_required') {
-    return 'For security, sign out and sign back in before enabling MFA.'
-  }
-
-  const message = getAuthErrorMessage(error)
-  return message || 'Unable to update multi-factor authentication right now.'
-}
-
-function formatOtpExpiry(expiresIn: number | null): string | null {
-  if (!expiresIn || expiresIn <= 0) return null
-  const minutes = Math.max(1, Math.round(expiresIn / 60))
-  return `The code expires in about ${minutes} minute${minutes === 1 ? '' : 's'}.`
-}
 
 export function AdminSecurityPage() {
   const auth = useAuth()
@@ -50,8 +52,7 @@ export function AdminSecurityPage() {
   const [isRequestingOtp, setIsRequestingOtp] = useState(false)
   const [isResendingOtp, setIsResendingOtp] = useState(false)
 
-  async function refreshAfterUpdate(successMessage: string) {
-    await auth.reload()
+  function finishMfaUpdate(successMessage: string) {
     setNotice(successMessage)
   }
 
@@ -62,7 +63,7 @@ export function AdminSecurityPage() {
 
     try {
       await auth.enableEmailOtp()
-      await refreshAfterUpdate('Multi-factor authentication is now enabled.')
+      finishMfaUpdate(MFA_ENABLE_SUCCESS)
       setConfirmEnableOpen(false)
     } catch (nextError) {
       setError(getMfaErrorMessage(nextError))
@@ -91,9 +92,7 @@ export function AdminSecurityPage() {
 
   async function handleDisable() {
     if (!isCompleteOtpCode(otpCode)) {
-      setError(
-        'Enter the 6-digit OTP code from your email before turning MFA off.'
-      )
+      setError(MFA_DISABLE_OTP_REQUIRED)
       return
     }
 
@@ -107,7 +106,7 @@ export function AdminSecurityPage() {
         code: otpCode,
       })
       await auth.disableEmailOtp(verification.action_token)
-      await refreshAfterUpdate('Multi-factor authentication is now disabled.')
+      finishMfaUpdate(MFA_DISABLE_SUCCESS)
       setDisableOtpOpen(false)
       setOtpCode('')
       setOtpExpiresIn(null)
@@ -125,7 +124,7 @@ export function AdminSecurityPage() {
     try {
       const response = await auth.requestActionOtp({ action: 'disable_otp' })
       setOtpExpiresIn(response.expires_in)
-      setNotice('A fresh OTP code has been sent to your email.')
+      setNotice(MFA_RESEND_SUCCESS)
     } catch (nextError) {
       setError(getMfaErrorMessage(nextError))
     } finally {
@@ -141,11 +140,11 @@ export function AdminSecurityPage() {
 
         <AdminPanel className="max-w-4xl">
           <PanelHeader
-            title="Multi-Factor Authentication"
+            title={MFA_TITLE}
             subtitle="Protect your TWA staff account with an email OTP challenge during sign-in."
             action={
               <StatusBadge tone={mfaEnabled ? 'success' : 'neutral'}>
-                {mfaEnabled ? 'Enabled' : 'Disabled'}
+                {getMfaStatusLabel(mfaEnabled)}
               </StatusBadge>
             }
           />
@@ -160,8 +159,7 @@ export function AdminSecurityPage() {
                     Staff account sign-in protection
                   </p>
                   <p className="text-sm leading-7 text-slate-500">
-                    Turning MFA on will require an OTP code during login.
-                    Turning it off requires a fresh OTP verification first.
+                    {MFA_CARD_DESCRIPTION}
                   </p>
                 </div>
               </div>
@@ -169,9 +167,9 @@ export function AdminSecurityPage() {
 
             <ToggleRow
               checked={mfaEnabled}
-              description="Require a one-time password from the staff email inbox whenever this account signs in."
+              description={MFA_TOGGLE_DESCRIPTION}
               disabled={isSubmitting || isRequestingOtp || isResendingOtp}
-              title="Multi-Factor Authentication"
+              title={MFA_TITLE}
               onChange={(nextChecked) => {
                 if (nextChecked) {
                   setError(null)
@@ -191,7 +189,7 @@ export function AdminSecurityPage() {
 
       <Modal
         open={confirmEnableOpen}
-        title="Enable multi-factor authentication?"
+        title={MFA_ENABLE_CONFIRM_TITLE}
         onClose={() => {
           if (isSubmitting) return
           setConfirmEnableOpen(false)
@@ -199,8 +197,7 @@ export function AdminSecurityPage() {
       >
         <div className="space-y-6">
           <p className="text-sm leading-7 text-slate-600">
-            Are you sure you want to enable multi-factor authentication?
-            Enabling this will require an OTP code during login.
+            {MFA_ENABLE_CONFIRM_BODY}
           </p>
           <div className="flex justify-end gap-3">
             <AdminButton
@@ -224,7 +221,7 @@ export function AdminSecurityPage() {
 
       <Modal
         open={confirmDisableOpen}
-        title="Disable multi-factor authentication?"
+        title={MFA_DISABLE_CONFIRM_TITLE}
         onClose={() => {
           if (isRequestingOtp) return
           setConfirmDisableOpen(false)
@@ -232,8 +229,7 @@ export function AdminSecurityPage() {
       >
         <div className="space-y-6">
           <p className="text-sm leading-7 text-slate-600">
-            Are you sure you want to disable multi-factor authentication?
-            Disabling it will stop OTP verification during login.
+            {MFA_DISABLE_CONFIRM_BODY}
           </p>
           <div className="flex justify-end gap-3">
             <AdminButton
@@ -258,7 +254,7 @@ export function AdminSecurityPage() {
 
       <Modal
         open={disableOtpOpen}
-        title="Turn off multi-factor authentication"
+        title={MFA_DISABLE_OTP_MODAL_TITLE}
         onClose={() => {
           if (isSubmitting || isResendingOtp) return
           setDisableOtpOpen(false)
@@ -267,11 +263,11 @@ export function AdminSecurityPage() {
         <div className="space-y-6">
           <div className="space-y-2">
             <p className="text-sm leading-7 text-slate-600">
-              Enter the OTP code sent to your email to turn MFA off.
+              {MFA_DISABLE_OTP_PROMPT}
             </p>
-            {formatOtpExpiry(otpExpiresIn) ? (
+            {formatMfaOtpExpiry(otpExpiresIn) ? (
               <p className="text-sm text-slate-500">
-                {formatOtpExpiry(otpExpiresIn)}
+                {formatMfaOtpExpiry(otpExpiresIn)}
               </p>
             ) : null}
           </div>
@@ -280,7 +276,7 @@ export function AdminSecurityPage() {
             <FieldLabel>OTP code</FieldLabel>
             <div className="mt-2">
               <OtpCodeInput
-                ariaLabel="OTP code"
+                ariaLabel={MFA_OTP_CODE_ARIA_LABEL}
                 value={otpCode}
                 onChange={setOtpCode}
               />

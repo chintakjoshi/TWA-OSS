@@ -16,6 +16,7 @@ import type {
   ForgotPasswordRequest,
   LoginOTPChallengeResponse,
   LoginRequest,
+  OTPEnrollmentResponse,
   RequestActionOTPRequest,
   ResendVerifyEmailRequest,
   ResetPasswordRequest,
@@ -80,6 +81,20 @@ export function AuthProvider({
   const [authMe, setAuthMe] = useState<AuthMeResponse | null>(null)
   const [otpChallenge, setOtpChallenge] =
     useState<LoginOTPChallengeResponse | null>(null)
+
+  const applyEmailOtpState = useCallback(
+    (result: OTPEnrollmentResponse) => {
+      setAuthMe((current) =>
+        current
+          ? {
+              ...current,
+              email_otp_enabled: result.email_otp_enabled,
+            }
+          : current
+      )
+    },
+    [setAuthMe]
+  )
 
   const resetAuthState = useCallback(() => {
     client.clearStoredSession()
@@ -221,11 +236,15 @@ export function AuthProvider({
       verifyActionOtp(payload: VerifyActionOTPRequest) {
         return client.verifyActionOtp(payload)
       },
-      enableEmailOtp(actionToken?: string) {
-        return client.enableEmailOtp(actionToken)
+      async enableEmailOtp(actionToken?: string) {
+        const result = await client.enableEmailOtp(actionToken)
+        applyEmailOtpState(result)
+        return result
       },
-      disableEmailOtp(actionToken?: string) {
-        return client.disableEmailOtp(actionToken)
+      async disableEmailOtp(actionToken?: string) {
+        const result = await client.disableEmailOtp(actionToken)
+        applyEmailOtpState(result)
+        return result
       },
       async requestPasswordReset(payload: ForgotPasswordRequest) {
         await client.requestPasswordReset(payload)
@@ -249,7 +268,16 @@ export function AuthProvider({
         return client.streamTwa(path, client.loadStoredSession(), init)
       },
     }),
-    [authMe, client, hydrate, otpChallenge, resetAuthState, session, state]
+    [
+      applyEmailOtpState,
+      authMe,
+      client,
+      hydrate,
+      otpChallenge,
+      resetAuthState,
+      session,
+      state,
+    ]
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

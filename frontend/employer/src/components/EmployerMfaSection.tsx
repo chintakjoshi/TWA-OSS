@@ -33,9 +33,9 @@ import {
   PortalButton,
   Surface,
   Toggle,
-} from './ui/JobseekerUi'
+} from './ui/EmployerUi'
 
-export function JobseekerMfaSection() {
+export function EmployerMfaSection() {
   const auth = useAuth()
   const mfaEnabled = Boolean(auth.authMe?.email_otp_enabled)
   const [notice, setNotice] = useState<string | null>(null)
@@ -137,11 +137,11 @@ export function JobseekerMfaSection() {
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#8da2c5]">
               Security
             </p>
-            <h2 className="jobseeker-display mt-2 text-[1.9rem] font-semibold text-slate-950">
+            <h2 className="employer-display mt-2 text-[1.8rem] font-semibold text-slate-950">
               {MFA_TITLE}
             </h2>
             <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-500">
-              Protect your jobseeker account with an email OTP challenge during
+              Protect your employer account with an email OTP challenge during
               sign-in.
             </p>
           </div>
@@ -168,7 +168,7 @@ export function JobseekerMfaSection() {
             </div>
             <div className="space-y-2">
               <p className="text-lg font-semibold text-slate-950">
-                Jobseeker sign-in protection
+                Employer sign-in protection
               </p>
               <p className="text-sm leading-7 text-slate-500">
                 {MFA_CARD_DESCRIPTION}
