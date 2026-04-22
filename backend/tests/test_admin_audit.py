@@ -198,16 +198,19 @@ def seed_admin_audit_data(session_factory):
             jobseeker_id=active_jobseeker.id,
             job_listing_id=open_listing.id,
             status=ApplicationStatus.SUBMITTED,
+            applied_at=datetime(2026, 1, 10, 12, 0, tzinfo=timezone.utc),
         )
         reviewed_application = Application(
             jobseeker_id=active_jobseeker.id,
             job_listing_id=closed_listing.id,
             status=ApplicationStatus.REVIEWED,
+            applied_at=datetime(2026, 1, 18, 12, 0, tzinfo=timezone.utc),
         )
         hired_application = Application(
             jobseeker_id=hired_jobseeker.id,
             job_listing_id=open_listing.id,
             status=ApplicationStatus.HIRED,
+            applied_at=datetime(2026, 1, 24, 12, 0, tzinfo=timezone.utc),
         )
         session.add_all(
             [submitted_application, reviewed_application, hired_application]
@@ -266,6 +269,18 @@ def test_admin_dashboard_returns_expected_summary(admin_audit_env) -> None:
         "active_jobseekers": 1,
         "open_applications": 2,
         "open_listings": 1,
+        "placement_summary": {
+            "rows": [
+                {
+                    "month": "2026-01-01T00:00:00Z",
+                    "applications": 3,
+                    "hires": 1,
+                }
+            ],
+            "ytd_applications": 3,
+            "ytd_hires": 1,
+            "ytd_employers": 1,
+        },
     }
 
 
