@@ -238,10 +238,7 @@ export function JobseekerProfilePage() {
       const refreshed = await getMyJobseekerProfile(auth.requestTwa)
       setProfile(refreshed.profile)
       setDraft((current) =>
-        toDraft(
-          refreshed.profile,
-          current?.preferred_contact ?? 'Email'
-        )
+        toDraft(refreshed.profile, current?.preferred_contact ?? 'Email')
       )
       if (reloadAuth) {
         await auth.reload()
