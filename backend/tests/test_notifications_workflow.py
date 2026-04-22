@@ -720,9 +720,15 @@ def test_notification_broker_publishes_new_events(notifications_env) -> None:
         )
 
 
-def test_notification_stream_does_not_leave_request_session_in_transaction(
+def test_notification_stream_does_not_hold_caller_session(
     notifications_env,
 ) -> None:
+    """The SSE route must not reuse a caller-provided session for the snapshot.
+
+    Layer 1 guarantees: the stream opens a short-lived session per snapshot via
+    the injected session factory. A caller's session must never be touched by
+    the stream and therefore must never end up in an open transaction.
+    """
     _, _, session_factory, _ = notifications_env
     jobseeker_user, _ = seed_jobseeker(
         session_factory, auth_user_id=uuid.UUID("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")
@@ -732,7 +738,7 @@ def test_notification_stream_does_not_leave_request_session_in_transaction(
         async def is_disconnected(self) -> bool:
             return False
 
-    async def read_first_stream_chunk(session: Session) -> str:
+    async def read_first_stream_chunk() -> str:
         response = await stream_my_notifications(
             request=FakeRequest(),
             auth_context=AuthContext(
@@ -743,7 +749,7 @@ def test_notification_stream_does_not_leave_request_session_in_transaction(
                 app_role="jobseeker",
                 is_active=True,
             ),
-            session=session,
+            session_factory=session_factory,
         )
         body_iterator = response.body_iterator
         assert body_iterator is not None
@@ -753,8 +759,8 @@ def test_notification_stream_does_not_leave_request_session_in_transaction(
         finally:
             await body_iterator.aclose()
 
-    with session_factory() as session:
-        first_chunk = anyio.run(read_first_stream_chunk, session)
+    with session_factory() as unrelated_session:
+        first_chunk = anyio.run(read_first_stream_chunk)
 
         assert "event: snapshot" in first_chunk
-        assert not session.in_transaction()
+        assert not unrelated_session.in_transaction()

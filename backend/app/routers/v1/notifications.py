@@ -1,18 +1,20 @@
 from __future__ import annotations
 
 import json
+import logging
 from queue import Empty
 from uuid import UUID, uuid4
 
 import anyio
 from fastapi import APIRouter, Depends, Query, Request
+from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 
 from app.core.auth import AuthContext, get_auth_context
 from app.core.config import get_settings
 from app.core.responses import PaginatedResponse
-from app.db.session import get_db_session
+from app.db.session import SessionFactory, get_db_session, get_db_session_factory
 from app.schemas.notifications import (
     NotificationBulkReadResponse,
     NotificationPayload,
@@ -29,6 +31,8 @@ from app.services.notifications import (
     serialize_notification_snapshot,
 )
 
+logger = logging.getLogger("twa.notifications")
+
 settings = get_settings()
 router = APIRouter(
     prefix=f"{settings.api_v1_prefix}/notifications", tags=["notifications"]
@@ -36,21 +40,33 @@ router = APIRouter(
 
 STREAM_POLL_INTERVAL_SECONDS = 1
 STREAM_RECONCILE_INTERVAL_SECONDS = 15
+STREAM_SNAPSHOT_TIMEOUT_SECONDS = 5
 
 
 def build_sse_message(*, event: str, data: dict[str, object]) -> str:
     return f"event: {event}\ndata: {json.dumps(data)}\n\n"
 
 
-def build_snapshot_message(*, session: Session, app_user_id: UUID) -> str:
-    # End the read transaction before yielding back into the long-lived SSE loop.
-    session.expire_all()
-    try:
-        snapshot = serialize_notification_snapshot(session, app_user_id=app_user_id)
-    finally:
-        if session.in_transaction():
-            session.rollback()
+def _format_snapshot_message(snapshot: dict[str, object]) -> str:
     return build_sse_message(event="snapshot", data=snapshot)
+
+
+def _load_snapshot(
+    session_factory: SessionFactory, app_user_id: UUID
+) -> dict[str, object]:
+    """Synchronously load a notification snapshot using a short-lived session.
+
+    Designed to be dispatched via ``run_in_threadpool`` so that blocking
+    SQLAlchemy I/O does not execute on the async event loop. The session is
+    opened and closed within this call — the returned dict contains only
+    plain data and does not keep the session alive.
+    """
+    with session_factory() as session:
+        try:
+            return serialize_notification_snapshot(session, app_user_id=app_user_id)
+        finally:
+            if session.in_transaction():
+                session.rollback()
 
 
 @router.get("/me", response_model=PaginatedResponse[NotificationPayload])
@@ -72,7 +88,7 @@ def get_my_notifications(
 async def stream_my_notifications(
     request: Request,
     auth_context: AuthContext = Depends(get_auth_context),
-    session: Session = Depends(get_db_session),
+    session_factory: SessionFactory = Depends(get_db_session_factory),
 ) -> StreamingResponse:
     subscriber_id = uuid4().hex
     subscriber_queue = notification_stream_broker.subscribe(
@@ -80,13 +96,47 @@ async def stream_my_notifications(
         subscriber_id=subscriber_id,
     )
 
+    async def take_snapshot() -> str | None:
+        """Load a snapshot off the event loop, bounded by a timeout.
+
+        Returns the framed SSE message on success, or ``None`` if the snapshot
+        timed out. Timeouts are logged; the caller is expected to terminate
+        the stream so the client reconnects cleanly rather than receiving a
+        silently degraded stream.
+        """
+        try:
+            with anyio.fail_after(STREAM_SNAPSHOT_TIMEOUT_SECONDS):
+                snapshot = await run_in_threadpool(
+                    _load_snapshot, session_factory, auth_context.app_user_id
+                )
+        except TimeoutError:
+            logger.warning(
+                "notification_stream_snapshot_timeout",
+                extra={
+                    "app_user_id": str(auth_context.app_user_id),
+                    "subscriber_id": subscriber_id,
+                    "timeout_seconds": STREAM_SNAPSHOT_TIMEOUT_SECONDS,
+                },
+            )
+            return None
+        except Exception:
+            logger.exception(
+                "notification_stream_snapshot_failed",
+                extra={
+                    "app_user_id": str(auth_context.app_user_id),
+                    "subscriber_id": subscriber_id,
+                },
+            )
+            return None
+        return _format_snapshot_message(snapshot)
+
     async def event_stream():
         idle_seconds = 0
         try:
-            yield build_snapshot_message(
-                session=session,
-                app_user_id=auth_context.app_user_id,
-            )
+            initial = await take_snapshot()
+            if initial is None:
+                return
+            yield initial
 
             while True:
                 if await request.is_disconnected():
@@ -109,10 +159,10 @@ async def stream_my_notifications(
 
                 idle_seconds += STREAM_POLL_INTERVAL_SECONDS
                 if idle_seconds >= STREAM_RECONCILE_INTERVAL_SECONDS:
-                    yield build_snapshot_message(
-                        session=session,
-                        app_user_id=auth_context.app_user_id,
-                    )
+                    reconcile = await take_snapshot()
+                    if reconcile is None:
+                        break
+                    yield reconcile
                     idle_seconds = 0
                 else:
                     yield ": keep-alive\n\n"
