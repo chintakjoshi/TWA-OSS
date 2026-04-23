@@ -224,8 +224,8 @@ export function AdminWorkspaceLayout({
                     ) : null}
 
                     {!notificationsLoading &&
-                    !notificationsError &&
-                    notifications.length === 0 ? (
+                      !notificationsError &&
+                      notifications.length === 0 ? (
                       <div className="px-5 py-6 text-sm text-slate-500">
                         No notifications right now.
                       </div>
