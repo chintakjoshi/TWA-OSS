@@ -76,13 +76,15 @@ export function getVisibleJobDetail(requestTwa: RequestTwa, jobId: string) {
 
 export function createApplication(
   requestTwa: RequestTwa,
-  jobListingId: string
+  jobListingId: string,
+  options: { signal?: AbortSignal } = {}
 ) {
   return requestTwa<{ application: ApplicationPayload }>(
     '/api/v1/applications',
     {
       method: 'POST',
       body: JSON.stringify({ job_listing_id: jobListingId }),
+      signal: options.signal,
     }
   )
 }

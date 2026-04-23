@@ -190,7 +190,7 @@ export function AuthProvider({
       authMe,
       otpChallenge,
       async reload() {
-        await hydrate(session)
+        await hydrate(client.loadStoredSession())
       },
       async signup(payload: SignupRequest) {
         await client.signup(payload)

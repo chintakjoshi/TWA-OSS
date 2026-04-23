@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
   ArrowLeft,
   Check,
@@ -62,6 +62,17 @@ export function JobseekerJobDetailPage() {
   const [confirmOpen, setConfirmOpen] = useState(false)
   const [hasApplied, setHasApplied] = useState(false)
   const alreadyApplied = hasApplied || detail?.eligibility.has_applied === true
+  const applyControllerRef = useRef<AbortController | null>(null)
+  const isMountedRef = useRef(true)
+
+  useEffect(() => {
+    isMountedRef.current = true
+    return () => {
+      isMountedRef.current = false
+      applyControllerRef.current?.abort()
+      applyControllerRef.current = null
+    }
+  }, [])
 
   useEffect(() => {
     let active = true
@@ -70,6 +81,7 @@ export function JobseekerJobDetailPage() {
     setActionError(null)
     setNotice(null)
     setHasApplied(false)
+    setDetail(null)
     void getVisibleJobDetail(auth.requestTwa, jobId)
       .then((response) => {
         if (!active) return
@@ -89,13 +101,26 @@ export function JobseekerJobDetailPage() {
     }
   }, [auth.requestTwa, jobId])
 
+  function cancelConfirm() {
+    if (isApplying) {
+      applyControllerRef.current?.abort()
+      applyControllerRef.current = null
+    }
+    setConfirmOpen(false)
+  }
+
   async function handleApply() {
-    if (!detail) return
+    if (!detail || isApplying || applyControllerRef.current) return
+    const controller = new AbortController()
+    applyControllerRef.current = controller
     setIsApplying(true)
     setActionError(null)
     setNotice(null)
     try {
-      await createApplication(auth.requestTwa, detail.job.id)
+      await createApplication(auth.requestTwa, detail.job.id, {
+        signal: controller.signal,
+      })
+      if (!isMountedRef.current || controller.signal.aborted) return
       setHasApplied(true)
       setDetail((current) =>
         current
@@ -111,6 +136,13 @@ export function JobseekerJobDetailPage() {
         description: 'Your TWA application tracker has been updated.',
       })
     } catch (nextError) {
+      if (
+        !isMountedRef.current ||
+        controller.signal.aborted ||
+        (nextError instanceof Error && nextError.name === 'AbortError')
+      ) {
+        return
+      }
       if (
         nextError instanceof Error &&
         nextError.message.toLowerCase().includes('already applied')
@@ -136,7 +168,12 @@ export function JobseekerJobDetailPage() {
           : 'Unable to submit application right now.'
       )
     } finally {
-      setIsApplying(false)
+      if (applyControllerRef.current === controller) {
+        applyControllerRef.current = null
+      }
+      if (isMountedRef.current) {
+        setIsApplying(false)
+      }
     }
   }
 
@@ -359,7 +396,7 @@ export function JobseekerJobDetailPage() {
       <Modal
         open={confirmOpen}
         title="Confirm your application"
-        onClose={() => setConfirmOpen(false)}
+        onClose={cancelConfirm}
       >
         <div className="space-y-6 text-center">
           <div className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-[#eef6ff] text-[#2458b8]">
@@ -378,7 +415,7 @@ export function JobseekerJobDetailPage() {
             <PortalButton
               className="flex-1"
               variant="secondary"
-              onClick={() => setConfirmOpen(false)}
+              onClick={cancelConfirm}
             >
               Cancel
             </PortalButton>
