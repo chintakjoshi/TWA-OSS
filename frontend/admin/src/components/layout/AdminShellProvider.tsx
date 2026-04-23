@@ -83,7 +83,10 @@ function upsertNotificationState(
   )
 
   let unreadCount = current.unreadCount
-  if (notification.read_at === null && (!existing || existing.read_at !== null)) {
+  if (
+    notification.read_at === null &&
+    (!existing || existing.read_at !== null)
+  ) {
     unreadCount += 1
   }
   if (
@@ -431,18 +434,15 @@ export function AdminShellProvider({ children }: { children: ReactNode }) {
       if (reconnectTimer !== null) window.clearTimeout(reconnectTimer)
       streamController?.abort()
     }
-  }, [
-    authRole,
-    authState,
-    refreshSummary,
-    setNotificationState,
-    streamTwa,
-  ])
+  }, [authRole, authState, refreshSummary, setNotificationState, streamTwa])
 
   const markNotificationRead = useCallback(
     async (notificationId: string) => {
       try {
-        const response = await markMyNotificationRead(requestTwa, notificationId)
+        const response = await markMyNotificationRead(
+          requestTwa,
+          notificationId
+        )
         setNotificationState(
           applyReadResultToState(
             notificationStateRef.current,

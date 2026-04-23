@@ -248,10 +248,14 @@ export function AdminWorkspaceLayout({
                                   type="button"
                                   onClick={async () => {
                                     if (!notification.read_at) {
-                                      await markNotificationRead(notification.id)
+                                      await markNotificationRead(
+                                        notification.id
+                                      )
                                     }
                                     setNotificationsOpen(false)
-                                    navigate(notification.target.href)
+                                    if (notification.target) {
+                                      navigate(notification.target.href)
+                                    }
                                   }}
                                 >
                                   <div className="flex items-center gap-2">
@@ -266,7 +270,9 @@ export function AdminWorkspaceLayout({
                                     {notification.body}
                                   </p>
                                   <p className="mt-2 text-xs text-[#89a0c4]">
-                                    {formatRelativeTime(notification.created_at)}
+                                    {formatRelativeTime(
+                                      notification.created_at
+                                    )}
                                   </p>
                                 </button>
                               ) : (
@@ -283,7 +289,9 @@ export function AdminWorkspaceLayout({
                                     {notification.body}
                                   </p>
                                   <p className="mt-2 text-xs text-[#89a0c4]">
-                                    {formatRelativeTime(notification.created_at)}
+                                    {formatRelativeTime(
+                                      notification.created_at
+                                    )}
                                   </p>
                                 </div>
                               )}

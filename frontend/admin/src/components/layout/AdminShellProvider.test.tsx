@@ -76,13 +76,7 @@ function createNotificationEventStream() {
   }
 }
 
-function TestPage({
-  title,
-  children,
-}: {
-  title: string
-  children: ReactNode
-}) {
+function TestPage({ title, children }: { title: string; children: ReactNode }) {
   return <AdminWorkspaceLayout title={title}>{children}</AdminWorkspaceLayout>
 }
 
@@ -103,7 +97,9 @@ function TestRoutes() {
       />
       <Route
         path="/employers/queue"
-        element={<TestPage title="Employer Queue">Employer queue view</TestPage>}
+        element={
+          <TestPage title="Employer Queue">Employer queue view</TestPage>
+        }
       />
       <Route
         path="/listings/queue"
@@ -187,7 +183,9 @@ test('admin shell keeps the bell badge in sync across live updates and navigatio
   expect(within(applicationsLink).getByText('4')).toBeInTheDocument()
 
   await user.click(screen.getByRole('button', { name: /notifications/i }))
-  expect(await screen.findByText('New application received')).toBeInTheDocument()
+  expect(
+    await screen.findByText('New application received')
+  ).toBeInTheDocument()
   expect(screen.getByText('1 unread item')).toBeInTheDocument()
 
   await user.click(applicationsLink)
@@ -196,7 +194,9 @@ test('admin shell keeps the bell badge in sync across live updates and navigatio
   expect(spies.streamTwa).toHaveBeenCalledTimes(1)
 
   await user.click(screen.getByRole('button', { name: /notifications/i }))
-  expect(await screen.findByText('New application received')).toBeInTheDocument()
+  expect(
+    await screen.findByText('New application received')
+  ).toBeInTheDocument()
 
   stream.push('notification.read', {
     notification: {
@@ -213,7 +213,8 @@ test('admin shell keeps the bell badge in sync across live updates and navigatio
 
 test('admin shell coalesces summary refreshes triggered by live notifications', async () => {
   const stream = createNotificationEventStream()
-  const secondSummary = createDeferred<ReturnType<typeof createDashboardResponse>>()
+  const secondSummary =
+    createDeferred<ReturnType<typeof createDashboardResponse>>()
   let dashboardRequests = 0
 
   const { client, spies } = createMockAuthClient({
@@ -429,7 +430,9 @@ test('bell notifications with malformed targets remain readable and non-clickabl
 
   await user.click(screen.getByRole('button', { name: /notifications/i }))
 
-  expect(await screen.findByText('New application received')).toBeInTheDocument()
+  expect(
+    await screen.findByText('New application received')
+  ).toBeInTheDocument()
   expect(
     screen.queryByRole('button', {
       name: /open notification new application received/i,
