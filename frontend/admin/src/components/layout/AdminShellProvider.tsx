@@ -158,10 +158,7 @@ function applyBulkReadResultToState(
       : { ...notification, read_at: readAt }
   })
 
-  const unreadCount = Math.max(
-    0,
-    current.unreadCount - response.marked_count
-  )
+  const unreadCount = Math.max(0, current.unreadCount - response.marked_count)
 
   return {
     notifications: nextNotifications,
