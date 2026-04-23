@@ -34,6 +34,12 @@ class NotificationConfigUpdateRequest(BaseModel):
         )
 
 
+class NotificationTargetPayload(BaseModel):
+    kind: str
+    href: str
+    entity_id: UUID | None = None
+
+
 class NotificationPayload(BaseModel):
     id: UUID
     type: str
@@ -42,6 +48,7 @@ class NotificationPayload(BaseModel):
     body: str
     read_at: datetime | None
     created_at: datetime
+    target: NotificationTargetPayload | None = None
 
 
 class NotificationReadResultPayload(BaseModel):

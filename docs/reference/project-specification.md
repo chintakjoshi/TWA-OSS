@@ -356,7 +356,7 @@ PATCH  /api/v1/admin/config/notifications                 # update config toggle
 GET    /api/v1/admin/audit-log                            # filterable audit log
 
 # In-app notifications
-GET    /api/v1/notifications/me                           # current user's notifications
+GET    /api/v1/notifications/me                           # current user's notifications; each item may include an optional target {kind, href, entity_id}
 PATCH  /api/v1/notifications/me/{id}/read                # mark notification read
 ```
 

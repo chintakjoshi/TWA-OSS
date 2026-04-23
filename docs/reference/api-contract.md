@@ -1740,6 +1740,10 @@ Returns audit entries with filters.
 
 Returns in-app notifications for the current user.
 
+Notification payloads may include an optional `target` object so clients can
+navigate directly to the source page of a notification without guessing from
+title/body text.
+
 ### Auth
 
 Any authenticated role.
@@ -1762,7 +1766,12 @@ Any authenticated role.
       "title": "New application received",
       "body": "Jane Doe applied to Warehouse Associate.",
       "read_at": null,
-      "created_at": "2026-03-18T23:15:00Z"
+      "created_at": "2026-03-18T23:15:00Z",
+      "target": {
+        "kind": "admin_route",
+        "href": "/applications",
+        "entity_id": null
+      }
     }
   ],
   "meta": {
@@ -1773,6 +1782,12 @@ Any authenticated role.
   }
 }
 ```
+
+`target` is optional. Known values currently include:
+
+- `admin_route`
+- `employer_route`
+- `jobseeker_route`
 
 ## `PATCH /api/v1/notifications/me/{notification_id}/read`
 

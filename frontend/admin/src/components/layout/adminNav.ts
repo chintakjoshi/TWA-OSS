@@ -25,7 +25,14 @@ export type AdminNavItem = {
     | 'listings'
     | 'tracking'
     | 'settings'
-  badgeKey?: 'pending_employers' | 'pending_listings' | 'open_applications'
+  badge?:
+    | {
+        source: 'summary'
+        key: 'pending_employers' | 'pending_listings' | 'open_applications'
+      }
+    | {
+        source: 'notifications'
+      }
   activePrefixes?: string[]
   inactivePrefixes?: string[]
 }
@@ -55,7 +62,7 @@ export const adminNavItems: AdminNavItem[] = [
     href: '/employers/queue',
     icon: UserRoundSearch,
     section: 'employers',
-    badgeKey: 'pending_employers',
+    badge: { source: 'summary', key: 'pending_employers' },
     activePrefixes: ['/employers/queue'],
   },
   {
@@ -71,7 +78,7 @@ export const adminNavItems: AdminNavItem[] = [
     href: '/listings/queue',
     icon: FileClock,
     section: 'listings',
-    badgeKey: 'pending_listings',
+    badge: { source: 'summary', key: 'pending_listings' },
     activePrefixes: ['/listings/queue'],
   },
   {
@@ -94,7 +101,7 @@ export const adminNavItems: AdminNavItem[] = [
     href: '/applications',
     icon: BellRing,
     section: 'tracking',
-    badgeKey: 'open_applications',
+    badge: { source: 'summary', key: 'open_applications' },
   },
   {
     label: 'Security',

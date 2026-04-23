@@ -147,6 +147,12 @@ export interface NotificationConfig {
   updated_at: string | null
 }
 
+export interface AdminNotificationTarget {
+  kind: string
+  href: string
+  entity_id: string | null
+}
+
 export interface AdminNotification {
   id: string
   type: string
@@ -155,6 +161,7 @@ export interface AdminNotification {
   body: string
   read_at: string | null
   created_at: string
+  target: AdminNotificationTarget | null
 }
 
 export interface AdminNotificationSnapshot {

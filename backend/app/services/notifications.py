@@ -25,6 +25,7 @@ from app.schemas.notifications import (
     NotificationConfigPayload,
     NotificationPayload,
     NotificationReadResultPayload,
+    NotificationTargetPayload,
 )
 from app.services.common import (
     PaginationParams,
@@ -113,6 +114,7 @@ def serialize_notification(notification: Notification) -> NotificationPayload:
         body=notification.body,
         read_at=notification.read_at,
         created_at=notification.created_at,
+        target=build_notification_target(notification),
     )
 
 
@@ -122,6 +124,50 @@ def serialize_notification_read_result(
     return NotificationReadResultPayload(
         id=notification.id, read_at=notification.read_at
     )
+
+
+def build_notification_target(
+    notification: Notification,
+) -> NotificationTargetPayload | None:
+    targets: dict[str, NotificationTargetPayload] = {
+        "application_submitted": NotificationTargetPayload(
+            kind="admin_route",
+            href="/applications",
+        ),
+        "employer_review_requested": NotificationTargetPayload(
+            kind="admin_route",
+            href="/employers/queue",
+        ),
+        "listing_review_requested": NotificationTargetPayload(
+            kind="admin_route",
+            href="/listings/queue",
+        ),
+        "employer_approved": NotificationTargetPayload(
+            kind="employer_route",
+            href="/profile",
+        ),
+        "employer_rejected": NotificationTargetPayload(
+            kind="employer_route",
+            href="/profile",
+        ),
+        "listing_approved": NotificationTargetPayload(
+            kind="employer_route",
+            href="/listings",
+        ),
+        "listing_rejected": NotificationTargetPayload(
+            kind="employer_route",
+            href="/listings",
+        ),
+        "application_reviewed": NotificationTargetPayload(
+            kind="jobseeker_route",
+            href="/applications",
+        ),
+        "application_hired": NotificationTargetPayload(
+            kind="jobseeker_route",
+            href="/applications",
+        ),
+    }
+    return targets.get(notification.type)
 
 
 def get_notification_config(

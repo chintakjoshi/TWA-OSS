@@ -2,6 +2,7 @@ import type {
   AdminNotification,
   AdminNotificationReadResult,
   AdminNotificationSnapshot,
+  AdminNotificationTarget,
 } from '../types/admin'
 
 /**
@@ -44,12 +45,30 @@ function isNonNegativeInteger(value: unknown): value is number {
   )
 }
 
+function parseAdminNotificationTarget(
+  input: unknown
+): AdminNotificationTarget | null {
+  if (!isRecord(input)) return null
+
+  const { kind, href, entity_id } = input
+
+  if (!isString(kind)) return null
+  if (!isString(href)) return null
+  if (!isStringOrNull(entity_id)) return null
+
+  return {
+    kind,
+    href,
+    entity_id,
+  }
+}
+
 export function parseAdminNotification(
   input: unknown
 ): AdminNotification | null {
   if (!isRecord(input)) return null
 
-  const { id, type, channel, title, body, read_at, created_at } = input
+  const { id, type, channel, title, body, read_at, created_at, target } = input
 
   if (!isString(id)) return null
   if (!isString(type)) return null
@@ -58,6 +77,14 @@ export function parseAdminNotification(
   if (!isString(body)) return null
   if (!isStringOrNull(read_at)) return null
   if (!isString(created_at)) return null
+
+  // Invalid targets should not crash the UI or drop the rest of a valid
+  // notification payload. We keep the notification and treat the row as
+  // non-clickable until the backend sends a valid target.
+  const parsedTarget =
+    target === undefined || target === null
+      ? null
+      : parseAdminNotificationTarget(target)
 
   // Return a fresh object — never pass the caller-supplied reference through,
   // so downstream state cannot pick up attacker-controlled extra fields.
@@ -69,6 +96,7 @@ export function parseAdminNotification(
     body,
     read_at,
     created_at,
+    target: parsedTarget,
   }
 }
 

@@ -2,6 +2,7 @@ import { describe, expect, test } from 'vitest'
 
 import type {
   AdminNotification,
+  AdminNotificationTarget,
   AdminNotificationReadResult,
 } from '../types/admin'
 import {
@@ -20,6 +21,11 @@ const validNotification: AdminNotification = {
   body: 'A jobseeker applied to your listing.',
   read_at: null,
   created_at: '2026-04-22T12:34:56.000Z',
+  target: {
+    kind: 'admin_route',
+    href: '/applications',
+    entity_id: null,
+  },
 }
 
 const validReadResult: AdminNotificationReadResult = {
@@ -39,6 +45,31 @@ describe('parseAdminNotification', () => {
       read_at: null,
     })
     expect(result?.read_at).toBeNull()
+  })
+
+  test('accepts a valid notification target', () => {
+    const target: AdminNotificationTarget = {
+      kind: 'admin_route',
+      href: '/employers/queue',
+      entity_id: 'employer-1',
+    }
+    const result = parseAdminNotification({
+      ...validNotification,
+      target,
+    })
+    expect(result?.target).toEqual(target)
+  })
+
+  test('drops malformed notification targets instead of rejecting the notification', () => {
+    const result = parseAdminNotification({
+      ...validNotification,
+      target: {
+        kind: 42,
+        href: '/applications',
+      },
+    })
+    expect(result).not.toBeNull()
+    expect(result?.target).toBeNull()
   })
 
   test('rejects non-objects', () => {

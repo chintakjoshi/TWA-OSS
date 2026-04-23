@@ -325,6 +325,21 @@ def test_application_submission_notifies_staff_by_default(notifications_env) -> 
         notification.app_user_id for notification in notifications
     }
 
+    switch_identity(
+        state,
+        auth_user_id=staff.auth_user_id,
+        email=staff.email,
+        auth_provider_role="admin",
+    )
+    inbox = client.get("/api/v1/notifications/me", params={"unread_only": "true"})
+    assert inbox.status_code == 200
+    item = inbox.json()["items"][0]
+    assert item["target"] == {
+        "kind": "admin_route",
+        "href": "/applications",
+        "entity_id": None,
+    }
+
 
 def test_application_submission_can_notify_employer_when_toggle_enabled(
     notifications_env,
@@ -713,6 +728,7 @@ def test_notification_broker_publishes_new_events(notifications_env) -> None:
         assert created_event.event == "notification.created"
         assert created_event.payload["notification"]["type"] == "staff_test_event"
         assert created_event.payload["notification"]["title"] == "Stream test"
+        assert created_event.payload["notification"]["target"] is None
     finally:
         notifications_service.notification_stream_broker.unsubscribe(
             app_user_id=staff.id,

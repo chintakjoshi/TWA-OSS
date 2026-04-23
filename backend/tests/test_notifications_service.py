@@ -2,11 +2,14 @@ from __future__ import annotations
 
 import logging
 import uuid
+from datetime import datetime, timezone
+from types import SimpleNamespace
 from unittest.mock import Mock
 
 import pytest
 from sqlalchemy.orm import Session
 
+from app.models.enums import NotificationChannel
 from app.services import notifications as notifications_service
 from app.services.email import EmailDeliveryError
 
@@ -77,3 +80,38 @@ def test_safe_dispatch_notification_logs_unknown_failures_as_error_without_rollb
         for record in caplog.records
     )
     session.rollback.assert_not_called()
+
+
+def test_serialize_notification_includes_a_trusted_target_for_known_types() -> None:
+    notification = SimpleNamespace(
+        id=uuid.uuid4(),
+        type="application_submitted",
+        channel=NotificationChannel.IN_APP,
+        title="New application received",
+        body="A jobseeker applied.",
+        read_at=None,
+        created_at=datetime.now(timezone.utc),
+    )
+
+    payload = notifications_service.serialize_notification(notification)
+
+    assert payload.target is not None
+    assert payload.target.kind == "admin_route"
+    assert payload.target.href == "/applications"
+    assert payload.target.entity_id is None
+
+
+def test_serialize_notification_omits_targets_for_unknown_notification_types() -> None:
+    notification = SimpleNamespace(
+        id=uuid.uuid4(),
+        type="unknown_event",
+        channel=NotificationChannel.IN_APP,
+        title="Unknown",
+        body="Unknown.",
+        read_at=None,
+        created_at=datetime.now(timezone.utc),
+    )
+
+    payload = notifications_service.serialize_notification(notification)
+
+    assert payload.target is None

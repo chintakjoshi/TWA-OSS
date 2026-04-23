@@ -5,23 +5,10 @@ import { toast } from 'sonner'
 
 import { useAuth } from '@shared/auth/AuthProvider'
 
-import {
-  listMyNotifications,
-  markAllMyNotificationsRead,
-  markMyNotificationRead,
-} from '../../api/adminApi'
 import { announceComingSoon } from '../../lib/comingSoon'
 import { cn } from '../../lib/cn'
 import { formatRelativeTime } from '../../lib/formatting'
-import {
-  parseAdminNotificationSnapshot,
-  parseNotificationCreatedPayload,
-  parseNotificationReadPayload,
-} from '../../lib/notificationSseValidators'
-import type {
-  AdminNotification,
-  AdminNotificationReadResult,
-} from '../../types/admin'
+import type { AdminNotificationTarget } from '../../types/admin'
 import { useAdminShell } from './AdminShellProvider'
 import { adminNavItems } from './adminNav'
 import { AdminButton } from '../ui/AdminUi'
@@ -46,86 +33,14 @@ function getProfileInitials(email: string | null | undefined) {
   return email.slice(0, 2).toUpperCase() || fallback
 }
 
-function upsertNotification(
-  current: AdminNotification[],
-  notification: AdminNotification
+function isNavigableNotificationTarget(
+  target: AdminNotificationTarget | null | undefined
 ) {
-  return [
-    notification,
-    ...current.filter((item) => item.id !== notification.id),
-  ]
-    .sort(
-      (left, right) =>
-        new Date(right.created_at).getTime() -
-        new Date(left.created_at).getTime()
-    )
-    .slice(0, 8)
-}
-
-function applyReadResult(
-  current: AdminNotification[],
-  result: AdminNotificationReadResult
-) {
-  return current.map((notification) =>
-    notification.id === result.id
-      ? { ...notification, read_at: result.read_at }
-      : notification
+  return (
+    target?.kind === 'admin_route' &&
+    typeof target.href === 'string' &&
+    target.href.startsWith('/')
   )
-}
-
-function applyReadResults(
-  current: AdminNotification[],
-  results: AdminNotificationReadResult[]
-) {
-  if (results.length === 0) return current
-  const readLookup = new Map(
-    results.map((result) => [result.id, result.read_at])
-  )
-  return current.map((notification) => {
-    const readAt = readLookup.get(notification.id)
-    return readAt === undefined
-      ? notification
-      : { ...notification, read_at: readAt }
-  })
-}
-
-function logInvalidSsePayload(event: string, payload: unknown) {
-  // Invalid frames are dropped silently on the UI but surfaced to the
-  // browser console so engineers diagnosing a bad release can still see
-  // them. We never include the raw payload in user-facing state.
-  console.warn(
-    `[admin-notifications] Dropped malformed "${event}" SSE payload.`,
-    payload
-  )
-}
-
-function parseSseBlock(block: string) {
-  const normalized = block.replaceAll('\r\n', '\n')
-  const lines = normalized.split('\n')
-  let event = ''
-  const dataLines: string[] = []
-
-  lines.forEach((line) => {
-    if (!line || line.startsWith(':')) return
-    if (line.startsWith('event:')) {
-      event = line.slice('event:'.length).trim()
-      return
-    }
-    if (line.startsWith('data:')) {
-      dataLines.push(line.slice('data:'.length).trim())
-    }
-  })
-
-  if (!event || dataLines.length === 0) return null
-
-  try {
-    return {
-      event,
-      payload: JSON.parse(dataLines.join('\n')) as Record<string, unknown>,
-    }
-  } catch {
-    return null
-  }
 }
 
 const sectionOrder = [
@@ -151,24 +66,21 @@ export function AdminWorkspaceLayout({
   const auth = useAuth()
   const location = useLocation()
   const navigate = useNavigate()
-  const { summary } = useAdminShell()
-  const authState = auth.state
-  const authRole = auth.authMe?.app_user?.app_role
+  const {
+    summary,
+    notifications,
+    unreadNotificationCount,
+    notificationsLoading,
+    notificationsError,
+    markingAllNotificationsRead,
+    markNotificationRead,
+    markAllNotificationsRead,
+  } = useAdminShell()
   const authEmail = auth.authMe?.app_user?.email
-  const requestTwa = auth.requestTwa
-  const streamTwa = auth.streamTwa
   const logout = auth.logout
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [notificationsOpen, setNotificationsOpen] = useState(false)
   const [profileMenuOpen, setProfileMenuOpen] = useState(false)
-  const [notifications, setNotifications] = useState<AdminNotification[]>([])
-  const [unreadCount, setUnreadCount] = useState(0)
-  const [notificationsLoading, setNotificationsLoading] = useState(false)
-  const [notificationsError, setNotificationsError] = useState<string | null>(
-    null
-  )
-  const [markingAllNotificationsRead, setMarkingAllNotificationsRead] =
-    useState(false)
 
   const notificationMenuRef = useRef<HTMLDivElement | null>(null)
   const profileMenuRef = useRef<HTMLDivElement | null>(null)
@@ -208,197 +120,6 @@ export function AdminWorkspaceLayout({
     return () => window.removeEventListener('mousedown', handleWindowClick)
   }, [notificationsOpen, profileMenuOpen])
 
-  useEffect(() => {
-    if (authState !== 'authenticated' || authRole !== 'staff') {
-      setNotifications([])
-      setUnreadCount(0)
-      setNotificationsLoading(false)
-      setNotificationsError(null)
-      setMarkingAllNotificationsRead(false)
-      return
-    }
-
-    let active = true
-    setNotificationsLoading(true)
-    setNotificationsError(null)
-
-    void listMyNotifications(requestTwa, { pageSize: 8 })
-      .then((response) => {
-        if (!active) return
-        setNotifications(response.items)
-        setUnreadCount(
-          response.items.filter((notification) => !notification.read_at).length
-        )
-      })
-      .catch((error: Error) => {
-        if (!active) return
-        setNotificationsError(error.message)
-      })
-      .finally(() => {
-        if (active) setNotificationsLoading(false)
-      })
-
-    return () => {
-      active = false
-    }
-  }, [authRole, authState, requestTwa])
-
-  useEffect(() => {
-    if (authState !== 'authenticated' || authRole !== 'staff') {
-      return
-    }
-
-    let active = true
-    let reconnectTimer: number | null = null
-    let reconnectAttempt = 0
-    let streamController: AbortController | null = null
-
-    const scheduleReconnect = () => {
-      if (!active) return
-      const delay = Math.min(1000 * 2 ** reconnectAttempt, 15000)
-      reconnectAttempt += 1
-      reconnectTimer = window.setTimeout(() => {
-        void connect()
-      }, delay)
-    }
-
-    const connect = async () => {
-      streamController = new AbortController()
-
-      try {
-        const response = await streamTwa('/api/v1/notifications/stream', {
-          headers: {
-            Accept: 'text/event-stream',
-          },
-          signal: streamController.signal,
-        })
-
-        if (!response.body) {
-          throw new Error('Notification stream is unavailable.')
-        }
-
-        reconnectAttempt = 0
-        setNotificationsError(null)
-
-        const reader = response.body.getReader()
-        const decoder = new TextDecoder()
-        let buffer = ''
-
-        while (active) {
-          const { value, done } = await reader.read()
-          if (done) throw new Error('Notification stream disconnected.')
-
-          buffer += decoder
-            .decode(value, { stream: true })
-            .replaceAll('\r\n', '\n')
-          let boundaryIndex = buffer.indexOf('\n\n')
-
-          while (boundaryIndex !== -1) {
-            const block = buffer.slice(0, boundaryIndex)
-            buffer = buffer.slice(boundaryIndex + 2)
-            const parsed = parseSseBlock(block)
-
-            if (parsed?.event === 'snapshot') {
-              const snapshot = parseAdminNotificationSnapshot(parsed.payload)
-              if (snapshot === null) {
-                logInvalidSsePayload('snapshot', parsed.payload)
-              } else {
-                setNotifications(snapshot.notifications)
-                setUnreadCount(snapshot.unread_count)
-              }
-            }
-
-            if (parsed?.event === 'notification.created') {
-              const payload = parseNotificationCreatedPayload(parsed.payload)
-              if (payload === null) {
-                logInvalidSsePayload('notification.created', parsed.payload)
-              } else {
-                setNotifications((current) =>
-                  upsertNotification(current, payload.notification)
-                )
-                setUnreadCount((current) => current + 1)
-              }
-            }
-
-            if (parsed?.event === 'notification.read') {
-              const payload = parseNotificationReadPayload(parsed.payload)
-              if (payload === null) {
-                logInvalidSsePayload('notification.read', parsed.payload)
-              } else {
-                setNotifications((current) =>
-                  applyReadResult(current, payload.notification)
-                )
-                setUnreadCount((current) => Math.max(0, current - 1))
-              }
-            }
-
-            boundaryIndex = buffer.indexOf('\n\n')
-          }
-        }
-      } catch (error) {
-        const streamError =
-          error instanceof Error
-            ? error
-            : new Error('Notification stream connection failed.')
-
-        if (!active || streamError.name === 'AbortError') {
-          return
-        }
-
-        scheduleReconnect()
-      }
-    }
-
-    void connect()
-
-    return () => {
-      active = false
-      if (reconnectTimer !== null) window.clearTimeout(reconnectTimer)
-      streamController?.abort()
-    }
-  }, [authRole, authState, streamTwa])
-
-  async function handleMarkNotificationRead(notificationId: string) {
-    try {
-      const response = await markMyNotificationRead(requestTwa, notificationId)
-      setNotifications((current) =>
-        applyReadResult(current, response.notification)
-      )
-    } catch (error) {
-      setNotificationsError(
-        error instanceof Error
-          ? error.message
-          : 'Unable to update that notification right now.'
-      )
-    }
-  }
-
-  async function handleMarkAllNotificationsRead() {
-    if (unreadCount === 0 || markingAllNotificationsRead) return
-
-    setMarkingAllNotificationsRead(true)
-    setNotificationsError(null)
-
-    try {
-      const response = await markAllMyNotificationsRead(requestTwa)
-      setNotifications((current) =>
-        applyReadResults(current, response.notifications)
-      )
-      setUnreadCount(0)
-      if (response.marked_count > 0) {
-        toast.success('All notifications marked as read.')
-      }
-    } catch (error) {
-      setNotificationsError(
-        error instanceof Error
-          ? error.message
-          : 'Unable to mark all notifications as read right now.'
-      )
-    } finally {
-      setMarkingAllNotificationsRead(false)
-    }
-  }
-
   const shellContent = (
     <>
       <div className="relative z-30 shrink-0 border-b border-[#ddcfba] bg-white/85 px-4 py-4 backdrop-blur sm:px-7">
@@ -432,9 +153,9 @@ export function AdminWorkspaceLayout({
               >
                 <BellRing className="h-[18px] w-[18px]" strokeWidth={2} />
               </button>
-              {unreadCount > 0 ? (
+              {unreadNotificationCount > 0 ? (
                 <span className="pointer-events-none absolute -right-1 -top-1 inline-flex min-h-5 min-w-5 items-center justify-center rounded-full bg-[#d0922c] px-1.5 text-[11px] font-semibold text-white">
-                  {unreadCount > 9 ? '9+' : unreadCount}
+                  {unreadNotificationCount > 9 ? '9+' : unreadNotificationCount}
                 </span>
               ) : null}
               {notificationsOpen ? (
@@ -446,8 +167,8 @@ export function AdminWorkspaceLayout({
                           Notifications
                         </p>
                         <p className="mt-1 text-xs text-slate-500">
-                          {unreadCount > 0
-                            ? `${unreadCount} unread item${unreadCount === 1 ? '' : 's'}`
+                          {unreadNotificationCount > 0
+                            ? `${unreadNotificationCount} unread item${unreadNotificationCount === 1 ? '' : 's'}`
                             : 'All caught up'}
                         </p>
                       </div>
@@ -456,9 +177,10 @@ export function AdminWorkspaceLayout({
                           className="inline-flex h-9 items-center justify-center rounded-xl border border-[#eadfce] px-3 text-xs font-semibold text-[#b77712] transition hover:border-[#d9ccb6] hover:bg-[#faf7f1] hover:text-[#8f5b08] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d0922c]/60 disabled:cursor-not-allowed disabled:border-[#efe6d8] disabled:text-slate-300 disabled:hover:bg-transparent"
                           type="button"
                           disabled={
-                            unreadCount === 0 || markingAllNotificationsRead
+                            unreadNotificationCount === 0 ||
+                            markingAllNotificationsRead
                           }
-                          onClick={() => void handleMarkAllNotificationsRead()}
+                          onClick={() => void markAllNotificationsRead()}
                         >
                           {markingAllNotificationsRead
                             ? 'Marking...'
@@ -517,30 +239,60 @@ export function AdminWorkspaceLayout({
                             className="border-b border-[#eadfce] px-5 py-4 last:border-b-0"
                           >
                             <div className="flex items-start justify-between gap-3">
-                              <div className="min-w-0 flex-1">
-                                <div className="flex items-center gap-2">
-                                  <p className="truncate text-sm font-semibold text-slate-950">
-                                    {notification.title}
+                              {isNavigableNotificationTarget(
+                                notification.target
+                              ) ? (
+                                <button
+                                  aria-label={`Open notification ${notification.title}`}
+                                  className="min-w-0 flex-1 rounded-xl p-0 text-left transition hover:text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d0922c]/60"
+                                  type="button"
+                                  onClick={async () => {
+                                    if (!notification.read_at) {
+                                      await markNotificationRead(notification.id)
+                                    }
+                                    setNotificationsOpen(false)
+                                    navigate(notification.target.href)
+                                  }}
+                                >
+                                  <div className="flex items-center gap-2">
+                                    <p className="truncate text-sm font-semibold text-slate-950">
+                                      {notification.title}
+                                    </p>
+                                    {!notification.read_at ? (
+                                      <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-[#d0922c]" />
+                                    ) : null}
+                                  </div>
+                                  <p className="mt-1 text-sm leading-6 text-slate-600">
+                                    {notification.body}
                                   </p>
-                                  {!notification.read_at ? (
-                                    <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-[#d0922c]" />
-                                  ) : null}
+                                  <p className="mt-2 text-xs text-[#89a0c4]">
+                                    {formatRelativeTime(notification.created_at)}
+                                  </p>
+                                </button>
+                              ) : (
+                                <div className="min-w-0 flex-1">
+                                  <div className="flex items-center gap-2">
+                                    <p className="truncate text-sm font-semibold text-slate-950">
+                                      {notification.title}
+                                    </p>
+                                    {!notification.read_at ? (
+                                      <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-[#d0922c]" />
+                                    ) : null}
+                                  </div>
+                                  <p className="mt-1 text-sm leading-6 text-slate-600">
+                                    {notification.body}
+                                  </p>
+                                  <p className="mt-2 text-xs text-[#89a0c4]">
+                                    {formatRelativeTime(notification.created_at)}
+                                  </p>
                                 </div>
-                                <p className="mt-1 text-sm leading-6 text-slate-600">
-                                  {notification.body}
-                                </p>
-                                <p className="mt-2 text-xs text-[#89a0c4]">
-                                  {formatRelativeTime(notification.created_at)}
-                                </p>
-                              </div>
+                              )}
                               {!notification.read_at ? (
                                 <button
                                   className="shrink-0 text-xs font-semibold text-[#b77712] transition hover:text-[#8f5b08]"
                                   type="button"
                                   onClick={() =>
-                                    void handleMarkNotificationRead(
-                                      notification.id
-                                    )
+                                    void markNotificationRead(notification.id)
                                   }
                                 >
                                   Mark read
@@ -603,9 +355,11 @@ export function AdminWorkspaceLayout({
                         )
                         const Icon = item.icon
                         const badgeValue =
-                          item.badgeKey && summary
-                            ? summary[item.badgeKey]
-                            : null
+                          item.badge?.source === 'summary' && summary
+                            ? summary[item.badge.key]
+                            : item.badge?.source === 'notifications'
+                              ? unreadNotificationCount
+                              : null
 
                         return (
                           <NavLink
