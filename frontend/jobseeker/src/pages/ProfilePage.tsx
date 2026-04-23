@@ -1,4 +1,4 @@
-import { useEffect, useEffectEvent, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Check, CircleAlert } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
@@ -180,40 +180,39 @@ export function JobseekerProfilePage() {
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
 
-  const hydrateProfile = useEffectEvent(
-    async (active: { current: boolean }) => {
-      setIsLoading(true)
-      setError(null)
-      try {
-        const response = await getMyJobseekerProfile(auth.requestTwa)
-        if (!active.current) return
+  const requestTwa = auth.requestTwa
+
+  useEffect(() => {
+    if (!appUserId) return
+
+    let active = true
+    setIsLoading(true)
+    setError(null)
+    void getMyJobseekerProfile(requestTwa)
+      .then((response) => {
+        if (!active) return
         setProfile(response.profile)
         setDraft(toDraft(response.profile))
         setStep(inferInitialStep(response.profile))
         setWizardMode(response.profile.profile_complete ? 'edit' : 'setup')
         setIsEditing(!response.profile.profile_complete)
-      } catch (nextError) {
-        if (!active.current) return
+      })
+      .catch((nextError: unknown) => {
+        if (!active) return
         setError(
           nextError instanceof Error
             ? nextError.message
             : 'Unable to load your profile right now.'
         )
-      } finally {
-        if (active.current) setIsLoading(false)
-      }
-    }
-  )
+      })
+      .finally(() => {
+        if (active) setIsLoading(false)
+      })
 
-  useEffect(() => {
-    if (!appUserId) return
-
-    const active = { current: true }
-    void hydrateProfile(active)
     return () => {
-      active.current = false
+      active = false
     }
-  }, [appUserId])
+  }, [appUserId, requestTwa])
 
   const selectedCharges = useMemo(() => {
     if (!draft) return []

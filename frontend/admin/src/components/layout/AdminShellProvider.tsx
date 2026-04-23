@@ -83,18 +83,17 @@ function upsertNotificationState(
   )
 
   let unreadCount = current.unreadCount
-  if (
-    notification.read_at === null &&
-    (!existing || existing.read_at !== null)
-  ) {
-    unreadCount += 1
-  }
-  if (
-    notification.read_at !== null &&
-    existing !== undefined &&
-    existing.read_at === null
-  ) {
-    unreadCount = Math.max(0, unreadCount - 1)
+  if (!existing) {
+    if (notification.read_at === null) {
+      unreadCount += 1
+    }
+  } else {
+    if (existing.read_at !== null && notification.read_at === null) {
+      unreadCount += 1
+    }
+    if (existing.read_at === null && notification.read_at !== null) {
+      unreadCount = Math.max(0, unreadCount - 1)
+    }
   }
 
   return {
@@ -116,16 +115,28 @@ function applyReadResultToState(
   current: NotificationState,
   result: AdminNotificationReadResult
 ): NotificationState {
+  const existing = current.notifications.find(
+    (notification) => notification.id === result.id
+  )
+
   let unreadCount = current.unreadCount
+  if (existing) {
+    if (existing.read_at === null && result.read_at !== null) {
+      unreadCount = Math.max(0, unreadCount - 1)
+    }
+    if (existing.read_at !== null && result.read_at === null) {
+      unreadCount += 1
+    }
+  } else if (result.read_at !== null) {
+    unreadCount = Math.max(0, unreadCount - 1)
+  }
 
   return {
-    notifications: current.notifications.map((notification) => {
-      if (notification.id !== result.id) return notification
-      if (notification.read_at === null && result.read_at !== null) {
-        unreadCount = Math.max(0, unreadCount - 1)
-      }
-      return { ...notification, read_at: result.read_at }
-    }),
+    notifications: current.notifications.map((notification) =>
+      notification.id === result.id
+        ? { ...notification, read_at: result.read_at }
+        : notification
+    ),
     unreadCount,
   }
 }
@@ -140,14 +151,21 @@ function applyBulkReadResultToState(
     response.notifications.map((result) => [result.id, result.read_at])
   )
 
+  const nextNotifications = current.notifications.map((notification) => {
+    const readAt = readLookup.get(notification.id)
+    return readAt === undefined
+      ? notification
+      : { ...notification, read_at: readAt }
+  })
+
+  const unreadCount = Math.max(
+    0,
+    current.unreadCount - response.marked_count
+  )
+
   return {
-    notifications: current.notifications.map((notification) => {
-      const readAt = readLookup.get(notification.id)
-      return readAt === undefined
-        ? notification
-        : { ...notification, read_at: readAt }
-    }),
-    unreadCount: 0,
+    notifications: nextNotifications,
+    unreadCount,
   }
 }
 
@@ -224,6 +242,7 @@ export function AdminShellProvider({ children }: { children: ReactNode }) {
     notifications: [],
     unreadCount: 0,
   })
+  const markingAllNotificationsReadRef = useRef(false)
 
   const setNotificationState = useCallback((nextState: NotificationState) => {
     notificationStateRef.current = nextState
@@ -317,26 +336,50 @@ export function AdminShellProvider({ children }: { children: ReactNode }) {
     let reconnectTimer: number | null = null
     let reconnectAttempt = 0
     let streamController: AbortController | null = null
+    let activeReader: ReadableStreamDefaultReader<Uint8Array> | null = null
+    let connectGeneration = 0
 
     const scheduleReconnect = () => {
       if (!active) return
+      if (reconnectTimer !== null) return
       const delay = Math.min(1000 * 2 ** reconnectAttempt, 15000)
       reconnectAttempt += 1
       reconnectTimer = window.setTimeout(() => {
+        reconnectTimer = null
         void connect()
       }, delay)
     }
 
     const connect = async () => {
-      streamController = new AbortController()
+      if (!active) return
+
+      if (streamController) {
+        streamController.abort()
+      }
+      if (activeReader) {
+        try {
+          await activeReader.cancel()
+        } catch {
+          // reader may already be closed; ignore
+        }
+        activeReader = null
+      }
+
+      const generation = ++connectGeneration
+      const controller = new AbortController()
+      streamController = controller
 
       try {
         const response = await streamTwa('/api/v1/notifications/stream', {
           headers: {
             Accept: 'text/event-stream',
           },
-          signal: streamController.signal,
+          signal: controller.signal,
         })
+
+        if (!active || generation !== connectGeneration) {
+          return
+        }
 
         if (!response.body) {
           throw new Error('Notification stream is unavailable.')
@@ -346,10 +389,11 @@ export function AdminShellProvider({ children }: { children: ReactNode }) {
         setNotificationsError(null)
 
         const reader = response.body.getReader()
+        activeReader = reader
         const decoder = new TextDecoder()
         let buffer = ''
 
-        while (active) {
+        while (active && generation === connectGeneration) {
           const { value, done } = await reader.read()
           if (done) throw new Error('Notification stream disconnected.')
 
@@ -419,11 +463,20 @@ export function AdminShellProvider({ children }: { children: ReactNode }) {
             ? error
             : new Error('Notification stream connection failed.')
 
-        if (!active || streamError.name === 'AbortError') {
+        if (
+          !active ||
+          generation !== connectGeneration ||
+          streamError.name === 'AbortError'
+        ) {
           return
         }
 
         scheduleReconnect()
+      } finally {
+        if (generation === connectGeneration) {
+          activeReader = null
+          streamController = null
+        }
       }
     }
 
@@ -431,8 +484,16 @@ export function AdminShellProvider({ children }: { children: ReactNode }) {
 
     return () => {
       active = false
-      if (reconnectTimer !== null) window.clearTimeout(reconnectTimer)
+      connectGeneration += 1
+      if (reconnectTimer !== null) {
+        window.clearTimeout(reconnectTimer)
+        reconnectTimer = null
+      }
       streamController?.abort()
+      if (activeReader) {
+        void activeReader.cancel().catch(() => {})
+        activeReader = null
+      }
     }
   }, [authRole, authState, refreshSummary, setNotificationState, streamTwa])
 
@@ -461,8 +522,14 @@ export function AdminShellProvider({ children }: { children: ReactNode }) {
   )
 
   const markAllNotificationsRead = useCallback(async () => {
-    if (unreadNotificationCount === 0 || markingAllNotificationsRead) return
+    if (
+      notificationStateRef.current.unreadCount === 0 ||
+      markingAllNotificationsReadRef.current
+    ) {
+      return
+    }
 
+    markingAllNotificationsReadRef.current = true
     setMarkingAllNotificationsRead(true)
     setNotificationsError(null)
 
@@ -481,14 +548,10 @@ export function AdminShellProvider({ children }: { children: ReactNode }) {
           : 'Unable to mark all notifications as read right now.'
       )
     } finally {
+      markingAllNotificationsReadRef.current = false
       setMarkingAllNotificationsRead(false)
     }
-  }, [
-    markingAllNotificationsRead,
-    requestTwa,
-    setNotificationState,
-    unreadNotificationCount,
-  ])
+  }, [requestTwa, setNotificationState])
 
   const value = useMemo(
     () => ({
