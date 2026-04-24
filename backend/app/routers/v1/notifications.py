@@ -11,7 +11,11 @@ from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 
-from app.core.auth import AuthContext, get_auth_context
+from app.core.auth import (
+    AuthContext,
+    ensure_authenticated_app_context,
+    get_auth_context,
+)
 from app.core.config import get_settings
 from app.core.responses import PaginatedResponse
 from app.db.session import SessionFactory, get_db_session, get_db_session_factory
@@ -19,6 +23,11 @@ from app.schemas.notifications import (
     NotificationBulkReadResponse,
     NotificationPayload,
     NotificationReadResponse,
+)
+from app.services.auth import (
+    AuthProviderIdentity,
+    get_auth_provider_identity,
+    resolve_auth_context,
 )
 from app.services.common import PaginationParams, ensure_found, get_pagination_params
 from app.services.notifications import (
@@ -49,6 +58,34 @@ def build_sse_message(*, event: str, data: dict[str, object]) -> str:
 
 def _format_snapshot_message(snapshot: dict[str, object]) -> str:
     return build_sse_message(event="snapshot", data=snapshot)
+
+
+def _load_stream_auth_context(
+    *, request: Request, session_factory: SessionFactory, identity: AuthProviderIdentity
+) -> AuthContext:
+    with session_factory() as session:
+        try:
+            auth_context = resolve_auth_context(
+                request=request,
+                session=session,
+                identity=identity,
+            )
+            return ensure_authenticated_app_context(auth_context)
+        finally:
+            if session.in_transaction():
+                session.rollback()
+
+
+def get_stream_auth_context(
+    request: Request,
+    session_factory: SessionFactory = Depends(get_db_session_factory),
+    identity: AuthProviderIdentity = Depends(get_auth_provider_identity),
+) -> AuthContext:
+    return _load_stream_auth_context(
+        request=request,
+        session_factory=session_factory,
+        identity=identity,
+    )
 
 
 def _load_snapshot(
@@ -87,7 +124,7 @@ def get_my_notifications(
 @router.get("/stream")
 async def stream_my_notifications(
     request: Request,
-    auth_context: AuthContext = Depends(get_auth_context),
+    auth_context: AuthContext = Depends(get_stream_auth_context),
     session_factory: SessionFactory = Depends(get_db_session_factory),
 ) -> StreamingResponse:
     subscriber_id = uuid4().hex
