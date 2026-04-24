@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import hashlib
+import logging
 from datetime import datetime, timezone
 from uuid import UUID
 
@@ -37,6 +39,8 @@ from app.services.notifications import (
 )
 from app.services.transit import compute_transit_accessibility
 
+logger = logging.getLogger("twa.employer")
+
 EMPLOYER_ALLOWED_FILTERS = {
     "review_status": Employer.review_status,
 }
@@ -67,6 +71,7 @@ EMPLOYER_APPLICANT_ALLOWED_SORTS = {
     "status": Application.status,
     "jobseeker_name": Jobseeker.full_name,
 }
+LISTING_GEOCODING_FAILED_WARNING = "Geocoding failed for the listing address."
 ALLOWED_EMPLOYER_REVIEW_TRANSITIONS = {
     EmployerReviewStatus.PENDING: {
         EmployerReviewStatus.PENDING,
@@ -282,6 +287,30 @@ def _ensure_listing_lifecycle_transition(
         )
 
 
+def _redacted_location_log_context(listing: JobListing) -> dict[str, object]:
+    normalized_address = (listing.location_address or "").strip().lower()
+    address_fingerprint = (
+        hashlib.sha256(normalized_address.encode("utf-8")).hexdigest()[:12]
+        if normalized_address
+        else None
+    )
+    zip_code = (listing.zip or "").strip()
+    return {
+        "listing_id": str(listing.id) if listing.id is not None else None,
+        "city": listing.city,
+        "zip_prefix": zip_code[:3] if zip_code else None,
+        "address_present": bool(normalized_address),
+        "address_fingerprint": address_fingerprint,
+    }
+
+
+def _log_listing_geocoding_failure(listing: JobListing) -> None:
+    logger.error(
+        "listing_geocoding_failed",
+        extra=_redacted_location_log_context(listing),
+    )
+
+
 def _enrich_listing_location_data(listing: JobListing) -> str | None:
     if not listing.location_address or not listing.city or not listing.zip:
         listing.job_lat = None
@@ -298,7 +327,9 @@ def _enrich_listing_location_data(listing: JobListing) -> str | None:
         listing.job_lat = None
         listing.job_lon = None
         listing.transit_accessible = None
-        return "Geocoding failed for the listing address."
+        listing.review_status = ListingReviewStatus.PENDING
+        _log_listing_geocoding_failure(listing)
+        return LISTING_GEOCODING_FAILED_WARNING
 
     listing.job_lat = geocoded.latitude
     listing.job_lon = geocoded.longitude

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import tempfile
 import uuid
 import zipfile
@@ -214,9 +215,12 @@ def test_listing_creation_computes_location_fields(location_services_env) -> Non
     assert stored.transit_accessible is True
 
 
-def test_listing_creation_survives_geocoding_failure(location_services_env) -> None:
+def test_listing_creation_survives_geocoding_failure(
+    location_services_env, caplog: pytest.LogCaptureFixture
+) -> None:
     client, state, session_factory, monkeypatch = location_services_env
     monkeypatch.setattr("app.services.employer.geocode_address", lambda **_: None)
+    caplog.set_level(logging.ERROR, logger="twa.employer")
 
     bootstrap = client.post(
         "/api/v1/auth/bootstrap",
@@ -248,3 +252,65 @@ def test_listing_creation_survives_geocoding_failure(location_services_env) -> N
         audits = session.execute(select(AuditLog)).scalars().all()
     assert stored.job_lat is None
     assert any(audit.action == "listing.location_warning" for audit in audits)
+    geocode_logs = [
+        record
+        for record in caplog.records
+        if record.message == "listing_geocoding_failed"
+    ]
+    assert geocode_logs
+    assert geocode_logs[0].city == "St. Louis"
+    assert geocode_logs[0].zip_prefix == "631"
+    assert geocode_logs[0].address_present is True
+    assert "2000 North Broadway" not in caplog.text
+
+
+def test_listing_approval_geocoding_failure_flags_listing_for_review(
+    location_services_env, caplog: pytest.LogCaptureFixture
+) -> None:
+    client, state, session_factory, monkeypatch = location_services_env
+    monkeypatch.setattr("app.services.employer.geocode_address", lambda **_: None)
+    caplog.set_level(logging.ERROR, logger="twa.employer")
+
+    bootstrap = client.post(
+        "/api/v1/auth/bootstrap",
+        json={
+            "role": "employer",
+            "employer_profile": {"org_name": "Northside Logistics"},
+        },
+    )
+    assert bootstrap.status_code == 200
+    approve_employer(client, state, session_factory)
+
+    create_listing = client.post(
+        "/api/v1/employer/listings",
+        json={
+            "title": "Warehouse Associate",
+            "location_address": "2000 North Broadway",
+            "city": "St. Louis",
+            "zip": "63102",
+        },
+    )
+    assert create_listing.status_code == 200
+    listing_id = create_listing.json()["listing"]["id"]
+
+    state["identity"] = AuthProviderIdentity(
+        auth_user_id=uuid.UUID("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"),
+        email="staff@example.com",
+        auth_provider_role="admin",
+    )
+    approve_listing = client.patch(
+        f"/api/v1/admin/listings/{listing_id}",
+        json={"review_status": "approved", "review_note": "Ready."},
+    )
+
+    assert approve_listing.status_code == 200
+    payload = approve_listing.json()["listing"]
+    assert payload["review_status"] == "pending"
+    assert payload["job_lat"] is None
+    assert payload["job_lon"] is None
+
+    with session_factory() as session:
+        stored = session.get(JobListing, uuid.UUID(listing_id))
+    assert stored.review_status.value == "pending"
+    assert "listing_geocoding_failed" in caplog.text
+    assert "2000 North Broadway" not in caplog.text
