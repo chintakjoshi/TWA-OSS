@@ -48,6 +48,7 @@ from app.services.applications import (
     update_application_status,
 )
 from app.services.common import (
+    DEFAULT_PAGE_SIZE,
     PaginationParams,
     SortParams,
     ensure_found,
@@ -81,7 +82,16 @@ from app.services.notifications import (
     update_notification_config,
 )
 
+AUDIT_LOG_MAX_PAGE_SIZE = 50
+
 router = APIRouter(prefix="/api/v1/admin", tags=["admin"])
+
+
+def get_audit_log_pagination_params(
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=DEFAULT_PAGE_SIZE, ge=1, le=AUDIT_LOG_MAX_PAGE_SIZE),
+) -> PaginationParams:
+    return PaginationParams(page=page, page_size=page_size)
 
 
 @router.get("/dashboard", response_model=AdminDashboardPayload)
@@ -353,7 +363,7 @@ def get_admin_audit_log(
     action: str | None = Query(default=None),
     date_from: datetime | None = Query(default=None),
     date_to: datetime | None = Query(default=None),
-    pagination: PaginationParams = Depends(get_pagination_params),
+    pagination: PaginationParams = Depends(get_audit_log_pagination_params),
     _: AuthContext = Depends(require_staff),
     session: Session = Depends(get_db_session),
 ) -> PaginatedResponse[AuditLogPayload]:

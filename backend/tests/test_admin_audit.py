@@ -336,6 +336,59 @@ def test_admin_audit_log_supports_filters_and_system_events(admin_audit_env) -> 
     ]
 
 
+def test_admin_audit_log_enforces_audit_specific_page_size_cap(
+    admin_audit_env,
+) -> None:
+    client, _, session_factory = admin_audit_env
+    seed_admin_audit_data(session_factory)
+
+    accepted = client.get("/api/v1/admin/audit-log", params={"page_size": 50})
+    rejected = client.get("/api/v1/admin/audit-log", params={"page_size": 51})
+
+    assert accepted.status_code == 200
+    assert accepted.json()["meta"]["page_size"] == 50
+    assert rejected.status_code == 422
+
+
+def test_admin_audit_log_default_order_is_deterministic_for_tied_timestamps(
+    admin_audit_env,
+) -> None:
+    client, _, session_factory = admin_audit_env
+    seed_admin_audit_data(session_factory)
+    shared_timestamp = datetime(2026, 3, 4, 12, 0, tzinfo=timezone.utc)
+
+    with session_factory() as session:
+        session.add_all(
+            [
+                AuditLog(
+                    id=uuid.UUID("00000000-0000-0000-0000-000000000001"),
+                    actor_id=None,
+                    action="tie.low_id",
+                    entity_type="system",
+                    entity_id=None,
+                    timestamp=shared_timestamp,
+                ),
+                AuditLog(
+                    id=uuid.UUID("00000000-0000-0000-0000-000000000002"),
+                    actor_id=None,
+                    action="tie.high_id",
+                    entity_type="system",
+                    entity_id=None,
+                    timestamp=shared_timestamp,
+                ),
+            ]
+        )
+        session.commit()
+
+    response = client.get("/api/v1/admin/audit-log", params={"page_size": 2})
+
+    assert response.status_code == 200
+    assert [item["action"] for item in response.json()["items"]] == [
+        "tie.high_id",
+        "tie.low_id",
+    ]
+
+
 def test_admin_listing_filters_support_city_search_and_employer(
     admin_audit_env,
 ) -> None:
