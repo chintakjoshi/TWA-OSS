@@ -19,6 +19,7 @@ import tempfile
 import uuid
 from collections.abc import Generator
 from pathlib import Path
+from types import SimpleNamespace
 from typing import Any
 
 import anyio
@@ -33,6 +34,7 @@ from app.main import create_app
 from app.models import AppUser, Jobseeker
 from app.models.enums import AppRole, JobseekerStatus, TransitType
 from app.routers.v1 import notifications as notifications_router
+from app.services.auth import AuthProviderIdentity
 
 
 @pytest.fixture()
@@ -147,6 +149,67 @@ def test_stream_route_does_not_depend_on_get_db_session(configured_app) -> None:
         "stream_my_notifications must not accept a `session` dependency — the "
         "stream lifetime would pin a pooled DB connection."
     )
+
+
+def test_stream_route_uses_short_lived_auth_context_dependency(
+    configured_app,
+) -> None:
+    signature = inspect.signature(notifications_router.stream_my_notifications)
+    auth_dependency = signature.parameters["auth_context"].default
+
+    assert auth_dependency.dependency is not notifications_router.get_auth_context, (
+        "stream_my_notifications must not use get_auth_context because that "
+        "dependency opens a request-scoped DB session before StreamingResponse "
+        "starts."
+    )
+
+
+def test_stream_auth_context_uses_short_lived_session(
+    configured_app, jobseeker_user
+) -> None:
+    factory_override = configured_app.dependency_overrides[get_db_session_factory]
+    real_factory = factory_override()
+    close_count = 0
+    rollback_count = 0
+
+    class TrackingSession:
+        def __init__(self) -> None:
+            self._inner = real_factory()
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *exc_info: Any) -> None:
+            nonlocal close_count
+            try:
+                self._inner.__exit__(*exc_info)
+            finally:
+                close_count += 1
+
+        def __getattr__(self, name: str) -> Any:
+            return getattr(self._inner, name)
+
+        def rollback(self) -> None:
+            nonlocal rollback_count
+            rollback_count += 1
+            self._inner.rollback()
+
+    def tracking_factory() -> TrackingSession:
+        return TrackingSession()
+
+    auth_context = notifications_router._load_stream_auth_context(
+        request=SimpleNamespace(state=SimpleNamespace()),  # type: ignore[arg-type]
+        session_factory=tracking_factory,
+        identity=AuthProviderIdentity(
+            auth_user_id=jobseeker_user.auth_user_id,
+            email=jobseeker_user.email,
+            auth_provider_role=jobseeker_user.auth_provider_role,
+        ),
+    )
+
+    assert auth_context.app_user_id == jobseeker_user.id
+    assert rollback_count == 1
+    assert close_count == 1
 
 
 def test_stream_emits_initial_snapshot(configured_app, jobseeker_user) -> None:

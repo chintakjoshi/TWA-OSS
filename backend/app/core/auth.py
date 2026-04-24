@@ -39,14 +39,7 @@ def get_optional_auth_context(request: Request) -> AuthContext | None:
     return getattr(request.state, "auth_context", None)
 
 
-def get_auth_context(
-    request: Request,
-    session: Session = Depends(get_db_session),
-    identity: AuthProviderIdentity = Depends(get_auth_provider_identity),
-) -> AuthContext:
-    auth_context = resolve_auth_context(
-        request=request, session=session, identity=identity
-    )
+def ensure_authenticated_app_context(auth_context: AuthContext) -> AuthContext:
     if auth_context.app_user_id is None or auth_context.app_role is None:
         raise AppError(
             status_code=403,
@@ -58,6 +51,17 @@ def get_auth_context(
             status_code=403, code="ACCOUNT_INACTIVE", detail="This account is inactive."
         )
     return auth_context
+
+
+def get_auth_context(
+    request: Request,
+    session: Session = Depends(get_db_session),
+    identity: AuthProviderIdentity = Depends(get_auth_provider_identity),
+) -> AuthContext:
+    auth_context = resolve_auth_context(
+        request=request, session=session, identity=identity
+    )
+    return ensure_authenticated_app_context(auth_context)
 
 
 def require_role(*allowed_roles: AppRole):
