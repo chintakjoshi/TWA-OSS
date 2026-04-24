@@ -185,7 +185,7 @@ def list_audit_logs(
     total_items = session.execute(
         select(func.count()).select_from(base_statement.subquery())
     ).scalar_one()
-    statement = base_statement.order_by(AuditLog.timestamp.desc())
+    statement = base_statement.order_by(AuditLog.timestamp.desc(), AuditLog.id.desc())
     statement = apply_pagination(statement, pagination)
     items = session.execute(statement).scalars().all()
     return build_paginated_response(
