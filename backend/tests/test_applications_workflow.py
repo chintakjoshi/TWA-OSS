@@ -7,13 +7,13 @@ from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, select
 from sqlalchemy.orm import Session, sessionmaker
 
 from app.core.config import get_settings
 from app.db.session import get_db_session
 from app.main import create_app
-from app.models import Application, AppUser, Employer, JobListing
+from app.models import Application, AppUser, Employer, JobListing, Jobseeker
 from app.models.enums import (
     ApplicationStatus,
     AppRole,
@@ -321,6 +321,47 @@ def test_jobseeker_can_browse_jobs_and_apply(applications_env) -> None:
     refreshed_detail = client.get(f"/api/v1/jobs/{listing_ids['eligible']}")
     assert refreshed_detail.status_code == 200
     assert refreshed_detail.json()["eligibility"]["has_applied"] is True
+
+
+def test_concurrent_duplicate_application_returns_conflict(
+    applications_env, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    client, state, session_factory = applications_env
+    bootstrap_completed_jobseeker(client)
+    listing_ids = seed_employer_and_listings(session_factory)
+
+    with session_factory() as session:
+        jobseeker = session.execute(
+            select(Jobseeker)
+            .join(AppUser)
+            .where(AppUser.auth_user_id == state["identity"].auth_user_id)
+        ).scalar_one()
+        session.add(
+            Application(
+                jobseeker_id=jobseeker.id,
+                job_listing_id=listing_ids["eligible"],
+                status=ApplicationStatus.SUBMITTED,
+            )
+        )
+        session.commit()
+
+    def stale_application_lookup(
+        session: Session, *, jobseeker_id: uuid.UUID, job_listing_id: uuid.UUID
+    ) -> None:
+        return None
+
+    monkeypatch.setattr(
+        applications_service,
+        "get_jobseeker_application_by_listing",
+        stale_application_lookup,
+    )
+
+    duplicate = client.post(
+        "/api/v1/applications", json={"job_listing_id": str(listing_ids["eligible"])}
+    )
+
+    assert duplicate.status_code == 409
+    assert duplicate.json()["error"]["code"] == "CONFLICT"
 
 
 def test_rejected_employer_listings_are_hidden_from_jobseekers(
