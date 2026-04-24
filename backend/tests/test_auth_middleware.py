@@ -135,7 +135,7 @@ def test_auth_middleware_allows_cors_preflight_without_authentication(
 
     assert response.status_code == 200
     assert response.headers["access-control-allow-origin"] == "http://localhost:5175"
-    assert "authorization" in response.headers["access-control-allow-headers"]
+    assert "authorization" in response.headers["access-control-allow-headers"].lower()
     assert dispatch_calls == []
 
     app.dependency_overrides.clear()

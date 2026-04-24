@@ -11,6 +11,29 @@ from app.core.middleware import CookieCSRFMiddleware, PathAwareJWTAuthMiddleware
 from app.routers import router as api_router
 
 
+def _get_cors_allow_origins(origins: list[str]) -> list[str]:
+    if "*" in origins:
+        raise ValueError(
+            "TWA_CORS_ORIGINS cannot include '*' because credentialed CORS is "
+            "enabled. Configure explicit trusted origins instead."
+        )
+    return origins
+
+
+def _get_cors_allow_headers(
+    *, csrf_header_name: str, request_id_header: str
+) -> list[str]:
+    return sorted(
+        {
+            "Authorization",
+            "Content-Type",
+            csrf_header_name,
+            request_id_header,
+        },
+        key=str.lower,
+    )
+
+
 def create_app() -> FastAPI:
     settings = get_settings()
     configure_logging(settings.log_level)
@@ -53,12 +76,16 @@ def create_app() -> FastAPI:
         RequestLoggingMiddleware, request_id_header=settings.request_id_header
     )
     if settings.cors_origins_list:
+        allow_origins = _get_cors_allow_origins(settings.cors_origins_list)
         app.add_middleware(
             CORSMiddleware,
-            allow_origins=settings.cors_origins_list,
+            allow_origins=allow_origins,
             allow_credentials=True,
             allow_methods=["*"],
-            allow_headers=["*"],
+            allow_headers=_get_cors_allow_headers(
+                csrf_header_name=settings.auth_csrf_header_name,
+                request_id_header=settings.request_id_header,
+            ),
         )
     register_exception_handlers(app)
     if settings.docs_enabled:
