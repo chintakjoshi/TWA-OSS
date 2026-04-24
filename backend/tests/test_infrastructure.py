@@ -213,3 +213,56 @@ def test_unhandled_exceptions_use_standard_error_shape(client: TestClient) -> No
             "request_id": "req-500",
         }
     }
+
+
+def test_create_app_rejects_wildcard_cors_origins_with_credentials(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("TWA_CORS_ORIGINS", "*")
+    get_settings.cache_clear()
+
+    with pytest.raises(ValueError, match="TWA_CORS_ORIGINS"):
+        create_app()
+
+    get_settings.cache_clear()
+
+
+def test_cors_preflight_allows_only_documented_request_headers(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("TWA_AUTH_ENABLED", "false")
+    monkeypatch.setenv("TWA_CORS_ORIGINS", "https://portal.example.com")
+    monkeypatch.setenv("TWA_AUTH_CSRF_HEADER_NAME", "X-CSRF-Token")
+    monkeypatch.setenv("TWA_REQUEST_ID_HEADER", "X-Request-ID")
+    get_settings.cache_clear()
+    app = create_app()
+
+    with TestClient(app) as test_client:
+        response = test_client.options(
+            "/api/v1/auth/me",
+            headers={
+                "Origin": "https://portal.example.com",
+                "Access-Control-Request-Method": "POST",
+                "Access-Control-Request-Headers": (
+                    "authorization,content-type,x-csrf-token,x-request-id"
+                ),
+            },
+        )
+        disallowed_response = test_client.options(
+            "/api/v1/auth/me",
+            headers={
+                "Origin": "https://portal.example.com",
+                "Access-Control-Request-Method": "POST",
+                "Access-Control-Request-Headers": "x-untrusted-header",
+            },
+        )
+
+    assert response.status_code == 200
+    assert (
+        response.headers["access-control-allow-origin"] == "https://portal.example.com"
+    )
+    assert response.headers["access-control-allow-credentials"] == "true"
+    assert response.headers["access-control-allow-headers"] != "*"
+    assert disallowed_response.status_code == 400
+
+    get_settings.cache_clear()
