@@ -4,6 +4,7 @@ from datetime import datetime, timezone
 from uuid import UUID
 
 from sqlalchemy import false, func, not_, or_, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, joinedload
 
 from app.audit import write_audit
@@ -80,6 +81,30 @@ JOBSEEKER_LISTING_CHARGE_FLAG_PAIRS = (
     ("charge_drug", "disq_drug"),
     ("charge_theft", "disq_theft"),
 )
+APPLICATION_DUPLICATE_CONSTRAINT = "uq_applications_jobseeker_listing"
+APPLICATION_DUPLICATE_DETAIL = "This jobseeker has already applied to this listing."
+
+
+def _duplicate_application_error() -> AppError:
+    return AppError(
+        status_code=409,
+        code="CONFLICT",
+        detail=APPLICATION_DUPLICATE_DETAIL,
+    )
+
+
+def _is_duplicate_application_integrity_error(exc: IntegrityError) -> bool:
+    orig = exc.orig
+    constraint_name = getattr(getattr(orig, "diag", None), "constraint_name", None)
+    if constraint_name == APPLICATION_DUPLICATE_CONSTRAINT:
+        return True
+
+    message = str(orig).lower()
+    return APPLICATION_DUPLICATE_CONSTRAINT in message or (
+        "unique constraint failed" in message
+        and "applications.jobseeker_id" in message
+        and "applications.job_listing_id" in message
+    )
 
 
 def _visible_jobs_statement():
@@ -341,11 +366,7 @@ def create_application(
         session, jobseeker_id=jobseeker.id, job_listing_id=job_listing_id
     )
     if existing is not None:
-        raise AppError(
-            status_code=409,
-            code="CONFLICT",
-            detail="This jobseeker has already applied to this listing.",
-        )
+        raise _duplicate_application_error()
 
     eligibility = evaluate_jobseeker_listing_match(jobseeker, listing)
     if not eligibility.is_eligible:
@@ -361,7 +382,13 @@ def create_application(
         status=ApplicationStatus.SUBMITTED,
     )
     session.add(application)
-    session.flush()
+    try:
+        session.flush()
+    except IntegrityError as exc:
+        session.rollback()
+        if _is_duplicate_application_integrity_error(exc):
+            raise _duplicate_application_error() from exc
+        raise
     application = ensure_found(
         get_application_by_id(session, application.id), entity_name="Application"
     )
